@@ -59,6 +59,7 @@ export type Database = {
           plan: Database["public"]["Enums"]["plan_tier"]
           runtime_credits: number
           updated_at: string
+          voice_rules: Json | null
         }
         Insert: {
           avatar_url?: string | null
@@ -74,6 +75,7 @@ export type Database = {
           plan?: Database["public"]["Enums"]["plan_tier"]
           runtime_credits?: number
           updated_at?: string
+          voice_rules?: Json | null
         }
         Update: {
           avatar_url?: string | null
@@ -89,6 +91,7 @@ export type Database = {
           plan?: Database["public"]["Enums"]["plan_tier"]
           runtime_credits?: number
           updated_at?: string
+          voice_rules?: Json | null
         }
         Relationships: []
       }
