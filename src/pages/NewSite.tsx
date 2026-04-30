@@ -120,8 +120,8 @@ export default function NewSite() {
     // Replace placeholders in the draft
     const replaced: SiteContent = JSON.parse(
       JSON.stringify(templateModal.draft)
-        .replaceAll("{{BUSINESS_NAME}}", bizName.trim())
-        .replaceAll("{{CITY}}", bizCity.trim()),
+        .split("{{BUSINESS_NAME}}").join(bizName.trim())
+        .split("{{CITY}}").join(bizCity.trim()),
     );
     const tplPrompt = `${templateModal.industry}: ${bizName} in ${bizCity}. ${templateModal.description}`;
     setPrompt(tplPrompt);
