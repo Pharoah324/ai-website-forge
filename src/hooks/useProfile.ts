@@ -10,6 +10,13 @@ export type Profile = {
   build_credits: number;
   runtime_credits: number;
   build_credits_rollover: number;
+  billing_cycle_start: string;
+  monthly_build_limit: number;
+  monthly_runtime_limit: number;
+  rollover_build_credits: number;
+  rollover_runtime_credits: number;
+  top_up_build_credits: number;
+  top_up_runtime_credits: number;
   brand_voice_samples: string | null;
   brand_voice_active: boolean;
   voice_rules: string[] | null;
