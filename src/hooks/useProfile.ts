@@ -12,6 +12,7 @@ export type Profile = {
   build_credits_rollover: number;
   brand_voice_samples: string | null;
   brand_voice_active: boolean;
+  voice_rules: string[] | null;
 };
 
 export const PLAN_LIMITS: Record<

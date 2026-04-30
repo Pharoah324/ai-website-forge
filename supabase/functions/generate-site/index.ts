@@ -6,23 +6,23 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-const SYSTEM_PROMPT = `You are a website generator. Given a business description, return a complete site structure.
+const SYSTEM_PROMPT = `You are a website generator. Given a business description (and optionally an existing template draft), return a complete, polished site structure.
 Use the build_site tool. Generate clear, conversion-focused copy. Pick a tasteful color palette that fits the industry.
-Sections should follow this order when relevant: hero, features, about, testimonials, pricing, faq, cta, contact.`;
+Sections should follow this order when relevant: hero, features, about, testimonials, pricing, faq, cta, contact.
+Color values must be raw HSL triples like "221 83% 53%" (no hsl() wrapper, no commas).`;
 
-// Anthropic-style tool schema (input_schema instead of parameters)
 const TOOL = {
   name: "build_site",
   description: "Build a structured website definition.",
   input_schema: {
     type: "object",
     properties: {
-      name: { type: "string", description: "Short business name" },
+      name: { type: "string" },
       tagline: { type: "string" },
       theme: {
         type: "object",
         properties: {
-          primary: { type: "string", description: "HSL string like '221 83% 53%'" },
+          primary: { type: "string" },
           background: { type: "string" },
           foreground: { type: "string" },
           accent: { type: "string" },
@@ -95,10 +95,15 @@ Deno.serve(async (req) => {
     }
     const user = userData.user;
 
-    const body = await req.json();
+    const body = await req.json().catch(() => ({}));
     const prompt: string = (body.prompt || "").toString().slice(0, 4000);
-    if (!prompt.trim()) {
-      return new Response(JSON.stringify({ error: "Prompt required" }), {
+    const templateDraft = body.template_draft ?? null; // optional starting JSON
+    const businessName: string | undefined = body.business_name;
+    const businessCity: string | undefined = body.business_city;
+    const stream: boolean = body.stream !== false; // default true
+
+    if (!prompt.trim() && !templateDraft) {
+      return new Response(JSON.stringify({ error: "Prompt or template required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -106,7 +111,7 @@ Deno.serve(async (req) => {
 
     const { data: profile, error: profileErr } = await supabase
       .from("profiles")
-      .select("build_credits, plan, brand_voice_active, brand_voice_samples")
+      .select("build_credits, plan, brand_voice_active, brand_voice_samples, voice_rules")
       .eq("id", user.id)
       .single();
 
@@ -121,17 +126,38 @@ Deno.serve(async (req) => {
     if (!isUnlimited && profile.build_credits <= 0) {
       return new Response(
         JSON.stringify({ error: "Out of build credits. Top up or upgrade." }),
-        {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
+        { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
     let voiceAddon = "";
-    if (profile.brand_voice_active && profile.brand_voice_samples) {
-      voiceAddon = `\n\nWrite all copy in this brand voice. Samples:\n${String(profile.brand_voice_samples).slice(0, 2000)}`;
+    if (profile.brand_voice_active) {
+      const rules = Array.isArray(profile.voice_rules) ? profile.voice_rules : null;
+      if (rules && rules.length) {
+        voiceAddon = `\n\nWrite all copy following this brand voice. Rules:\n- ${rules.join("\n- ")}`;
+      } else if (profile.brand_voice_samples) {
+        voiceAddon = `\n\nWrite all copy mirroring the tone of these samples:\n${String(profile.brand_voice_samples).slice(0, 2000)}`;
+      }
     }
+
+    let userMessage = prompt;
+    if (templateDraft) {
+      userMessage = `Personalize this template for "${businessName || "the business"}"${businessCity ? ` in ${businessCity}` : ""}.
+Replace placeholders, sharpen the copy, keep section structure. Original prompt: ${prompt || "(template start)"}.
+
+Existing template JSON:
+${JSON.stringify(templateDraft).slice(0, 6000)}`;
+    }
+
+    const aiBody = {
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 4096,
+      system: SYSTEM_PROMPT + voiceAddon,
+      messages: [{ role: "user", content: userMessage }],
+      tools: [TOOL],
+      tool_choice: { type: "tool", name: "build_site" },
+      stream,
+    };
 
     const aiResp = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -140,14 +166,7 @@ Deno.serve(async (req) => {
         "anthropic-version": "2023-06-01",
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 4096,
-        system: SYSTEM_PROMPT + voiceAddon,
-        messages: [{ role: "user", content: prompt }],
-        tools: [TOOL],
-        tool_choice: { type: "tool", name: "build_site" },
-      }),
+      body: JSON.stringify(aiBody),
     });
 
     if (!aiResp.ok) {
@@ -165,59 +184,103 @@ Deno.serve(async (req) => {
       });
     }
 
-    const data = await aiResp.json();
-    const toolUse = (data.content || []).find(
-      (b: { type: string; name?: string }) => b.type === "tool_use" && b.name === "build_site",
-    );
-    if (!toolUse?.input) {
-      console.error("No tool_use returned", JSON.stringify(data).slice(0, 500));
-      return new Response(JSON.stringify({ error: "AI returned no site" }), {
-        status: 500,
+    if (!stream) {
+      const data = await aiResp.json();
+      const toolUse = (data.content || []).find(
+        (b: { type: string; name?: string }) => b.type === "tool_use" && b.name === "build_site",
+      );
+      if (!toolUse?.input) {
+        return new Response(JSON.stringify({ error: "AI returned no site" }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const site = await persistSite(supabase, user.id, prompt, toolUse.input, profile, isUnlimited);
+      return new Response(JSON.stringify({ site }), {
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const siteJson: unknown = toolUse.input;
+    // STREAMING: parse Anthropic SSE, forward partial JSON deltas of the tool input as SSE to the client,
+    // accumulate the full JSON, then persist and emit a final "done" event with the saved site.
+    const reader = aiResp.body!.getReader();
+    const decoder = new TextDecoder();
+    const encoder = new TextEncoder();
+    let leftover = "";
+    let accumulated = "";
 
-    // Persist site
-    const { data: site, error: siteErr } = await supabase
-      .from("sites")
-      .insert({
-        user_id: user.id,
-        name: (siteJson as { name?: string }).name || "Untitled Site",
-        prompt,
-        content: siteJson,
-      })
-      .select()
-      .single();
+    const out = new ReadableStream({
+      async start(controller) {
+        const send = (event: string, data: unknown) => {
+          controller.enqueue(
+            encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`),
+          );
+        };
 
-    if (siteErr) {
-      console.error("Site insert error:", siteErr);
-      return new Response(JSON.stringify({ error: "Failed to save site" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            leftover += decoder.decode(value, { stream: true });
+            let nl: number;
+            while ((nl = leftover.indexOf("\n")) !== -1) {
+              const line = leftover.slice(0, nl).replace(/\r$/, "");
+              leftover = leftover.slice(nl + 1);
+              if (!line.startsWith("data: ")) continue;
+              const json = line.slice(6).trim();
+              if (!json) continue;
+              try {
+                const evt = JSON.parse(json);
+                if (
+                  evt.type === "content_block_delta" &&
+                  evt.delta?.type === "input_json_delta" &&
+                  typeof evt.delta.partial_json === "string"
+                ) {
+                  accumulated += evt.delta.partial_json;
+                  send("delta", { partial_json: evt.delta.partial_json });
+                }
+              } catch {
+                // ignore partial / non-JSON lines
+              }
+            }
+          }
 
-    // Deduct 1 build credit (skip for agency)
-    if (!isUnlimited) {
-      await supabase
-        .from("profiles")
-        .update({ build_credits: profile.build_credits - 1 })
-        .eq("id", user.id);
+          let parsed: unknown = null;
+          try {
+            parsed = JSON.parse(accumulated);
+          } catch (e) {
+            send("error", { error: "Failed to parse AI output" });
+            controller.close();
+            return;
+          }
 
-      await supabase.from("credit_ledger").insert({
-        user_id: user.id,
-        kind: "build",
-        amount: -1,
-        reason: "generate",
-        description: `Generated site: ${site.name}`,
-      });
-    }
+          const site = await persistSite(
+            supabase,
+            user.id,
+            prompt || (templateDraft ? `Template: ${businessName || "Untitled"}` : ""),
+            parsed,
+            profile,
+            isUnlimited,
+          );
+          send("done", { site });
+          controller.close();
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : "stream error";
+          console.error("stream error:", msg);
+          send("error", { error: msg });
+          controller.close();
+        }
+      },
+    });
 
-    return new Response(JSON.stringify({ site }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    return new Response(out, {
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache, no-transform",
+        Connection: "keep-alive",
+      },
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Unknown error";
@@ -228,3 +291,36 @@ Deno.serve(async (req) => {
     });
   }
 });
+
+async function persistSite(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+  userId: string,
+  prompt: string,
+  siteJson: unknown,
+  profile: { build_credits: number },
+  isUnlimited: boolean,
+) {
+  const name = (siteJson as { name?: string }).name || "Untitled Site";
+  const { data: site, error: siteErr } = await supabase
+    .from("sites")
+    .insert({ user_id: userId, name, prompt, content: siteJson })
+    .select()
+    .single();
+  if (siteErr) throw new Error("Failed to save site");
+
+  if (!isUnlimited) {
+    await supabase
+      .from("profiles")
+      .update({ build_credits: profile.build_credits - 1 })
+      .eq("id", userId);
+    await supabase.from("credit_ledger").insert({
+      user_id: userId,
+      kind: "build",
+      amount: -1,
+      reason: "generate",
+      description: `Generated site: ${name}`,
+    });
+  }
+  return site;
+}

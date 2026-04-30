@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Wand2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Settings() {
@@ -15,6 +15,7 @@ export default function Settings() {
   const [samples, setSamples] = useState("");
   const [active, setActive] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [training, setTraining] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -35,13 +36,28 @@ export default function Settings() {
       })
       .eq("id", profile.id);
     setSaving(false);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
+    if (error) return toast.error(error.message);
     qc.invalidateQueries({ queryKey: ["profile"] });
     toast.success("Settings saved");
   };
+
+  const train = async () => {
+    if (!samples.trim()) return toast.error("Paste samples first");
+    setTraining(true);
+    const { data, error } = await supabase.functions.invoke("train-voice", {
+      body: { samples },
+    });
+    setTraining(false);
+    if (error || data?.error) {
+      toast.error(error?.message || data?.error || "Training failed");
+      return;
+    }
+    setActive(true);
+    qc.invalidateQueries({ queryKey: ["profile"] });
+    toast.success("Brand voice trained");
+  };
+
+  const rules = profile.voice_rules ?? [];
 
   return (
     <div className="container max-w-3xl py-8">
@@ -59,13 +75,11 @@ export default function Settings() {
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Paste 3–5 samples of your existing copy (emails, social posts,
-              about page). Generated sites will mirror your tone.
+              about page). We'll learn your tone and apply it to every site.
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Label htmlFor="brand-active" className="text-sm">
-              Active
-            </Label>
+            <Label htmlFor="brand-active" className="text-sm">Active</Label>
             <Switch
               id="brand-active"
               checked={active}
@@ -77,13 +91,39 @@ export default function Settings() {
         <Textarea
           value={samples}
           onChange={(e) => setSamples(e.target.value)}
-          placeholder="Paste a few writing samples here…"
+          placeholder="Paste a few writing samples here, separated by blank lines…"
           className="mt-4 min-h-48"
           maxLength={6000}
         />
-        <Button className="mt-4" onClick={save} disabled={saving}>
-          {saving ? "Saving…" : "Save brand voice"}
-        </Button>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Button onClick={train} disabled={training || !samples.trim()}>
+            {training ? (
+              <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Analyzing…</>
+            ) : (
+              <><Wand2 className="mr-2 h-4 w-4" /> Train my brand voice</>
+            )}
+          </Button>
+          <Button variant="outline" onClick={save} disabled={saving}>
+            {saving ? "Saving…" : "Save"}
+          </Button>
+        </div>
+
+        {rules.length > 0 && (
+          <div className="mt-6 rounded-md border border-primary/20 bg-primary/5 p-4">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-primary">
+              Learned voice rules
+            </p>
+            <ul className="space-y-1 text-sm">
+              {rules.map((r, i) => (
+                <li key={i} className="flex gap-2">
+                  <span className="text-primary">•</span>
+                  <span>{r}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     </div>
   );

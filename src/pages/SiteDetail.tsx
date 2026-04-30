@@ -12,9 +12,18 @@ import {
   Trash2,
   Copy,
   Check,
+  Wand2,
+  Loader2,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { SitePreview } from "@/components/SitePreview";
-import type { SiteContent } from "@/types/site";
+import type { SiteContent, SiteSection } from "@/types/site";
 import { toast } from "sonner";
 
 const VIEWPORTS = {
@@ -23,10 +32,15 @@ const VIEWPORTS = {
   mobile: { width: "390px", icon: Smartphone, label: "Mobile" },
 } as const;
 
+type Variation = Partial<SiteSection>;
+
 export default function SiteDetail() {
   const { id } = useParams<{ id: string }>();
   const [viewport, setViewport] = useState<keyof typeof VIEWPORTS>("desktop");
   const [copied, setCopied] = useState(false);
+  const [rewriteIdx, setRewriteIdx] = useState<number | null>(null);
+  const [variations, setVariations] = useState<Variation[]>([]);
+  const [rewriting, setRewriting] = useState(false);
   const qc = useQueryClient();
   const navigate = useNavigate();
 
@@ -35,10 +49,7 @@ export default function SiteDetail() {
     enabled: !!id,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("sites")
-        .select("*")
-        .eq("id", id!)
-        .single();
+        .from("sites").select("*").eq("id", id!).single();
       if (error) throw error;
       return data;
     },
@@ -47,9 +58,7 @@ export default function SiteDetail() {
   const shareToggle = useMutation({
     mutationFn: async (next: boolean) => {
       const { error } = await supabase
-        .from("sites")
-        .update({ is_shared: next })
-        .eq("id", id!);
+        .from("sites").update({ is_shared: next }).eq("id", id!);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["site", id] }),
@@ -75,11 +84,7 @@ export default function SiteDetail() {
     );
   }
   if (!site) {
-    return (
-      <div className="container py-10">
-        <p>Site not found.</p>
-      </div>
-    );
+    return <div className="container py-10"><p>Site not found.</p></div>;
   }
 
   const content = site.content as unknown as SiteContent;
@@ -96,6 +101,41 @@ export default function SiteDetail() {
     setTimeout(() => setCopied(false), 1500);
   };
 
+  const openRewrite = async (idx: number) => {
+    setRewriteIdx(idx);
+    setVariations([]);
+    setRewriting(true);
+    const { data, error } = await supabase.functions.invoke("rewrite-section", {
+      body: {
+        section: content.sections[idx],
+        business_context: `${content.name} — ${content.tagline}. Original prompt: ${site.prompt}`,
+      },
+    });
+    setRewriting(false);
+    if (error || data?.error) {
+      toast.error(error?.message || data?.error || "Rewrite failed");
+      setRewriteIdx(null);
+      return;
+    }
+    setVariations(data.variations || []);
+  };
+
+  const applyVariation = async (variation: Variation) => {
+    if (rewriteIdx === null) return;
+    const next: SiteContent = JSON.parse(JSON.stringify(content));
+    next.sections[rewriteIdx] = { ...next.sections[rewriteIdx], ...variation };
+    const { error } = await supabase
+      .from("sites").update({ content: next }).eq("id", id!);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    qc.invalidateQueries({ queryKey: ["site", id] });
+    toast.success("Section updated");
+    setRewriteIdx(null);
+    setVariations([]);
+  };
+
   return (
     <div className="flex h-[calc(100vh-3.5rem)] flex-col">
       <div className="flex items-center justify-between border-b bg-card px-4 py-2">
@@ -107,73 +147,129 @@ export default function SiteDetail() {
           </Button>
           <div>
             <h1 className="text-sm font-semibold">{site.name}</h1>
-            <p className="line-clamp-1 text-xs text-muted-foreground">
-              {site.prompt}
-            </p>
+            <p className="line-clamp-1 text-xs text-muted-foreground">{site.prompt}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1 rounded-md border bg-background p-0.5">
-            {(Object.keys(VIEWPORTS) as Array<keyof typeof VIEWPORTS>).map(
-              (k) => {
-                const VP = VIEWPORTS[k];
-                const active = viewport === k;
-                return (
-                  <button
-                    key={k}
-                    onClick={() => setViewport(k)}
-                    className={`flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium transition-colors ${
-                      active
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    <VP.icon className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">{VP.label}</span>
-                  </button>
-                );
-              },
-            )}
+            {(Object.keys(VIEWPORTS) as Array<keyof typeof VIEWPORTS>).map((k) => {
+              const VP = VIEWPORTS[k];
+              const active = viewport === k;
+              return (
+                <button
+                  key={k}
+                  onClick={() => setViewport(k)}
+                  className={`flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium transition-colors ${
+                    active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <VP.icon className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">{VP.label}</span>
+                </button>
+              );
+            })}
           </div>
-
           {shareUrl ? (
             <Button size="sm" variant="outline" onClick={copyShare}>
-              {copied ? (
-                <Check className="mr-1 h-3.5 w-3.5" />
-              ) : (
-                <Copy className="mr-1 h-3.5 w-3.5" />
-              )}
+              {copied ? <Check className="mr-1 h-3.5 w-3.5" /> : <Copy className="mr-1 h-3.5 w-3.5" />}
               Copy share link
             </Button>
           ) : (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => shareToggle.mutate(true)}
-            >
+            <Button size="sm" variant="outline" onClick={() => shareToggle.mutate(true)}>
               <Share2 className="mr-1 h-3.5 w-3.5" /> Share preview
             </Button>
           )}
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => {
-              if (confirm("Delete this site?")) remove.mutate();
-            }}
-          >
+          <Button size="sm" variant="ghost" onClick={() => { if (confirm("Delete this site?")) remove.mutate(); }}>
             <Trash2 className="h-4 w-4 text-destructive" />
           </Button>
         </div>
       </div>
 
-      <div className="flex flex-1 items-start justify-center overflow-y-auto bg-muted/30 p-6">
-        <div
-          className="overflow-hidden rounded-lg border bg-card shadow-elevated transition-all"
-          style={{ width: v.width, maxWidth: "100%" }}
-        >
-          <SitePreview content={content} />
+      <div className="grid flex-1 grid-cols-1 overflow-hidden lg:grid-cols-[240px_1fr]">
+        {/* Section list with rewrite buttons */}
+        <aside className="overflow-y-auto border-r bg-card p-3">
+          <p className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Sections · Rewrite is free
+          </p>
+          <ul className="space-y-1">
+            {content.sections.map((s, i) => (
+              <li key={i} className="group flex items-center justify-between rounded-md p-2 hover:bg-muted">
+                <div className="min-w-0">
+                  <p className="text-[10px] font-semibold uppercase text-muted-foreground">{s.type}</p>
+                  <p className="truncate text-xs font-medium">{s.heading}</p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 px-2 opacity-0 transition-opacity group-hover:opacity-100"
+                  onClick={() => openRewrite(i)}
+                >
+                  <Wand2 className="h-3.5 w-3.5" />
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </aside>
+
+        <div className="flex flex-1 items-start justify-center overflow-y-auto bg-muted/30 p-6">
+          <div
+            className="overflow-hidden rounded-lg border bg-card shadow-elevated transition-all"
+            style={{ width: v.width, maxWidth: "100%" }}
+          >
+            <SitePreview content={content} />
+          </div>
         </div>
       </div>
+
+      <Dialog open={rewriteIdx !== null} onOpenChange={(o) => !o && setRewriteIdx(null)}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Rewrite copy — pick a variation</DialogTitle>
+            <DialogDescription>
+              Free refinement. Click one to apply it to your site.
+            </DialogDescription>
+          </DialogHeader>
+          {rewriting ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <Loader2 className="mb-3 h-8 w-8 animate-spin text-primary" />
+              <p className="text-sm text-muted-foreground">Generating 3 variations…</p>
+            </div>
+          ) : (
+            <div className="grid gap-3 md:grid-cols-3">
+              {variations.map((v, i) => (
+                <button
+                  key={i}
+                  onClick={() => applyVariation(v)}
+                  className="rounded-lg border bg-card p-4 text-left transition-all hover:border-primary hover:shadow-md"
+                >
+                  <p className="mb-1 text-[10px] font-semibold uppercase text-muted-foreground">
+                    Variation {i + 1}
+                  </p>
+                  <h3 className="font-semibold leading-tight">{v.heading}</h3>
+                  {v.subheading && (
+                    <p className="mt-2 text-xs text-muted-foreground">{v.subheading}</p>
+                  )}
+                  {v.cta && (
+                    <p className="mt-2 inline-block rounded bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                      {v.cta}
+                    </p>
+                  )}
+                  {v.items && v.items.length > 0 && (
+                    <ul className="mt-3 space-y-1.5 text-xs">
+                      {v.items.slice(0, 3).map((it, j) => (
+                        <li key={j}>
+                          <span className="font-medium">{it.title}</span>
+                          {it.body && <span className="text-muted-foreground"> — {it.body}</span>}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
