@@ -10,71 +10,56 @@ const SYSTEM_PROMPT = `You are a website generator. Given a business description
 Use the build_site tool. Generate clear, conversion-focused copy. Pick a tasteful color palette that fits the industry.
 Sections should follow this order when relevant: hero, features, about, testimonials, pricing, faq, cta, contact.`;
 
+// Anthropic-style tool schema (input_schema instead of parameters)
 const TOOL = {
-  type: "function",
-  function: {
-    name: "build_site",
-    description: "Build a structured website definition.",
-    parameters: {
-      type: "object",
-      properties: {
-        name: { type: "string", description: "Short business name" },
-        tagline: { type: "string" },
-        theme: {
+  name: "build_site",
+  description: "Build a structured website definition.",
+  input_schema: {
+    type: "object",
+    properties: {
+      name: { type: "string", description: "Short business name" },
+      tagline: { type: "string" },
+      theme: {
+        type: "object",
+        properties: {
+          primary: { type: "string", description: "HSL string like '221 83% 53%'" },
+          background: { type: "string" },
+          foreground: { type: "string" },
+          accent: { type: "string" },
+        },
+        required: ["primary", "background", "foreground", "accent"],
+      },
+      sections: {
+        type: "array",
+        items: {
           type: "object",
           properties: {
-            primary: { type: "string", description: "HSL string like '221 83% 53%'" },
-            background: { type: "string" },
-            foreground: { type: "string" },
-            accent: { type: "string" },
-          },
-          required: ["primary", "background", "foreground", "accent"],
-          additionalProperties: false,
-        },
-        sections: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              type: {
-                type: "string",
-                enum: [
-                  "hero",
-                  "features",
-                  "about",
-                  "testimonials",
-                  "pricing",
-                  "faq",
-                  "cta",
-                  "contact",
-                ],
-              },
-              heading: { type: "string" },
-              subheading: { type: "string" },
-              cta: { type: "string" },
+            type: {
+              type: "string",
+              enum: ["hero", "features", "about", "testimonials", "pricing", "faq", "cta", "contact"],
+            },
+            heading: { type: "string" },
+            subheading: { type: "string" },
+            cta: { type: "string" },
+            items: {
+              type: "array",
               items: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    title: { type: "string" },
-                    body: { type: "string" },
-                    price: { type: "string" },
-                    author: { type: "string" },
-                  },
-                  required: ["title"],
-                  additionalProperties: false,
+                type: "object",
+                properties: {
+                  title: { type: "string" },
+                  body: { type: "string" },
+                  price: { type: "string" },
+                  author: { type: "string" },
                 },
+                required: ["title"],
               },
             },
-            required: ["type", "heading"],
-            additionalProperties: false,
           },
+          required: ["type", "heading"],
         },
       },
-      required: ["name", "tagline", "theme", "sections"],
-      additionalProperties: false,
     },
+    required: ["name", "tagline", "theme", "sections"],
   },
 };
 
