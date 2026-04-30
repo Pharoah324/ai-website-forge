@@ -1,10 +1,19 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   Sparkles,
   Loader2,
@@ -13,10 +22,13 @@ import {
   Smartphone,
   Wand2,
   AlertTriangle,
+  LayoutTemplate,
 } from "lucide-react";
 import { SitePreview } from "@/components/SitePreview";
 import type { SiteContent } from "@/types/site";
 import { toast } from "sonner";
+import { TEMPLATES, type Template } from "@/data/templates";
+import { streamGenerateSite } from "@/lib/streamGenerate";
 
 const VIEWPORTS = {
   desktop: { width: "100%", icon: Monitor, label: "Desktop" },
@@ -30,11 +42,28 @@ const SAMPLES = [
   "A yoga studio offering classes, teacher training, and a 7-day free trial.",
 ];
 
+function tryParsePartial(s: string): SiteContent | null {
+  if (!s.trim().startsWith("{")) return null;
+  // Best-effort: try the accumulated string, then close braces progressively.
+  for (let extra = 0; extra <= 6; extra++) {
+    const candidate = s + "}".repeat(extra) + "]".repeat(extra);
+    try {
+      const parsed = JSON.parse(candidate);
+      if (parsed && typeof parsed === "object" && parsed.name) return parsed as SiteContent;
+    } catch { /* continue */ }
+  }
+  return null;
+}
+
 export default function NewSite() {
   const [prompt, setPrompt] = useState("");
   const [generating, setGenerating] = useState(false);
   const [content, setContent] = useState<SiteContent | null>(null);
   const [viewport, setViewport] = useState<keyof typeof VIEWPORTS>("desktop");
+  const [templateModal, setTemplateModal] = useState<Template | null>(null);
+  const [bizName, setBizName] = useState("");
+  const [bizCity, setBizCity] = useState("");
+  const accumulatedRef = useRef("");
   const { data: profile } = useProfile();
   const qc = useQueryClient();
   const navigate = useNavigate();
@@ -42,46 +71,77 @@ export default function NewSite() {
   const isUnlimited = profile?.plan === "agency";
   const noCredits = profile && !isUnlimited && profile.build_credits <= 0;
 
-  const generate = async () => {
-    if (!prompt.trim()) {
-      toast.error("Describe your business first");
-      return;
-    }
-    if (noCredits) {
-      toast.error("Out of build credits");
-      return;
-    }
+  const runGeneration = async (body: {
+    prompt: string;
+    template_draft?: SiteContent | null;
+    business_name?: string;
+    business_city?: string;
+  }) => {
     setGenerating(true);
     setContent(null);
-    try {
-      const { data, error } = await supabase.functions.invoke("generate-site", {
-        body: { prompt },
-      });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+    accumulatedRef.current = "";
 
-      setContent(data.site.content as SiteContent);
-      qc.invalidateQueries({ queryKey: ["profile"] });
-      qc.invalidateQueries({ queryKey: ["sites"] });
-      toast.success("Site generated", {
-        action: {
-          label: "Open",
-          onClick: () => navigate(`/app/sites/${data.site.id}`),
-        },
-      });
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : "Generation failed";
-      toast.error(msg);
-    } finally {
-      setGenerating(false);
+    await streamGenerateSite(body, {
+      onDelta: (chunk) => {
+        accumulatedRef.current += chunk;
+        const partial = tryParsePartial(accumulatedRef.current);
+        if (partial) setContent(partial);
+      },
+      onDone: (site) => {
+        setContent(site.content);
+        qc.invalidateQueries({ queryKey: ["profile"] });
+        qc.invalidateQueries({ queryKey: ["sites"] });
+        toast.success("Site generated", {
+          action: { label: "Open", onClick: () => navigate(`/app/sites/${site.id}`) },
+        });
+        setGenerating(false);
+      },
+      onError: (msg) => {
+        toast.error(msg);
+        setGenerating(false);
+      },
+    });
+  };
+
+  const generate = () => {
+    if (!prompt.trim()) return toast.error("Describe your business first");
+    if (noCredits) return toast.error("Out of build credits");
+    runGeneration({ prompt });
+  };
+
+  const startTemplate = () => {
+    if (!templateModal) return;
+    if (!bizName.trim() || !bizCity.trim()) {
+      toast.error("Business name and city required");
+      return;
     }
+    if (noCredits) return toast.error("Out of build credits");
+
+    // Replace placeholders in the draft
+    const replaced: SiteContent = JSON.parse(
+      JSON.stringify(templateModal.draft)
+        .replaceAll("{{BUSINESS_NAME}}", bizName.trim())
+        .replaceAll("{{CITY}}", bizCity.trim()),
+    );
+    const tplPrompt = `${templateModal.industry}: ${bizName} in ${bizCity}. ${templateModal.description}`;
+    setPrompt(tplPrompt);
+    const tpl = templateModal;
+    setTemplateModal(null);
+    runGeneration({
+      prompt: tplPrompt,
+      template_draft: replaced,
+      business_name: bizName.trim(),
+      business_city: bizCity.trim(),
+    });
+    setBizName("");
+    setBizCity("");
+    void tpl;
   };
 
   const v = VIEWPORTS[viewport];
 
   return (
     <div className="grid h-[calc(100vh-3.5rem)] grid-cols-1 lg:grid-cols-[420px_1fr]">
-      {/* Prompt panel */}
       <div className="flex flex-col gap-4 overflow-y-auto border-r bg-card p-6">
         <div>
           <div className="mb-2 flex items-center gap-2">
@@ -110,11 +170,12 @@ export default function NewSite() {
           placeholder="e.g. A modern dental practice in Austin focused on cosmetic dentistry, with online booking and patient testimonials."
           className="min-h-40 resize-none"
           maxLength={4000}
+          disabled={generating}
         />
 
         <Button
           onClick={generate}
-          disabled={generating || noCredits || !prompt.trim()}
+          disabled={generating || !!noCredits || !prompt.trim()}
           size="lg"
           className="w-full"
         >
@@ -131,6 +192,27 @@ export default function NewSite() {
             </>
           )}
         </Button>
+
+        <div>
+          <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <LayoutTemplate className="h-3.5 w-3.5" />
+            Or start from a template
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            {TEMPLATES.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setTemplateModal(t)}
+                disabled={generating}
+                className="flex flex-col items-start rounded-md border bg-background p-3 text-left transition-colors hover:border-primary/50 disabled:opacity-50"
+              >
+                <span className="text-lg">{t.emoji}</span>
+                <span className="mt-1 text-xs font-semibold">{t.name}</span>
+                <span className="text-[10px] text-muted-foreground">{t.industry}</span>
+              </button>
+            ))}
+          </div>
+        </div>
 
         <div>
           <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -151,33 +233,32 @@ export default function NewSite() {
         </div>
       </div>
 
-      {/* Preview panel */}
+      {/* Preview */}
       <div className="flex min-w-0 flex-col bg-muted/30">
         <div className="flex items-center justify-between border-b bg-card px-4 py-2">
           <div className="flex items-center gap-1 rounded-md border bg-background p-0.5">
-            {(Object.keys(VIEWPORTS) as Array<keyof typeof VIEWPORTS>).map(
-              (k) => {
-                const VP = VIEWPORTS[k];
-                const active = viewport === k;
-                return (
-                  <button
-                    key={k}
-                    onClick={() => setViewport(k)}
-                    className={`flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors ${
-                      active
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    <VP.icon className="h-3.5 w-3.5" />
-                    {VP.label}
-                  </button>
-                );
-              },
-            )}
+            {(Object.keys(VIEWPORTS) as Array<keyof typeof VIEWPORTS>).map((k) => {
+              const VP = VIEWPORTS[k];
+              const active = viewport === k;
+              return (
+                <button
+                  key={k}
+                  onClick={() => setViewport(k)}
+                  className={`flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium transition-colors ${
+                    active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <VP.icon className="h-3.5 w-3.5" />
+                  {VP.label}
+                </button>
+              );
+            })}
           </div>
           {content && (
-            <span className="text-xs text-muted-foreground">{content.name}</span>
+            <span className="flex items-center gap-2 text-xs text-muted-foreground">
+              {generating && <Loader2 className="h-3 w-3 animate-spin" />}
+              {content.name}
+            </span>
           )}
         </div>
 
@@ -189,17 +270,15 @@ export default function NewSite() {
               </div>
               <p className="font-medium">Your generated site appears here</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Type a description and hit Generate.
+                Type a description, pick a template, then hit Generate.
               </p>
             </div>
           )}
-          {generating && (
+          {generating && !content && (
             <div className="flex h-full flex-col items-center justify-center text-center">
               <Loader2 className="mb-3 h-8 w-8 animate-spin text-primary" />
               <p className="font-medium">Building your site…</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Picking sections, writing copy, choosing colors.
-              </p>
+              <p className="mt-1 text-sm text-muted-foreground">Streaming sections live.</p>
             </div>
           )}
           {content && (
@@ -212,6 +291,50 @@ export default function NewSite() {
           )}
         </div>
       </div>
+
+      <Dialog open={!!templateModal} onOpenChange={(o) => !o && setTemplateModal(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {templateModal?.emoji} {templateModal?.name} template
+            </DialogTitle>
+            <DialogDescription>
+              What's your business name and city? We'll personalize the copy and
+              run it through AI.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="biz-name">Business name</Label>
+              <Input
+                id="biz-name"
+                value={bizName}
+                onChange={(e) => setBizName(e.target.value)}
+                placeholder="e.g. Atlas Coffee"
+                autoFocus
+              />
+            </div>
+            <div>
+              <Label htmlFor="biz-city">City</Label>
+              <Input
+                id="biz-city"
+                value={bizCity}
+                onChange={(e) => setBizCity(e.target.value)}
+                placeholder="e.g. Austin"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTemplateModal(null)}>
+              Cancel
+            </Button>
+            <Button onClick={startTemplate} disabled={!bizName.trim() || !bizCity.trim()}>
+              <Wand2 className="mr-2 h-4 w-4" />
+              Generate (1 credit)
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
