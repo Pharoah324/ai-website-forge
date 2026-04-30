@@ -2,10 +2,11 @@ import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useProfile, PLAN_LIMITS } from "@/hooks/useProfile";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Sparkles, Loader2, Settings as SettingsIcon } from "lucide-react";
+import { CheckCircle2, Sparkles, Loader2, Settings as SettingsIcon, Webhook, Copy } from "lucide-react";
 import { TopUpModal } from "@/components/TopUpModal";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 type Interval = "monthly" | "annual";
 
