@@ -14,7 +14,155 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      credit_ledger: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          kind: Database["public"]["Enums"]["credit_kind"]
+          reason: Database["public"]["Enums"]["ledger_reason"]
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          kind: Database["public"]["Enums"]["credit_kind"]
+          reason: Database["public"]["Enums"]["ledger_reason"]
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["credit_kind"]
+          reason?: Database["public"]["Enums"]["ledger_reason"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          brand_voice_active: boolean
+          brand_voice_samples: string | null
+          build_credits: number
+          build_credits_rollover: number
+          created_at: string
+          current_period_start: string
+          display_name: string | null
+          email: string | null
+          id: string
+          plan: Database["public"]["Enums"]["plan_tier"]
+          runtime_credits: number
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          brand_voice_active?: boolean
+          brand_voice_samples?: string | null
+          build_credits?: number
+          build_credits_rollover?: number
+          created_at?: string
+          current_period_start?: string
+          display_name?: string | null
+          email?: string | null
+          id: string
+          plan?: Database["public"]["Enums"]["plan_tier"]
+          runtime_credits?: number
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          brand_voice_active?: boolean
+          brand_voice_samples?: string | null
+          build_credits?: number
+          build_credits_rollover?: number
+          created_at?: string
+          current_period_start?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          plan?: Database["public"]["Enums"]["plan_tier"]
+          runtime_credits?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      site_feedback: {
+        Row: {
+          author_name: string
+          created_at: string
+          id: string
+          message: string
+          section: string | null
+          site_id: string
+        }
+        Insert: {
+          author_name?: string
+          created_at?: string
+          id?: string
+          message: string
+          section?: string | null
+          site_id: string
+        }
+        Update: {
+          author_name?: string
+          created_at?: string
+          id?: string
+          message?: string
+          section?: string | null
+          site_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_feedback_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sites: {
+        Row: {
+          content: Json | null
+          created_at: string
+          id: string
+          is_shared: boolean
+          name: string
+          prompt: string
+          share_token: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: Json | null
+          created_at?: string
+          id?: string
+          is_shared?: boolean
+          name?: string
+          prompt: string
+          share_token?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: Json | null
+          created_at?: string
+          id?: string
+          is_shared?: boolean
+          name?: string
+          prompt?: string
+          share_token?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +171,15 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      credit_kind: "build" | "runtime"
+      ledger_reason:
+        | "generate"
+        | "topup"
+        | "monthly_grant"
+        | "rollover"
+        | "plan_change"
+        | "admin_adjust"
+      plan_tier: "free" | "starter" | "builder" | "pro" | "agency"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +306,17 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      credit_kind: ["build", "runtime"],
+      ledger_reason: [
+        "generate",
+        "topup",
+        "monthly_grant",
+        "rollover",
+        "plan_change",
+        "admin_adjust",
+      ],
+      plan_tier: ["free", "starter", "builder", "pro", "agency"],
+    },
   },
 } as const
