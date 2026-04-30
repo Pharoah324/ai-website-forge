@@ -27,7 +27,9 @@ Deno.serve(async (req) => {
 
   const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
     apiVersion: "2024-06-20",
+    httpClient: Stripe.createFetchHttpClient(),
   });
+  const cryptoProvider = Stripe.createSubtleCryptoProvider();
   const admin = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
