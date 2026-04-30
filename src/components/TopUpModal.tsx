@@ -6,35 +6,15 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Zap, TrendingUp, Rocket, ExternalLink } from "lucide-react";
+import { Zap, TrendingUp, Rocket, ExternalLink, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const PACKS = [
-  {
-    id: "starter_boost",
-    name: "Starter Boost",
-    price: 9,
-    build: 50,
-    runtime: 1000,
-    icon: Zap,
-  },
-  {
-    id: "growth_pack",
-    name: "Growth Pack",
-    price: 24,
-    build: 150,
-    runtime: 5000,
-    icon: TrendingUp,
-    popular: true,
-  },
-  {
-    id: "agency_burst",
-    name: "Agency Burst",
-    price: 69,
-    build: 500,
-    runtime: 20000,
-    icon: Rocket,
-  },
+  { id: "starter_boost", name: "Starter Boost", price: 9, build: 50, runtime: 1000, icon: Zap },
+  { id: "growth_pack", name: "Growth Pack", price: 24, build: 150, runtime: 5000, icon: TrendingUp, popular: true },
+  { id: "agency_burst", name: "Agency Burst", price: 69, build: 500, runtime: 20000, icon: Rocket },
 ];
 
 export const TopUpModal = ({
@@ -44,13 +24,32 @@ export const TopUpModal = ({
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) => {
+  const [loadingId, setLoadingId] = useState<string | null>(null);
+
+  const buy = async (packId: string) => {
+    setLoadingId(packId);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-checkout", {
+        body: { kind: "topup", packId, returnUrl: window.location.origin },
+      });
+      if (error) throw error;
+      if (data?.url) window.location.href = data.url;
+      else throw new Error("No checkout URL returned");
+    } catch (err: any) {
+      toast.error("Checkout failed", {
+        description: err?.message ?? "Could not start Stripe checkout. Make sure products are set up.",
+      });
+      setLoadingId(null);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Buy more credits</DialogTitle>
           <DialogDescription>
-            One-time purchase, credits added instantly. No subscription change.
+            One-time purchase. Credits added instantly and never expire on monthly reset.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-3 sm:grid-cols-3">
@@ -77,22 +76,19 @@ export const TopUpModal = ({
                 className="mt-4 w-full"
                 size="sm"
                 variant={p.popular ? "default" : "outline"}
-                onClick={() => {
-                  toast.info("Stripe checkout coming next phase", {
-                    description: `${p.name} ($${p.price}) — Stripe integration to be wired in the next build.`,
-                  });
-                }}
+                disabled={loadingId !== null}
+                onClick={() => buy(p.id)}
               >
-                <ExternalLink className="mr-1 h-3.5 w-3.5" />
+                {loadingId === p.id ? (
+                  <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <ExternalLink className="mr-1 h-3.5 w-3.5" />
+                )}
                 Buy {p.name}
               </Button>
             </div>
           ))}
         </div>
-        <p className="mt-2 text-xs text-muted-foreground">
-          Stripe checkout will be wired in the next build. Pack definitions and
-          credit math are already live.
-        </p>
       </DialogContent>
     </Dialog>
   );

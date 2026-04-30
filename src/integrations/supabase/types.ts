@@ -48,6 +48,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           billing_cycle_start: string
+          billing_interval: string
           brand_voice_active: boolean
           brand_voice_samples: string | null
           build_credits: number
@@ -63,6 +64,9 @@ export type Database = {
           rollover_build_credits: number
           rollover_runtime_credits: number
           runtime_credits: number
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          subscription_status: string | null
           top_up_build_credits: number
           top_up_runtime_credits: number
           updated_at: string
@@ -71,6 +75,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           billing_cycle_start?: string
+          billing_interval?: string
           brand_voice_active?: boolean
           brand_voice_samples?: string | null
           build_credits?: number
@@ -86,6 +91,9 @@ export type Database = {
           rollover_build_credits?: number
           rollover_runtime_credits?: number
           runtime_credits?: number
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_status?: string | null
           top_up_build_credits?: number
           top_up_runtime_credits?: number
           updated_at?: string
@@ -94,6 +102,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           billing_cycle_start?: string
+          billing_interval?: string
           brand_voice_active?: boolean
           brand_voice_samples?: string | null
           build_credits?: number
@@ -109,6 +118,9 @@ export type Database = {
           rollover_build_credits?: number
           rollover_runtime_credits?: number
           runtime_credits?: number
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_status?: string | null
           top_up_build_credits?: number
           top_up_runtime_credits?: number
           updated_at?: string
@@ -184,6 +196,69 @@ export type Database = {
           share_token?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      stripe_events: {
+        Row: {
+          id: string
+          processed_at: string
+          type: string
+        }
+        Insert: {
+          id: string
+          processed_at?: string
+          type: string
+        }
+        Update: {
+          id?: string
+          processed_at?: string
+          type?: string
+        }
+        Relationships: []
+      }
+      stripe_products: {
+        Row: {
+          active: boolean
+          amount_cents: number
+          build_credits: number
+          created_at: string
+          id: string
+          interval: string | null
+          kind: string
+          pack_id: string | null
+          plan_tier: string | null
+          runtime_credits: number
+          stripe_price_id: string
+          stripe_product_id: string
+        }
+        Insert: {
+          active?: boolean
+          amount_cents: number
+          build_credits?: number
+          created_at?: string
+          id?: string
+          interval?: string | null
+          kind: string
+          pack_id?: string | null
+          plan_tier?: string | null
+          runtime_credits?: number
+          stripe_price_id: string
+          stripe_product_id: string
+        }
+        Update: {
+          active?: boolean
+          amount_cents?: number
+          build_credits?: number
+          created_at?: string
+          id?: string
+          interval?: string | null
+          kind?: string
+          pack_id?: string | null
+          plan_tier?: string | null
+          runtime_credits?: number
+          stripe_price_id?: string
+          stripe_product_id?: string
         }
         Relationships: []
       }
