@@ -2,3 +2,9 @@ project_id = "idnyrmdhdfyxdrvyjirj"
 
 [functions.stripe-webhook]
 verify_jwt = false
+
+[functions.ghl-oauth-callback]
+verify_jwt = false
+
+[functions.form-submission-webhook]
+verify_jwt = false
