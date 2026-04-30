@@ -2,10 +2,11 @@ import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useProfile, PLAN_LIMITS } from "@/hooks/useProfile";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Sparkles, Loader2, Settings as SettingsIcon } from "lucide-react";
+import { CheckCircle2, Sparkles, Loader2, Settings as SettingsIcon, Webhook, Copy } from "lucide-react";
 import { TopUpModal } from "@/components/TopUpModal";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 type Interval = "monthly" | "annual";
 
@@ -15,6 +16,8 @@ export default function Billing() {
   const [interval, setInterval] = useState<Interval>("monthly");
   const [busyTier, setBusyTier] = useState<string | null>(null);
   const [setupBusy, setSetupBusy] = useState(false);
+  const [webhookBusy, setWebhookBusy] = useState(false);
+  const [webhookResult, setWebhookResult] = useState<{ secret?: string; url?: string; alreadyExists?: boolean; message?: string } | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -67,6 +70,24 @@ export default function Billing() {
     }
   };
 
+  const setupWebhook = async () => {
+    setWebhookBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("setup-stripe-webhook");
+      if (error) throw error;
+      setWebhookResult({
+        secret: data?.webhookSecret,
+        url: data?.url,
+        alreadyExists: data?.alreadyExists,
+        message: data?.message,
+      });
+    } catch (err: any) {
+      toast.error("Webhook setup failed", { description: err?.message });
+    } finally {
+      setWebhookBusy(false);
+    }
+  };
+
   const annualPrice = (monthly: number) => Math.round(monthly * 0.8);
 
   return (
@@ -76,10 +97,16 @@ export default function Billing() {
           <h1 className="text-3xl font-bold tracking-tight">Billing</h1>
           <p className="mt-1 text-sm text-muted-foreground">Manage your plan and credit packs.</p>
         </div>
-        <Button variant="ghost" size="sm" onClick={setupProducts} disabled={setupBusy}>
-          {setupBusy ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <SettingsIcon className="mr-1 h-3.5 w-3.5" />}
-          Sync Stripe products
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="ghost" size="sm" onClick={setupWebhook} disabled={webhookBusy}>
+            {webhookBusy ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Webhook className="mr-1 h-3.5 w-3.5" />}
+            Create Stripe webhook
+          </Button>
+          <Button variant="ghost" size="sm" onClick={setupProducts} disabled={setupBusy}>
+            {setupBusy ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <SettingsIcon className="mr-1 h-3.5 w-3.5" />}
+            Sync Stripe products
+          </Button>
+        </div>
       </div>
 
       <div className="mt-6 rounded-lg border bg-card p-6 shadow-card">
@@ -180,6 +207,43 @@ export default function Billing() {
       </p>
 
       <TopUpModal open={topupOpen} onOpenChange={setTopupOpen} />
+
+      <Dialog open={!!webhookResult} onOpenChange={(o) => !o && setWebhookResult(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Stripe webhook {webhookResult?.alreadyExists ? "already exists" : "created"}</DialogTitle>
+            <DialogDescription>
+              {webhookResult?.alreadyExists
+                ? webhookResult?.message
+                : "Copy the signing secret below and save it as STRIPE_WEBHOOK_SECRET in your project secrets. Stripe only shows this once."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <p className="text-xs font-semibold uppercase text-muted-foreground">Endpoint URL</p>
+              <code className="mt-1 block break-all rounded bg-muted px-2 py-1 text-xs">{webhookResult?.url}</code>
+            </div>
+            {webhookResult?.secret && (
+              <div>
+                <p className="text-xs font-semibold uppercase text-muted-foreground">Signing secret</p>
+                <div className="mt-1 flex items-center gap-2">
+                  <code className="flex-1 break-all rounded bg-muted px-2 py-1 text-xs">{webhookResult.secret}</code>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      navigator.clipboard.writeText(webhookResult.secret!);
+                      toast.success("Copied");
+                    }}
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -27,7 +27,9 @@ Deno.serve(async (req) => {
 
   const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
     apiVersion: "2024-06-20",
+    httpClient: Stripe.createFetchHttpClient(),
   });
+  const cryptoProvider = Stripe.createSubtleCryptoProvider();
   const admin = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -36,7 +38,7 @@ Deno.serve(async (req) => {
   const raw = await req.text();
   let event: Stripe.Event;
   try {
-    event = await stripe.webhooks.constructEventAsync(raw, sig, webhookSecret);
+    event = await stripe.webhooks.constructEventAsync(raw, sig, webhookSecret, undefined, cryptoProvider);
   } catch (err: any) {
     console.error("Signature verification failed:", err.message);
     return new Response(`Webhook Error: ${err.message}`, { status: 400 });
