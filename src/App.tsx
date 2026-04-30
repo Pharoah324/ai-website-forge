@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import NewSite from "./pages/NewSite";
 import SiteDetail from "./pages/SiteDetail";
 import Billing from "./pages/Billing";
+import Integrations from "./pages/Integrations";
 import Settings from "./pages/Settings";
 import Share from "./pages/Share";
 import AppLayout from "./layouts/AppLayout";
@@ -35,6 +36,7 @@ const App = () => (
               <Route path="new" element={<NewSite />} />
               <Route path="sites/:id" element={<SiteDetail />} />
               <Route path="billing" element={<Billing />} />
+              <Route path="integrations" element={<Integrations />} />
               <Route path="settings" element={<Settings />} />
             </Route>
             <Route path="*" element={<NotFound />} />

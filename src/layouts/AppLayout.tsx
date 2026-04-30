@@ -10,6 +10,7 @@ import {
   LogOut,
   Sparkles,
   Zap,
+  Plug,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CreditBadge } from "@/components/CreditBadge";
@@ -17,6 +18,7 @@ import { CreditBadge } from "@/components/CreditBadge";
 const nav = [
   { to: "/app", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/app/new", label: "New Site", icon: Plus },
+  { to: "/app/integrations", label: "Integrations", icon: Plug },
   { to: "/app/billing", label: "Billing", icon: CreditCard },
   { to: "/app/settings", label: "Settings", icon: Settings },
 ];
