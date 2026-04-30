@@ -48,7 +48,9 @@ export default function Landing() {
             <div className="flex h-8 w-8 items-center justify-center rounded-md bg-gradient-primary">
               <Zap className="h-4 w-4 text-primary-foreground" />
             </div>
-            <span className="font-semibold text-navy-foreground">VirtualEngine</span>
+            <span className="font-semibold text-navy-foreground">
+              Virtual Engine <span className="text-primary-glow">Builder</span>
+            </span>
           </Link>
           <div className="flex items-center gap-3">
             <Link
@@ -76,8 +78,11 @@ export default function Landing() {
             <span className="text-gradient">Get a website.</span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-balance text-lg text-navy-foreground/70">
-            VirtualEngine turns plain English into a working business site in
-            seconds. Watch it generate live, then ship it.
+            Your website. Built by AI. Backed by Virtual Engine.
+          </p>
+          <p className="mx-auto mt-3 max-w-xl text-sm text-navy-foreground/50">
+            Describe your business in plain English and watch a production-ready
+            site generate live.
           </p>
           <div className="mt-10 flex flex-wrap justify-center gap-3">
             <Button asChild size="lg">
@@ -199,9 +204,16 @@ export default function Landing() {
       </section>
 
       <footer className="border-t bg-card py-8">
-        <div className="container flex flex-col items-center justify-between gap-2 text-sm text-muted-foreground md:flex-row">
-          <span>© {new Date().getFullYear()} VirtualEngine</span>
-          <span>Built with AI · Streaming live preview · Stripe billing</span>
+        <div className="container flex flex-col items-center justify-between gap-3 text-sm text-muted-foreground md:flex-row">
+          <span>© {new Date().getFullYear()} Virtual Engine Builder</span>
+          <a
+            href="https://virtualengine.ai"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-foreground hover:text-primary"
+          >
+            A Virtual Engine product →
+          </a>
         </div>
       </footer>
     </div>

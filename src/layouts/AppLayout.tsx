@@ -49,7 +49,7 @@ export default function AppLayout() {
             <Zap className="h-4 w-4 text-primary-foreground" />
           </div>
           <span className="font-semibold text-sidebar-accent-foreground">
-            VirtualEngine
+            Virtual Engine <span className="text-sidebar-primary">Builder</span>
           </span>
         </Link>
 
@@ -100,7 +100,7 @@ export default function AppLayout() {
         <header className="flex h-14 items-center justify-between border-b bg-card px-6">
           <div className="md:hidden">
             <Link to="/app" className="font-semibold">
-              VirtualEngine
+              Virtual Engine <span className="text-primary">Builder</span>
             </Link>
           </div>
           <div className="ml-auto flex items-center gap-3">
