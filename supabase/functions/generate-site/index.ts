@@ -69,8 +69,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY not configured");
 
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -104,7 +104,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Check & deduct credits atomically (best-effort)
     const { data: profile, error: profileErr } = await supabase
       .from("profiles")
       .select("build_credits, plan, brand_voice_active, brand_voice_samples")
@@ -134,74 +133,51 @@ Deno.serve(async (req) => {
       voiceAddon = `\n\nWrite all copy in this brand voice. Samples:\n${String(profile.brand_voice_samples).slice(0, 2000)}`;
     }
 
-    const aiResp = await fetch(
-      "https://ai.gateway.lovable.dev/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-pro",
-          messages: [
-            { role: "system", content: SYSTEM_PROMPT + voiceAddon },
-            { role: "user", content: prompt },
-          ],
-          tools: [TOOL],
-          tool_choice: { type: "function", function: { name: "build_site" } },
-        }),
+    const aiResp = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+        "Content-Type": "application/json",
       },
-    );
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 4096,
+        system: SYSTEM_PROMPT + voiceAddon,
+        messages: [{ role: "user", content: prompt }],
+        tools: [TOOL],
+        tool_choice: { type: "tool", name: "build_site" },
+      }),
+    });
 
     if (!aiResp.ok) {
       if (aiResp.status === 429) {
         return new Response(
           JSON.stringify({ error: "Rate limited. Try again in a moment." }),
-          {
-            status: 429,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          },
-        );
-      }
-      if (aiResp.status === 402) {
-        return new Response(
-          JSON.stringify({
-            error: "AI workspace credits exhausted. Add funds in Settings.",
-          }),
-          {
-            status: 402,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          },
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
       const t = await aiResp.text();
-      console.error("AI gateway error:", aiResp.status, t);
-      return new Response(JSON.stringify({ error: "AI gateway error" }), {
+      console.error("Anthropic error:", aiResp.status, t);
+      return new Response(JSON.stringify({ error: "AI provider error" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const data = await aiResp.json();
-    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall?.function?.arguments) {
-      console.error("No tool call returned", JSON.stringify(data).slice(0, 500));
+    const toolUse = (data.content || []).find(
+      (b: { type: string; name?: string }) => b.type === "tool_use" && b.name === "build_site",
+    );
+    if (!toolUse?.input) {
+      console.error("No tool_use returned", JSON.stringify(data).slice(0, 500));
       return new Response(JSON.stringify({ error: "AI returned no site" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    let siteJson: unknown;
-    try {
-      siteJson = JSON.parse(toolCall.function.arguments);
-    } catch (_e) {
-      return new Response(JSON.stringify({ error: "Bad AI JSON" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const siteJson: unknown = toolUse.input;
 
     // Persist site
     const { data: site, error: siteErr } = await supabase
