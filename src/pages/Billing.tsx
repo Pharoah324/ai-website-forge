@@ -16,6 +16,8 @@ export default function Billing() {
   const [interval, setInterval] = useState<Interval>("monthly");
   const [busyTier, setBusyTier] = useState<string | null>(null);
   const [setupBusy, setSetupBusy] = useState(false);
+  const [webhookBusy, setWebhookBusy] = useState(false);
+  const [webhookResult, setWebhookResult] = useState<{ secret?: string; url?: string; alreadyExists?: boolean; message?: string } | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
