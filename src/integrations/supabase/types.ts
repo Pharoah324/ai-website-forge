@@ -47,6 +47,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          billing_cycle_start: string
           brand_voice_active: boolean
           brand_voice_samples: string | null
           build_credits: number
@@ -56,13 +57,20 @@ export type Database = {
           display_name: string | null
           email: string | null
           id: string
+          monthly_build_limit: number
+          monthly_runtime_limit: number
           plan: Database["public"]["Enums"]["plan_tier"]
+          rollover_build_credits: number
+          rollover_runtime_credits: number
           runtime_credits: number
+          top_up_build_credits: number
+          top_up_runtime_credits: number
           updated_at: string
           voice_rules: Json | null
         }
         Insert: {
           avatar_url?: string | null
+          billing_cycle_start?: string
           brand_voice_active?: boolean
           brand_voice_samples?: string | null
           build_credits?: number
@@ -72,13 +80,20 @@ export type Database = {
           display_name?: string | null
           email?: string | null
           id: string
+          monthly_build_limit?: number
+          monthly_runtime_limit?: number
           plan?: Database["public"]["Enums"]["plan_tier"]
+          rollover_build_credits?: number
+          rollover_runtime_credits?: number
           runtime_credits?: number
+          top_up_build_credits?: number
+          top_up_runtime_credits?: number
           updated_at?: string
           voice_rules?: Json | null
         }
         Update: {
           avatar_url?: string | null
+          billing_cycle_start?: string
           brand_voice_active?: boolean
           brand_voice_samples?: string | null
           build_credits?: number
@@ -88,8 +103,14 @@ export type Database = {
           display_name?: string | null
           email?: string | null
           id?: string
+          monthly_build_limit?: number
+          monthly_runtime_limit?: number
           plan?: Database["public"]["Enums"]["plan_tier"]
+          rollover_build_credits?: number
+          rollover_runtime_credits?: number
           runtime_credits?: number
+          top_up_build_credits?: number
+          top_up_runtime_credits?: number
           updated_at?: string
           voice_rules?: Json | null
         }
