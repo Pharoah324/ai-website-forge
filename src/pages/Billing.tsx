@@ -207,6 +207,43 @@ export default function Billing() {
       </p>
 
       <TopUpModal open={topupOpen} onOpenChange={setTopupOpen} />
+
+      <Dialog open={!!webhookResult} onOpenChange={(o) => !o && setWebhookResult(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Stripe webhook {webhookResult?.alreadyExists ? "already exists" : "created"}</DialogTitle>
+            <DialogDescription>
+              {webhookResult?.alreadyExists
+                ? webhookResult?.message
+                : "Copy the signing secret below and save it as STRIPE_WEBHOOK_SECRET in your project secrets. Stripe only shows this once."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <p className="text-xs font-semibold uppercase text-muted-foreground">Endpoint URL</p>
+              <code className="mt-1 block break-all rounded bg-muted px-2 py-1 text-xs">{webhookResult?.url}</code>
+            </div>
+            {webhookResult?.secret && (
+              <div>
+                <p className="text-xs font-semibold uppercase text-muted-foreground">Signing secret</p>
+                <div className="mt-1 flex items-center gap-2">
+                  <code className="flex-1 break-all rounded bg-muted px-2 py-1 text-xs">{webhookResult.secret}</code>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      navigator.clipboard.writeText(webhookResult.secret!);
+                      toast.success("Copied");
+                    }}
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
