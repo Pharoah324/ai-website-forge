@@ -46,11 +46,33 @@ export default function Integrations() {
     },
   });
 
+  const { data: githubIntegration } = useQuery({
+    queryKey: ["integration", "github", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("integrations")
+        .select("*")
+        .eq("user_id", user!.id)
+        .eq("platform", "github")
+        .maybeSingle();
+      if (error) throw error;
+      return data as Integration | null;
+    },
+  });
+
+  const ghConnected = !!githubIntegration?.access_token;
+  const ghLogin: string | null = (githubIntegration?.metadata as any)?.login ?? null;
+  const [ghConnecting, setGhConnecting] = useState(false);
+
   const connected = !!integration?.access_token;
 
   // Refetch on focus (after OAuth popup closes)
   useEffect(() => {
-    const onFocus = () => qc.invalidateQueries({ queryKey: ["integration", "gohighlevel", user?.id] });
+    const onFocus = () => {
+      qc.invalidateQueries({ queryKey: ["integration", "gohighlevel", user?.id] });
+      qc.invalidateQueries({ queryKey: ["integration", "github", user?.id] });
+    };
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
   }, [qc, user?.id]);
