@@ -9,7 +9,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle2, ExternalLink, Loader2, Plug, Unplug } from "lucide-react";
+import { CheckCircle2, ExternalLink, Github, Loader2, Plug, Unplug } from "lucide-react";
 
 type Integration = {
   id: string;
@@ -17,6 +17,7 @@ type Integration = {
   location_id: string | null;
   pipeline_id: string | null;
   access_token: string | null;
+  metadata: any;
   created_at: string;
 };
 
