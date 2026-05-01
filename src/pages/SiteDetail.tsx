@@ -138,7 +138,31 @@ export default function SiteDetail() {
     setVariations(data.variations || []);
   };
 
-  const applyVariation = async (variation: Variation) => {
+  const pushToGithub = async () => {
+    if (!ghConnected) {
+      toast.error("Connect GitHub first", {
+        description: "Open Integrations to connect your GitHub account.",
+        action: { label: "Open", onClick: () => navigate("/app/integrations") },
+      });
+      return;
+    }
+    setPushing(true);
+    const { data, error } = await supabase.functions.invoke("github-push", {
+      body: { site_id: id },
+    });
+    setPushing(false);
+    if (error || (data as any)?.error) {
+      toast.error("Push failed", { description: error?.message || (data as any)?.error });
+      return;
+    }
+    const url = (data as any).html_url as string;
+    setRepoUrl(url);
+    qc.invalidateQueries({ queryKey: ["integration", "github-for-push"] });
+    toast.success("Pushed to GitHub", {
+      description: url,
+      action: { label: "Open repo", onClick: () => window.open(url, "_blank") },
+    });
+  };
     if (rewriteIdx === null) return;
     const next: SiteContent = JSON.parse(JSON.stringify(content));
     next.sections[rewriteIdx] = { ...next.sections[rewriteIdx], ...variation };
