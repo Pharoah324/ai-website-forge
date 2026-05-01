@@ -223,6 +223,17 @@ export default function SiteDetail() {
               <Share2 className="mr-1 h-3.5 w-3.5" /> Share preview
             </Button>
           )}
+          <Button size="sm" variant="outline" onClick={pushToGithub} disabled={pushing}>
+            {pushing ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Github className="mr-1 h-3.5 w-3.5" />}
+            {effectiveRepoUrl ? "Push update" : "Push to GitHub"}
+          </Button>
+          {effectiveRepoUrl && (
+            <Button size="sm" variant="ghost" asChild>
+              <a href={effectiveRepoUrl} target="_blank" rel="noreferrer" title="Open GitHub repo">
+                <ExternalLink className="h-3.5 w-3.5" />
+              </a>
+            </Button>
+          )}
           <Button size="sm" variant="ghost" onClick={() => { if (confirm("Delete this site?")) remove.mutate(); }}>
             <Trash2 className="h-4 w-4 text-destructive" />
           </Button>
