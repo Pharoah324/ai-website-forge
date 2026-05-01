@@ -20,13 +20,13 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_ANON_KEY")!,
       { global: { headers: { Authorization: authHeader } } }
     );
-    const { data, error } = await supabase.auth.getClaims(authHeader.replace("Bearer ", ""));
-    if (error || !data?.claims) {
+    const { data, error } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
+    if (error || !data?.user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const userId = data.claims.sub;
+    const userId = data.user.id;
 
     const clientId = Deno.env.get("GHL_CLIENT_ID");
     if (!clientId) {
