@@ -14,6 +14,8 @@ import {
   Check,
   Wand2,
   Loader2,
+  Github,
+  ExternalLink,
 } from "lucide-react";
 import {
   Dialog,
