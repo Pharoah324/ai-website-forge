@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
     const clientSecret = Deno.env.get("GHL_CLIENT_SECRET");
     if (!clientId || !clientSecret) return html(`<h2>GHL credentials not configured</h2>`, 500);
 
-    const redirectUri = `${Deno.env.get("SUPABASE_URL")}/functions/v1/ghl-oauth-callback`;
+    const redirectUri = `${Deno.env.get("SUPABASE_URL")}/functions/v1/oauth-callback`;
 
     const tokenRes = await fetch("https://services.leadconnectorhq.com/oauth/token", {
       method: "POST",
