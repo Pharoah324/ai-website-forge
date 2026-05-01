@@ -238,6 +238,42 @@ export default function Integrations() {
           </CardContent>
         )}
       </Card>
+
+      <Card className="mt-6">
+        <CardHeader className="flex flex-row items-start justify-between gap-4">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Github className="h-5 w-5" /> GitHub
+              {ghConnected && (
+                <Badge className="bg-green-500/15 text-green-500 hover:bg-green-500/20">
+                  <CheckCircle2 className="mr-1 h-3 w-3" /> Connected{ghLogin ? ` as @${ghLogin}` : ""}
+                </Badge>
+              )}
+            </CardTitle>
+            <CardDescription>
+              Push any site's generated HTML, CSS and source JSON to a GitHub repo. New repos default to private.
+            </CardDescription>
+          </div>
+          {ghConnected ? (
+            <Button variant="outline" size="sm" onClick={handleGithubDisconnect}>
+              <Unplug className="mr-2 h-4 w-4" /> Disconnect
+            </Button>
+          ) : (
+            <Button onClick={handleGithubConnect} disabled={ghConnecting}>
+              {ghConnecting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Github className="mr-2 h-4 w-4" />}
+              Connect GitHub
+            </Button>
+          )}
+        </CardHeader>
+        {ghConnected && (
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Open any site in your dashboard and click <strong>Push to GitHub</strong> to create or update its repo.
+              Each push commits <code>index.html</code>, <code>styles.css</code>, <code>site.json</code> and a README.
+            </p>
+          </CardContent>
+        )}
+      </Card>
     </div>
   );
 }
