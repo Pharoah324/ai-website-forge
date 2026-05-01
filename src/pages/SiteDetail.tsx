@@ -163,6 +163,8 @@ export default function SiteDetail() {
       action: { label: "Open repo", onClick: () => window.open(url, "_blank") },
     });
   };
+
+  const applyVariation = async (variation: Variation) => {
     if (rewriteIdx === null) return;
     const next: SiteContent = JSON.parse(JSON.stringify(content));
     next.sections[rewriteIdx] = { ...next.sections[rewriteIdx], ...variation };
