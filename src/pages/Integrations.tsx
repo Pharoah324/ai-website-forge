@@ -9,7 +9,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle2, ExternalLink, Loader2, Plug, Unplug } from "lucide-react";
+import { CheckCircle2, ExternalLink, Github, Loader2, Plug, Unplug } from "lucide-react";
 
 type Integration = {
   id: string;
@@ -17,6 +17,7 @@ type Integration = {
   location_id: string | null;
   pipeline_id: string | null;
   access_token: string | null;
+  metadata: any;
   created_at: string;
 };
 
@@ -45,11 +46,33 @@ export default function Integrations() {
     },
   });
 
+  const { data: githubIntegration } = useQuery({
+    queryKey: ["integration", "github", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("integrations")
+        .select("*")
+        .eq("user_id", user!.id)
+        .eq("platform", "github")
+        .maybeSingle();
+      if (error) throw error;
+      return data as Integration | null;
+    },
+  });
+
+  const ghConnected = !!githubIntegration?.access_token;
+  const ghLogin: string | null = (githubIntegration?.metadata as any)?.login ?? null;
+  const [ghConnecting, setGhConnecting] = useState(false);
+
   const connected = !!integration?.access_token;
 
   // Refetch on focus (after OAuth popup closes)
   useEffect(() => {
-    const onFocus = () => qc.invalidateQueries({ queryKey: ["integration", "gohighlevel", user?.id] });
+    const onFocus = () => {
+      qc.invalidateQueries({ queryKey: ["integration", "gohighlevel", user?.id] });
+      qc.invalidateQueries({ queryKey: ["integration", "github", user?.id] });
+    };
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
   }, [qc, user?.id]);
@@ -104,6 +127,28 @@ export default function Integrations() {
     }
     qc.invalidateQueries({ queryKey: ["integration", "gohighlevel", user?.id] });
     toast({ title: "Pipeline updated" });
+  };
+
+  const handleGithubConnect = async () => {
+    setGhConnecting(true);
+    const { data, error } = await supabase.functions.invoke("github-oauth-start");
+    setGhConnecting(false);
+    if (error || !(data as any)?.url) {
+      toast({ title: "Could not start GitHub connection", description: error?.message ?? "Unknown error", variant: "destructive" });
+      return;
+    }
+    window.open((data as any).url, "_blank", "width=720,height=820");
+  };
+
+  const handleGithubDisconnect = async () => {
+    if (!githubIntegration) return;
+    const { error } = await supabase.from("integrations").delete().eq("id", githubIntegration.id);
+    if (error) {
+      toast({ title: "Disconnect failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    qc.invalidateQueries({ queryKey: ["integration", "github", user?.id] });
+    toast({ title: "Disconnected", description: "GitHub has been removed." });
   };
 
   return (
@@ -190,6 +235,42 @@ export default function Integrations() {
                 GHL API v2 docs <ExternalLink className="h-3 w-3" />
               </a>
             </div>
+          </CardContent>
+        )}
+      </Card>
+
+      <Card className="mt-6">
+        <CardHeader className="flex flex-row items-start justify-between gap-4">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Github className="h-5 w-5" /> GitHub
+              {ghConnected && (
+                <Badge className="bg-green-500/15 text-green-500 hover:bg-green-500/20">
+                  <CheckCircle2 className="mr-1 h-3 w-3" /> Connected{ghLogin ? ` as @${ghLogin}` : ""}
+                </Badge>
+              )}
+            </CardTitle>
+            <CardDescription>
+              Push any site's generated HTML, CSS and source JSON to a GitHub repo. New repos default to private.
+            </CardDescription>
+          </div>
+          {ghConnected ? (
+            <Button variant="outline" size="sm" onClick={handleGithubDisconnect}>
+              <Unplug className="mr-2 h-4 w-4" /> Disconnect
+            </Button>
+          ) : (
+            <Button onClick={handleGithubConnect} disabled={ghConnecting}>
+              {ghConnecting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Github className="mr-2 h-4 w-4" />}
+              Connect GitHub
+            </Button>
+          )}
+        </CardHeader>
+        {ghConnected && (
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Open any site in your dashboard and click <strong>Push to GitHub</strong> to create or update its repo.
+              Each push commits <code>index.html</code>, <code>styles.css</code>, <code>site.json</code> and a README.
+            </p>
           </CardContent>
         )}
       </Card>

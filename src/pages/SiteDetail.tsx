@@ -14,6 +14,8 @@ import {
   Check,
   Wand2,
   Loader2,
+  Github,
+  ExternalLink,
 } from "lucide-react";
 import {
   Dialog,
@@ -41,8 +43,24 @@ export default function SiteDetail() {
   const [rewriteIdx, setRewriteIdx] = useState<number | null>(null);
   const [variations, setVariations] = useState<Variation[]>([]);
   const [rewriting, setRewriting] = useState(false);
+  const [pushing, setPushing] = useState(false);
+  const [repoUrl, setRepoUrl] = useState<string | null>(null);
   const qc = useQueryClient();
   const navigate = useNavigate();
+
+  const { data: ghIntegration } = useQuery({
+    queryKey: ["integration", "github-for-push"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("integrations").select("metadata").eq("platform", "github").maybeSingle();
+      return data;
+    },
+  });
+
+  const ghConnected = !!ghIntegration;
+  const existingRepoUrl: string | null =
+    (ghIntegration?.metadata as any)?.sites?.[id ?? ""]?.html_url ?? null;
+  const effectiveRepoUrl = repoUrl ?? existingRepoUrl;
 
   const { data: site, isLoading } = useQuery({
     queryKey: ["site", id],
@@ -120,6 +138,32 @@ export default function SiteDetail() {
     setVariations(data.variations || []);
   };
 
+  const pushToGithub = async () => {
+    if (!ghConnected) {
+      toast.error("Connect GitHub first", {
+        description: "Open Integrations to connect your GitHub account.",
+        action: { label: "Open", onClick: () => navigate("/app/integrations") },
+      });
+      return;
+    }
+    setPushing(true);
+    const { data, error } = await supabase.functions.invoke("github-push", {
+      body: { site_id: id },
+    });
+    setPushing(false);
+    if (error || (data as any)?.error) {
+      toast.error("Push failed", { description: error?.message || (data as any)?.error });
+      return;
+    }
+    const url = (data as any).html_url as string;
+    setRepoUrl(url);
+    qc.invalidateQueries({ queryKey: ["integration", "github-for-push"] });
+    toast.success("Pushed to GitHub", {
+      description: url,
+      action: { label: "Open repo", onClick: () => window.open(url, "_blank") },
+    });
+  };
+
   const applyVariation = async (variation: Variation) => {
     if (rewriteIdx === null) return;
     const next: SiteContent = JSON.parse(JSON.stringify(content));
@@ -177,6 +221,17 @@ export default function SiteDetail() {
           ) : (
             <Button size="sm" variant="outline" onClick={() => shareToggle.mutate(true)}>
               <Share2 className="mr-1 h-3.5 w-3.5" /> Share preview
+            </Button>
+          )}
+          <Button size="sm" variant="outline" onClick={pushToGithub} disabled={pushing}>
+            {pushing ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Github className="mr-1 h-3.5 w-3.5" />}
+            {effectiveRepoUrl ? "Push update" : "Push to GitHub"}
+          </Button>
+          {effectiveRepoUrl && (
+            <Button size="sm" variant="ghost" asChild>
+              <a href={effectiveRepoUrl} target="_blank" rel="noreferrer" title="Open GitHub repo">
+                <ExternalLink className="h-3.5 w-3.5" />
+              </a>
             </Button>
           )}
           <Button size="sm" variant="ghost" onClick={() => { if (confirm("Delete this site?")) remove.mutate(); }}>
