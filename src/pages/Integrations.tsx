@@ -129,6 +129,28 @@ export default function Integrations() {
     toast({ title: "Pipeline updated" });
   };
 
+  const handleGithubConnect = async () => {
+    setGhConnecting(true);
+    const { data, error } = await supabase.functions.invoke("github-oauth-start");
+    setGhConnecting(false);
+    if (error || !(data as any)?.url) {
+      toast({ title: "Could not start GitHub connection", description: error?.message ?? "Unknown error", variant: "destructive" });
+      return;
+    }
+    window.open((data as any).url, "_blank", "width=720,height=820");
+  };
+
+  const handleGithubDisconnect = async () => {
+    if (!githubIntegration) return;
+    const { error } = await supabase.from("integrations").delete().eq("id", githubIntegration.id);
+    if (error) {
+      toast({ title: "Disconnect failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    qc.invalidateQueries({ queryKey: ["integration", "github", user?.id] });
+    toast({ title: "Disconnected", description: "GitHub has been removed." });
+  };
+
   return (
     <div className="mx-auto max-w-4xl p-6 md:p-10">
       <header className="mb-8">
