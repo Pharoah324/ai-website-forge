@@ -43,8 +43,24 @@ export default function SiteDetail() {
   const [rewriteIdx, setRewriteIdx] = useState<number | null>(null);
   const [variations, setVariations] = useState<Variation[]>([]);
   const [rewriting, setRewriting] = useState(false);
+  const [pushing, setPushing] = useState(false);
+  const [repoUrl, setRepoUrl] = useState<string | null>(null);
   const qc = useQueryClient();
   const navigate = useNavigate();
+
+  const { data: ghIntegration } = useQuery({
+    queryKey: ["integration", "github-for-push"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("integrations").select("metadata").eq("platform", "github").maybeSingle();
+      return data;
+    },
+  });
+
+  const ghConnected = !!ghIntegration;
+  const existingRepoUrl: string | null =
+    (ghIntegration?.metadata as any)?.sites?.[id ?? ""]?.html_url ?? null;
+  const effectiveRepoUrl = repoUrl ?? existingRepoUrl;
 
   const { data: site, isLoading } = useQuery({
     queryKey: ["site", id],
