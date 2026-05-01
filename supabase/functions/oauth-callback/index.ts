@@ -7,9 +7,9 @@ const corsHeaders = {
 
 const APP_ORIGIN = "https://id-preview--673536a3-867c-4ffd-9bd1-5a6b16cd2017.lovable.app";
 
-function html(body: string, status = 200) {
+function html(body: string, status = 200, title = "Connected") {
   return new Response(
-    `<!doctype html><html><head><meta charset="utf-8"><title>GoHighLevel</title>
+    `<!doctype html><html><head><meta charset="utf-8"><title>${title}</title>
      <style>body{font-family:system-ui;background:#0a0f1f;color:#e8eefc;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}
      .card{max-width:480px;padding:32px;background:#111a33;border:1px solid #1f2a4a;border-radius:12px;text-align:center}
      a{color:#3b82f6}</style></head><body><div class="card">${body}</div></body></html>`,
@@ -30,19 +30,78 @@ Deno.serve(async (req) => {
     if (!code || !state) return html(`<h2>Missing code or state</h2>`, 400);
 
     let userId: string;
+    let provider: "gohighlevel" | "github" = "gohighlevel";
     try {
       const parsed = JSON.parse(atob(state));
       userId = parsed.userId;
+      if (parsed.provider === "github") provider = "github";
       if (!userId) throw new Error("no userId in state");
     } catch {
       return html(`<h2>Invalid state parameter</h2>`, 400);
     }
 
+    const admin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+    const redirectUri = `${Deno.env.get("SUPABASE_URL")}/functions/v1/oauth-callback`;
+
+    if (provider === "github") {
+      const clientId = Deno.env.get("GITHUB_CLIENT_ID");
+      const clientSecret = Deno.env.get("GITHUB_CLIENT_SECRET");
+      if (!clientId || !clientSecret) return html(`<h2>GitHub credentials not configured</h2>`, 500);
+
+      const tokenRes = await fetch("https://github.com/login/oauth/access_token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Accept": "application/json" },
+        body: JSON.stringify({
+          client_id: clientId,
+          client_secret: clientSecret,
+          code,
+          redirect_uri: redirectUri,
+        }),
+      });
+      const tokenJson = await tokenRes.json();
+      if (!tokenRes.ok || !tokenJson.access_token) {
+        console.error("GitHub token exchange failed", tokenJson);
+        return html(`<h2>Token exchange failed</h2><pre>${JSON.stringify(tokenJson, null, 2)}</pre>`, 400);
+      }
+
+      // fetch login (username) for nicer UX
+      let login: string | null = null;
+      try {
+        const me = await fetch("https://api.github.com/user", {
+          headers: { Authorization: `Bearer ${tokenJson.access_token}`, Accept: "application/vnd.github+json" },
+        });
+        if (me.ok) {
+          const meJson = await me.json();
+          login = meJson.login ?? null;
+        }
+      } catch (e) { console.warn("could not fetch gh user", e); }
+
+      const { error: upsertError } = await admin.from("integrations").upsert({
+        user_id: userId,
+        platform: "github",
+        access_token: tokenJson.access_token,
+        metadata: { scope: tokenJson.scope ?? null, login, token_type: tokenJson.token_type ?? null },
+      }, { onConflict: "user_id,platform" });
+
+      if (upsertError) {
+        console.error("Upsert failed", upsertError);
+        return html(`<h2>Failed to save connection</h2><pre>${upsertError.message}</pre>`, 500);
+      }
+
+      return html(`<h2 style="color:#3b82f6">✓ GitHub connected${login ? ` as @${login}` : ""}</h2>
+        <p>You can close this tab and return to your dashboard.</p>
+        <p><a href="${APP_ORIGIN}/app/integrations">Back to Integrations</a></p>
+        <script>setTimeout(()=>{window.close();window.location.href="${APP_ORIGIN}/app/integrations"},1500)</script>`,
+        200, "GitHub connected");
+    }
+
+    // ---- default: GoHighLevel ----
     const clientId = Deno.env.get("GHL_CLIENT_ID");
     const clientSecret = Deno.env.get("GHL_CLIENT_SECRET");
     if (!clientId || !clientSecret) return html(`<h2>GHL credentials not configured</h2>`, 500);
-
-    const redirectUri = `${Deno.env.get("SUPABASE_URL")}/functions/v1/oauth-callback`;
 
     const tokenRes = await fetch("https://services.leadconnectorhq.com/oauth/token", {
       method: "POST",
@@ -67,11 +126,6 @@ Deno.serve(async (req) => {
     const expiresIn: number = tokenJson.expires_in ?? 3600;
     const locationId: string | null = tokenJson.locationId ?? null;
     const expiresAt = new Date(Date.now() + (expiresIn - 60) * 1000).toISOString();
-
-    const admin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
 
     const { error: upsertError } = await admin.from("integrations").upsert({
       user_id: userId,
