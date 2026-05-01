@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const redirectUri = `${supabaseUrl}/functions/v1/ghl-oauth-callback`;
+    const redirectUri = `${supabaseUrl}/functions/v1/oauth-callback`;
     const scopes = [
       "contacts.write", "contacts.readonly",
       "locations.readonly",
