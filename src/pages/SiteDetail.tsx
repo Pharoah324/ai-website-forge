@@ -395,6 +395,58 @@ export default function SiteDetail() {
           )}
         </DialogContent>
       </Dialog>
+
+      <Dialog open={publishOpen} onOpenChange={(o) => !o && setPublishOpen(false)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{liveUrl ? "Republish site" : "Publish your site"}</DialogTitle>
+            <DialogDescription>
+              Choose a subdomain. Your site will go live at{" "}
+              <code className="text-foreground">your-name.{PUBLISH_ROOT}</code>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="flex items-center overflow-hidden rounded-md border bg-background">
+              <Input
+                value={subdomainInput}
+                onChange={(e) => {
+                  setSubdomainInput(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""));
+                  setPublishError(null);
+                }}
+                placeholder="my-site"
+                className="border-0 focus-visible:ring-0"
+                maxLength={63}
+                autoFocus
+              />
+              <span className="whitespace-nowrap border-l bg-muted px-3 py-2 text-sm text-muted-foreground">
+                .{PUBLISH_ROOT}
+              </span>
+            </div>
+            {publishError && (
+              <p className="text-sm text-destructive">{publishError}</p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Lowercase letters, numbers, and hyphens. 3–63 characters.
+            </p>
+            <div className="flex justify-between gap-2 pt-2">
+              {liveUrl ? (
+                <Button variant="ghost" size="sm" onClick={unpublish}>
+                  Unpublish
+                </Button>
+              ) : <span />}
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setPublishOpen(false)} disabled={publishing}>
+                  Cancel
+                </Button>
+                <Button onClick={submitPublish} disabled={publishing || !subdomainInput}>
+                  {publishing && <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />}
+                  {liveUrl ? "Update" : "Publish"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
