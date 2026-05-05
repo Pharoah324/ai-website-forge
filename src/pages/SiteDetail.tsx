@@ -118,6 +118,52 @@ export default function SiteDetail() {
   const shareUrl = site.is_shared
     ? `${window.location.origin}/share/${site.share_token}`
     : null;
+  const liveUrl =
+    site.published && site.subdomain
+      ? `https://${site.subdomain}.${PUBLISH_ROOT}`
+      : null;
+
+  const slugify = (s: string) =>
+    s.toLowerCase().trim().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 63);
+
+  const openPublish = () => {
+    setPublishError(null);
+    setSubdomainInput(site.subdomain || slugify(site.name || "my-site"));
+    setPublishOpen(true);
+  };
+
+  const submitPublish = async () => {
+    setPublishing(true);
+    setPublishError(null);
+    const { data, error } = await supabase.functions.invoke("publish-site", {
+      body: { site_id: id, subdomain: subdomainInput },
+    });
+    setPublishing(false);
+    const errMsg = error?.message || (data as any)?.error;
+    if (errMsg) {
+      setPublishError(errMsg);
+      return;
+    }
+    qc.invalidateQueries({ queryKey: ["site", id] });
+    toast.success("Site published!", {
+      description: (data as any).url,
+      action: { label: "Open", onClick: () => window.open((data as any).url, "_blank") },
+    });
+    setPublishOpen(false);
+  };
+
+  const unpublish = async () => {
+    if (!confirm("Take this site offline?")) return;
+    const { error } = await supabase.functions.invoke("publish-site", {
+      body: { site_id: id, action: "unpublish" },
+    });
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    qc.invalidateQueries({ queryKey: ["site", id] });
+    toast.success("Site unpublished");
+  };
 
   const copyShare = async () => {
     if (!shareUrl) return;
