@@ -16,7 +16,11 @@ import {
   Loader2,
   Github,
   ExternalLink,
+  Globe,
+  Rocket,
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { PUBLISH_ROOT } from "@/lib/subdomain";
 import {
   Dialog,
   DialogContent,
@@ -45,6 +49,10 @@ export default function SiteDetail() {
   const [rewriting, setRewriting] = useState(false);
   const [pushing, setPushing] = useState(false);
   const [repoUrl, setRepoUrl] = useState<string | null>(null);
+  const [publishOpen, setPublishOpen] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [subdomainInput, setSubdomainInput] = useState("");
+  const [publishError, setPublishError] = useState<string | null>(null);
   const qc = useQueryClient();
   const navigate = useNavigate();
 
