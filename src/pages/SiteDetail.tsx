@@ -288,6 +288,22 @@ export default function SiteDetail() {
               </a>
             </Button>
           )}
+          {liveUrl ? (
+            <>
+              <Button size="sm" variant="outline" asChild>
+                <a href={liveUrl} target="_blank" rel="noreferrer">
+                  <Globe className="mr-1 h-3.5 w-3.5" /> {site.subdomain}.{PUBLISH_ROOT}
+                </a>
+              </Button>
+              <Button size="sm" variant="ghost" onClick={openPublish} title="Republish / change subdomain">
+                <Rocket className="h-3.5 w-3.5" />
+              </Button>
+            </>
+          ) : (
+            <Button size="sm" onClick={openPublish}>
+              <Rocket className="mr-1 h-3.5 w-3.5" /> Publish
+            </Button>
+          )}
           <Button size="sm" variant="ghost" onClick={() => { if (confirm("Delete this site?")) remove.mutate(); }}>
             <Trash2 className="h-4 w-4 text-destructive" />
           </Button>
