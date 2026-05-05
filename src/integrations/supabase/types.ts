@@ -213,7 +213,10 @@ export type Database = {
           is_shared: boolean
           name: string
           prompt: string
+          published: boolean
+          published_at: string | null
           share_token: string | null
+          subdomain: string | null
           updated_at: string
           user_id: string
         }
@@ -224,7 +227,10 @@ export type Database = {
           is_shared?: boolean
           name?: string
           prompt: string
+          published?: boolean
+          published_at?: string | null
           share_token?: string | null
+          subdomain?: string | null
           updated_at?: string
           user_id: string
         }
@@ -235,7 +241,10 @@ export type Database = {
           is_shared?: boolean
           name?: string
           prompt?: string
+          published?: boolean
+          published_at?: string | null
           share_token?: string | null
+          subdomain?: string | null
           updated_at?: string
           user_id?: string
         }
