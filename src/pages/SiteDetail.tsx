@@ -16,7 +16,11 @@ import {
   Loader2,
   Github,
   ExternalLink,
+  Globe,
+  Rocket,
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { PUBLISH_ROOT } from "@/lib/subdomain";
 import {
   Dialog,
   DialogContent,
@@ -45,6 +49,10 @@ export default function SiteDetail() {
   const [rewriting, setRewriting] = useState(false);
   const [pushing, setPushing] = useState(false);
   const [repoUrl, setRepoUrl] = useState<string | null>(null);
+  const [publishOpen, setPublishOpen] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [subdomainInput, setSubdomainInput] = useState("");
+  const [publishError, setPublishError] = useState<string | null>(null);
   const qc = useQueryClient();
   const navigate = useNavigate();
 
@@ -110,6 +118,52 @@ export default function SiteDetail() {
   const shareUrl = site.is_shared
     ? `${window.location.origin}/share/${site.share_token}`
     : null;
+  const liveUrl =
+    site.published && site.subdomain
+      ? `https://${site.subdomain}.${PUBLISH_ROOT}`
+      : null;
+
+  const slugify = (s: string) =>
+    s.toLowerCase().trim().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 63);
+
+  const openPublish = () => {
+    setPublishError(null);
+    setSubdomainInput(site.subdomain || slugify(site.name || "my-site"));
+    setPublishOpen(true);
+  };
+
+  const submitPublish = async () => {
+    setPublishing(true);
+    setPublishError(null);
+    const { data, error } = await supabase.functions.invoke("publish-site", {
+      body: { site_id: id, subdomain: subdomainInput },
+    });
+    setPublishing(false);
+    const errMsg = error?.message || (data as any)?.error;
+    if (errMsg) {
+      setPublishError(errMsg);
+      return;
+    }
+    qc.invalidateQueries({ queryKey: ["site", id] });
+    toast.success("Site published!", {
+      description: (data as any).url,
+      action: { label: "Open", onClick: () => window.open((data as any).url, "_blank") },
+    });
+    setPublishOpen(false);
+  };
+
+  const unpublish = async () => {
+    if (!confirm("Take this site offline?")) return;
+    const { error } = await supabase.functions.invoke("publish-site", {
+      body: { site_id: id, action: "unpublish" },
+    });
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    qc.invalidateQueries({ queryKey: ["site", id] });
+    toast.success("Site unpublished");
+  };
 
   const copyShare = async () => {
     if (!shareUrl) return;
@@ -234,6 +288,22 @@ export default function SiteDetail() {
               </a>
             </Button>
           )}
+          {liveUrl ? (
+            <>
+              <Button size="sm" variant="outline" asChild>
+                <a href={liveUrl} target="_blank" rel="noreferrer">
+                  <Globe className="mr-1 h-3.5 w-3.5" /> {site.subdomain}.{PUBLISH_ROOT}
+                </a>
+              </Button>
+              <Button size="sm" variant="ghost" onClick={openPublish} title="Republish / change subdomain">
+                <Rocket className="h-3.5 w-3.5" />
+              </Button>
+            </>
+          ) : (
+            <Button size="sm" onClick={openPublish}>
+              <Rocket className="mr-1 h-3.5 w-3.5" /> Publish
+            </Button>
+          )}
           <Button size="sm" variant="ghost" onClick={() => { if (confirm("Delete this site?")) remove.mutate(); }}>
             <Trash2 className="h-4 w-4 text-destructive" />
           </Button>
@@ -323,6 +393,58 @@ export default function SiteDetail() {
               ))}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={publishOpen} onOpenChange={(o) => !o && setPublishOpen(false)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{liveUrl ? "Republish site" : "Publish your site"}</DialogTitle>
+            <DialogDescription>
+              Choose a subdomain. Your site will go live at{" "}
+              <code className="text-foreground">your-name.{PUBLISH_ROOT}</code>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="flex items-center overflow-hidden rounded-md border bg-background">
+              <Input
+                value={subdomainInput}
+                onChange={(e) => {
+                  setSubdomainInput(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""));
+                  setPublishError(null);
+                }}
+                placeholder="my-site"
+                className="border-0 focus-visible:ring-0"
+                maxLength={63}
+                autoFocus
+              />
+              <span className="whitespace-nowrap border-l bg-muted px-3 py-2 text-sm text-muted-foreground">
+                .{PUBLISH_ROOT}
+              </span>
+            </div>
+            {publishError && (
+              <p className="text-sm text-destructive">{publishError}</p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Lowercase letters, numbers, and hyphens. 3–63 characters.
+            </p>
+            <div className="flex justify-between gap-2 pt-2">
+              {liveUrl ? (
+                <Button variant="ghost" size="sm" onClick={unpublish}>
+                  Unpublish
+                </Button>
+              ) : <span />}
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setPublishOpen(false)} disabled={publishing}>
+                  Cancel
+                </Button>
+                <Button onClick={submitPublish} disabled={publishing || !subdomainInput}>
+                  {publishing && <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />}
+                  {liveUrl ? "Update" : "Publish"}
+                </Button>
+              </div>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

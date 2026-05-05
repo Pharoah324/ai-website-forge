@@ -13,14 +13,29 @@ import Billing from "./pages/Billing";
 import Integrations from "./pages/Integrations";
 import Settings from "./pages/Settings";
 import Share from "./pages/Share";
+import LiveSite from "./pages/LiveSite";
 import AppLayout from "./layouts/AppLayout";
 import NotFound from "./pages/NotFound";
+import { getCustomerSubdomain } from "./lib/subdomain";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, refetchOnWindowFocus: false } },
 });
 
-const App = () => (
+const App = () => {
+  const customerSubdomain = getCustomerSubdomain();
+  if (customerSubdomain) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <LiveSite subdomain={customerSubdomain} />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+  return (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
@@ -45,6 +60,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;
