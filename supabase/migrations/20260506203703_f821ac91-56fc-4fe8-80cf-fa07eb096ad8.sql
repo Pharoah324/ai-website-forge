@@ -1,0 +1,2 @@
+UPDATE public.profiles SET build_credits = build_credits + 1 WHERE id = 'f5dd8024-1833-43c3-9456-ac305603d610';
+INSERT INTO public.credit_ledger (user_id, kind, amount, reason, description) VALUES ('f5dd8024-1833-43c3-9456-ac305603d610', 'build', 1, 'admin_adjust', 'Refund: failed generation (invalid Anthropic API key)');
