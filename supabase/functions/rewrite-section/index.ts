@@ -7,53 +7,55 @@ const corsHeaders = {
 };
 
 const TOOL = {
-  name: "rewrite_variations",
-  description: "Return 3 rewritten variations of a website section.",
-  input_schema: {
-    type: "object",
-    properties: {
-      variations: {
-        type: "array",
-        minItems: 3,
-        maxItems: 3,
-        items: {
-          type: "object",
-          properties: {
-            heading: { type: "string" },
-            subheading: { type: "string" },
-            cta: { type: "string" },
-            items: {
-              type: "array",
+  type: "function" as const,
+  function: {
+    name: "rewrite_variations",
+    description: "Return 3 rewritten variations of a website section.",
+    parameters: {
+      type: "object",
+      properties: {
+        variations: {
+          type: "array",
+          minItems: 3,
+          maxItems: 3,
+          items: {
+            type: "object",
+            properties: {
+              heading: { type: "string" },
+              subheading: { type: "string" },
+              cta: { type: "string" },
               items: {
-                type: "object",
-                properties: {
-                  title: { type: "string" },
-                  body: { type: "string" },
-                  price: { type: "string" },
-                  author: { type: "string" },
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    title: { type: "string" },
+                    body: { type: "string" },
+                    price: { type: "string" },
+                    author: { type: "string" },
+                  },
                 },
               },
             },
+            required: ["heading"],
           },
-          required: ["heading"],
         },
       },
+      required: ["variations"],
     },
-    required: ["variations"],
   },
 };
 
-// Cheap in-memory rate limit per user (Deno isolate scope) — best-effort.
 const RL = new Map<string, number[]>();
-const LIMIT = 30; // per hour
+const LIMIT = 30;
 const WINDOW_MS = 60 * 60 * 1000;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY not configured");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -111,43 +113,48 @@ Deno.serve(async (req) => {
       }
     }
 
-    const aiResp = await fetch("https://api.anthropic.com/v1/messages", {
+    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        "x-api-key": ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-5",
-        max_tokens: 2048,
-        system:
-          `You rewrite a single website section. Produce 3 distinct, conversion-focused variations. Keep the same section type, similar length, and same number of items.${voiceAddon}`,
+        model: "google/gemini-2.5-pro",
         messages: [
+          {
+            role: "system",
+            content:
+              `You rewrite a single website section. Produce 3 distinct, conversion-focused variations. Keep the same section type, similar length, and same number of items.${voiceAddon}`,
+          },
           {
             role: "user",
             content: `Business context: ${business_context || "(general)"}\n\nOriginal section JSON:\n${JSON.stringify(section)}\n\nReturn 3 variations via the rewrite_variations tool.`,
           },
         ],
         tools: [TOOL],
-        tool_choice: { type: "tool", name: "rewrite_variations" },
+        tool_choice: { type: "function", function: { name: "rewrite_variations" } },
       }),
     });
 
     if (!aiResp.ok) {
       const t = await aiResp.text();
-      console.error("anthropic", aiResp.status, t);
-      return new Response(JSON.stringify({ error: "AI provider error" }), {
-        status: aiResp.status === 429 ? 429 : 500,
+      console.error("lovable ai", aiResp.status, t);
+      const status = aiResp.status === 429 ? 429 : aiResp.status === 402 ? 402 : 500;
+      const msg = aiResp.status === 402
+        ? "Lovable AI credits exhausted. Add funds in Settings → Workspace → Usage."
+        : "AI provider error";
+      return new Response(JSON.stringify({ error: msg }), {
+        status,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
     const data = await aiResp.json();
-    const tool = (data.content || []).find(
-      (b: { type: string; name?: string }) =>
-        b.type === "tool_use" && b.name === "rewrite_variations",
-    );
-    const variations = tool?.input?.variations ?? [];
+    const argStr = data.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+    let variations: unknown[] = [];
+    if (argStr) {
+      try { variations = JSON.parse(argStr).variations ?? []; } catch { /* noop */ }
+    }
     return new Response(JSON.stringify({ variations }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
