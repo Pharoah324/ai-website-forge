@@ -70,8 +70,9 @@ export default function NewSite() {
   const accumulatedRef = useRef("");
   const abortRef = useRef<AbortController | null>(null);
   const recognitionRef = useRef<any>(null);
-  const baseTextRef = useRef("");
   const [listening, setListening] = useState(false);
+  const [liveFinal, setLiveFinal] = useState("");
+  const [liveInterim, setLiveInterim] = useState("");
   const SpeechRecognition =
     typeof window !== "undefined"
       ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
@@ -99,7 +100,8 @@ export default function NewSite() {
     rec.continuous = true;
     rec.interimResults = true;
     rec.lang = navigator.language || "en-US";
-    baseTextRef.current = prompt ? prompt.trimEnd() + " " : "";
+    setLiveFinal("");
+    setLiveInterim("");
     rec.onstart = () => setListening(true);
     rec.onerror = (e: any) => {
       setListening(false);
@@ -109,7 +111,10 @@ export default function NewSite() {
         toast.error(`Voice input error: ${e.error}`);
       }
     };
-    rec.onend = () => setListening(false);
+    rec.onend = () => {
+      setListening(false);
+      setLiveInterim("");
+    };
     rec.onresult = (event: any) => {
       let finalText = "";
       let interimText = "";
@@ -118,7 +123,8 @@ export default function NewSite() {
         if (r.isFinal) finalText += r[0].transcript;
         else interimText += r[0].transcript;
       }
-      setPrompt(baseTextRef.current + finalText + interimText);
+      setLiveFinal(finalText);
+      setLiveInterim(interimText);
     };
     recognitionRef.current = rec;
     try {
@@ -126,6 +132,21 @@ export default function NewSite() {
     } catch {
       setListening(false);
     }
+  };
+
+  const appendTranscript = () => {
+    const text = (liveFinal + " " + liveInterim).trim();
+    if (!text) return;
+    setPrompt((p) => (p ? p.trimEnd() + " " : "") + text);
+    setLiveFinal("");
+    setLiveInterim("");
+    try { recognitionRef.current?.stop(); } catch { /* noop */ }
+  };
+
+  const discardTranscript = () => {
+    setLiveFinal("");
+    setLiveInterim("");
+    try { recognitionRef.current?.stop(); } catch { /* noop */ }
   };
 
   const { data: profile } = useProfile();
@@ -296,6 +317,31 @@ export default function NewSite() {
           maxLength={4000}
           disabled={generating}
         />
+        {(listening || liveFinal || liveInterim) && (
+          <div className="rounded-md border border-primary/30 bg-primary/5 p-3">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary">
+                {listening && (
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+                  </span>
+                )}
+                {listening ? "Recording…" : "Transcript ready"}
+              </span>
+              <div className="flex gap-1">
+                <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={discardTranscript} type="button">Discard</Button>
+                <Button size="sm" className="h-7 px-2 text-xs" onClick={appendTranscript} disabled={!liveFinal.trim() && !liveInterim.trim()} type="button">Append to prompt</Button>
+              </div>
+            </div>
+            <p className="min-h-[2.5rem] text-sm leading-relaxed">
+              <span className="text-foreground">{liveFinal}</span>
+              {liveInterim && (<span className="italic text-muted-foreground"> {liveInterim}</span>)}
+              {!liveFinal && !liveInterim && (<span className="italic text-muted-foreground">Listening… start speaking.</span>)}
+            </p>
+          </div>
+        )}
+
 
         <div className="flex gap-2">
           <Button
