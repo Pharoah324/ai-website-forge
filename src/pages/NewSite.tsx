@@ -70,8 +70,9 @@ export default function NewSite() {
   const accumulatedRef = useRef("");
   const abortRef = useRef<AbortController | null>(null);
   const recognitionRef = useRef<any>(null);
-  const baseTextRef = useRef("");
   const [listening, setListening] = useState(false);
+  const [liveFinal, setLiveFinal] = useState("");
+  const [liveInterim, setLiveInterim] = useState("");
   const SpeechRecognition =
     typeof window !== "undefined"
       ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
