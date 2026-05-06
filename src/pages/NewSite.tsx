@@ -236,25 +236,37 @@ export default function NewSite() {
           disabled={generating}
         />
 
-        <Button
-          onClick={generate}
-          disabled={generating || !!noCredits || !prompt.trim()}
-          size="lg"
-          className="w-full"
-        >
-          {generating ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating…
-            </>
-          ) : (
-            <>
-              <Wand2 className="mr-2 h-4 w-4" /> Generate
-              <span className="ml-2 text-xs opacity-80">
-                {isUnlimited ? "(unlimited)" : "(1 credit)"}
-              </span>
-            </>
+        <div className="flex gap-2">
+          <Button
+            onClick={generate}
+            disabled={generating || !!noCredits || !prompt.trim()}
+            size="lg"
+            className="flex-1"
+          >
+            {generating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating…
+              </>
+            ) : (
+              <>
+                <Wand2 className="mr-2 h-4 w-4" /> Generate
+                <span className="ml-2 text-xs opacity-80">
+                  {isUnlimited ? "(unlimited)" : "(1 credit)"}
+                </span>
+              </>
+            )}
+          </Button>
+          {generating && (
+            <Button
+              onClick={cancelGeneration}
+              size="lg"
+              variant="outline"
+              type="button"
+            >
+              Cancel
+            </Button>
           )}
-        </Button>
+        </div>
 
         <div>
           <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
