@@ -69,6 +69,65 @@ export default function NewSite() {
   const [bizCity, setBizCity] = useState("");
   const accumulatedRef = useRef("");
   const abortRef = useRef<AbortController | null>(null);
+  const recognitionRef = useRef<any>(null);
+  const baseTextRef = useRef("");
+  const [listening, setListening] = useState(false);
+  const SpeechRecognition =
+    typeof window !== "undefined"
+      ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+      : null;
+  const speechSupported = !!SpeechRecognition;
+
+  useEffect(() => {
+    return () => {
+      try { recognitionRef.current?.stop(); } catch { /* noop */ }
+    };
+  }, []);
+
+  const toggleDictation = () => {
+    if (!speechSupported) {
+      toast.error("Voice input not supported", {
+        description: "Try Chrome or Safari on desktop.",
+      });
+      return;
+    }
+    if (listening) {
+      try { recognitionRef.current?.stop(); } catch { /* noop */ }
+      return;
+    }
+    const rec = new SpeechRecognition();
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.lang = navigator.language || "en-US";
+    baseTextRef.current = prompt ? prompt.trimEnd() + " " : "";
+    rec.onstart = () => setListening(true);
+    rec.onerror = (e: any) => {
+      setListening(false);
+      if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+        toast.error("Microphone permission denied");
+      } else if (e.error !== "aborted" && e.error !== "no-speech") {
+        toast.error(`Voice input error: ${e.error}`);
+      }
+    };
+    rec.onend = () => setListening(false);
+    rec.onresult = (event: any) => {
+      let finalText = "";
+      let interimText = "";
+      for (let i = 0; i < event.results.length; i++) {
+        const r = event.results[i];
+        if (r.isFinal) finalText += r[0].transcript;
+        else interimText += r[0].transcript;
+      }
+      setPrompt(baseTextRef.current + finalText + interimText);
+    };
+    recognitionRef.current = rec;
+    try {
+      rec.start();
+    } catch {
+      setListening(false);
+    }
+  };
+
   const { data: profile } = useProfile();
   const qc = useQueryClient();
   const navigate = useNavigate();
