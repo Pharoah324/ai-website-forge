@@ -23,6 +23,8 @@ import {
   Wand2,
   AlertTriangle,
   LayoutTemplate,
+  Mic,
+  MicOff,
 } from "lucide-react";
 import { SitePreview } from "@/components/SitePreview";
 import { TopUpModal } from "@/components/TopUpModal";
