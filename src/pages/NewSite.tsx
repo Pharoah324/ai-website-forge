@@ -83,32 +83,73 @@ export default function NewSite() {
     setGenerating(true);
     setContent(null);
     accumulatedRef.current = "";
+    abortRef.current?.abort();
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
 
-    await streamGenerateSite(body, {
-      onDelta: (chunk) => {
-        accumulatedRef.current += chunk;
-        const partial = tryParsePartial(accumulatedRef.current);
-        if (partial) setContent(partial);
+    await streamGenerateSite(
+      body,
+      {
+        onDelta: (chunk) => {
+          accumulatedRef.current += chunk;
+          const partial = tryParsePartial(accumulatedRef.current);
+          if (partial) setContent(partial);
+        },
+        onDone: (site) => {
+          setContent(site.content);
+          qc.invalidateQueries({ queryKey: ["profile"] });
+          qc.invalidateQueries({ queryKey: ["sites"] });
+          toast.success("Site generated", {
+            action: { label: "Open", onClick: () => navigate(`/app/sites/${site.id}`) },
+          });
+          setGenerating(false);
+        },
+        onError: (msg, code) => {
+          setGenerating(false);
+          if (code === "aborted") return; // user cancelled — no toast
+          if (code === "no_credits") {
+            toast.error("Out of build credits", {
+              description: "Top up to keep generating.",
+              action: { label: "Buy credits", onClick: () => setTopUpOpen(true) },
+            });
+            setTopUpOpen(true);
+            return;
+          }
+          if (code === "rate_limited") {
+            toast.error("Rate limited", {
+              description: "Too many requests. Wait a moment and try again.",
+            });
+            return;
+          }
+          if (code === "stalled") {
+            toast.error("Generation stalled", {
+              description: "The AI took too long. Retry?",
+              action: { label: "Retry", onClick: () => runGeneration(body) },
+            });
+            return;
+          }
+          toast.error(msg, {
+            action: { label: "Retry", onClick: () => runGeneration(body) },
+          });
+        },
       },
-      onDone: (site) => {
-        setContent(site.content);
-        qc.invalidateQueries({ queryKey: ["profile"] });
-        qc.invalidateQueries({ queryKey: ["sites"] });
-        toast.success("Site generated", {
-          action: { label: "Open", onClick: () => navigate(`/app/sites/${site.id}`) },
-        });
-        setGenerating(false);
-      },
-      onError: (msg) => {
-        toast.error(msg);
-        setGenerating(false);
-      },
-    });
+      ctrl.signal,
+    );
+  };
+
+  const cancelGeneration = () => {
+    abortRef.current?.abort();
   };
 
   const generate = () => {
     if (!prompt.trim()) return toast.error("Describe your business first");
-    if (noCredits) return toast.error("Out of build credits");
+    if (noCredits) {
+      toast.error("Out of build credits", {
+        action: { label: "Buy credits", onClick: () => setTopUpOpen(true) },
+      });
+      setTopUpOpen(true);
+      return;
+    }
     runGeneration({ prompt });
   };
 
