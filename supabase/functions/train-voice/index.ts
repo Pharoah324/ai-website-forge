@@ -7,19 +7,22 @@ const corsHeaders = {
 };
 
 const TOOL = {
-  name: "voice_rules",
-  description: "Return 5 specific brand-voice rules describing the writer's style.",
-  input_schema: {
-    type: "object",
-    properties: {
-      voice_rules: {
-        type: "array",
-        minItems: 5,
-        maxItems: 5,
-        items: { type: "string" },
+  type: "function" as const,
+  function: {
+    name: "voice_rules",
+    description: "Return 5 specific brand-voice rules describing the writer's style.",
+    parameters: {
+      type: "object",
+      properties: {
+        voice_rules: {
+          type: "array",
+          minItems: 5,
+          maxItems: 5,
+          items: { type: "string" },
+        },
       },
+      required: ["voice_rules"],
     },
-    required: ["voice_rules"],
   },
 };
 
@@ -27,8 +30,8 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY not configured");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -60,37 +63,45 @@ Deno.serve(async (req) => {
       });
     }
 
-    const aiResp = await fetch("https://api.anthropic.com/v1/messages", {
+    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        "x-api-key": ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-5",
-        max_tokens: 1024,
-        system:
-          "Analyze the writing samples and describe the writer's style in exactly 5 specific, actionable rules. Examples: 'Uses short sentences', 'Friendly and casual tone', 'Uses you and we a lot', 'Avoids corporate jargon', 'Ends with action-oriented sentences'. Return via the voice_rules tool.",
-        messages: [{ role: "user", content: `Writing samples:\n\n${text}` }],
+        model: "google/gemini-2.5-pro",
+        messages: [
+          {
+            role: "system",
+            content:
+              "Analyze the writing samples and describe the writer's style in exactly 5 specific, actionable rules. Examples: 'Uses short sentences', 'Friendly and casual tone', 'Uses you and we a lot', 'Avoids corporate jargon', 'Ends with action-oriented sentences'. Return via the voice_rules tool.",
+          },
+          { role: "user", content: `Writing samples:\n\n${text}` },
+        ],
         tools: [TOOL],
-        tool_choice: { type: "tool", name: "voice_rules" },
+        tool_choice: { type: "function", function: { name: "voice_rules" } },
       }),
     });
 
     if (!aiResp.ok) {
       const t = await aiResp.text();
-      console.error("anthropic", aiResp.status, t);
-      return new Response(JSON.stringify({ error: "AI provider error" }), {
-        status: aiResp.status === 429 ? 429 : 500,
+      console.error("lovable ai", aiResp.status, t);
+      const status = aiResp.status === 429 ? 429 : aiResp.status === 402 ? 402 : 500;
+      const msg = aiResp.status === 402
+        ? "Lovable AI credits exhausted. Add funds in Settings → Workspace → Usage."
+        : "AI provider error";
+      return new Response(JSON.stringify({ error: msg }), {
+        status,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
     const data = await aiResp.json();
-    const tool = (data.content || []).find(
-      (b: { type: string; name?: string }) => b.type === "tool_use" && b.name === "voice_rules",
-    );
-    const rules: string[] = tool?.input?.voice_rules ?? [];
+    const argStr = data.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+    let rules: string[] = [];
+    if (argStr) {
+      try { rules = JSON.parse(argStr).voice_rules ?? []; } catch { /* noop */ }
+    }
     if (!rules.length) {
       return new Response(JSON.stringify({ error: "Could not extract voice rules" }), {
         status: 500,

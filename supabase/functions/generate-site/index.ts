@@ -12,54 +12,57 @@ Sections should follow this order when relevant: hero, features, about, testimon
 Color values must be raw HSL triples like "221 83% 53%" (no hsl() wrapper, no commas).`;
 
 const TOOL = {
-  name: "build_site",
-  description: "Build a structured website definition.",
-  input_schema: {
-    type: "object",
-    properties: {
-      name: { type: "string" },
-      tagline: { type: "string" },
-      theme: {
-        type: "object",
-        properties: {
-          primary: { type: "string" },
-          background: { type: "string" },
-          foreground: { type: "string" },
-          accent: { type: "string" },
-        },
-        required: ["primary", "background", "foreground", "accent"],
-      },
-      sections: {
-        type: "array",
-        items: {
+  type: "function" as const,
+  function: {
+    name: "build_site",
+    description: "Build a structured website definition.",
+    parameters: {
+      type: "object",
+      properties: {
+        name: { type: "string" },
+        tagline: { type: "string" },
+        theme: {
           type: "object",
           properties: {
-            type: {
-              type: "string",
-              enum: ["hero", "features", "about", "testimonials", "pricing", "faq", "cta", "contact"],
-            },
-            heading: { type: "string" },
-            subheading: { type: "string" },
-            cta: { type: "string" },
-            items: {
-              type: "array",
+            primary: { type: "string" },
+            background: { type: "string" },
+            foreground: { type: "string" },
+            accent: { type: "string" },
+          },
+          required: ["primary", "background", "foreground", "accent"],
+        },
+        sections: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              type: {
+                type: "string",
+                enum: ["hero", "features", "about", "testimonials", "pricing", "faq", "cta", "contact"],
+              },
+              heading: { type: "string" },
+              subheading: { type: "string" },
+              cta: { type: "string" },
               items: {
-                type: "object",
-                properties: {
-                  title: { type: "string" },
-                  body: { type: "string" },
-                  price: { type: "string" },
-                  author: { type: "string" },
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    title: { type: "string" },
+                    body: { type: "string" },
+                    price: { type: "string" },
+                    author: { type: "string" },
+                  },
+                  required: ["title"],
                 },
-                required: ["title"],
               },
             },
+            required: ["type", "heading"],
           },
-          required: ["type", "heading"],
         },
       },
+      required: ["name", "tagline", "theme", "sections"],
     },
-    required: ["name", "tagline", "theme", "sections"],
   },
 };
 
@@ -69,8 +72,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY not configured");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -97,10 +100,10 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const prompt: string = (body.prompt || "").toString().slice(0, 4000);
-    const templateDraft = body.template_draft ?? null; // optional starting JSON
+    const templateDraft = body.template_draft ?? null;
     const businessName: string | undefined = body.business_name;
     const businessCity: string | undefined = body.business_city;
-    const stream: boolean = body.stream !== false; // default true
+    const stream: boolean = body.stream !== false;
 
     if (!prompt.trim() && !templateDraft) {
       return new Response(JSON.stringify({ error: "Prompt or template required" }), {
@@ -150,20 +153,20 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
     }
 
     const aiBody = {
-      model: "claude-sonnet-4-5",
-      max_tokens: 4096,
-      system: SYSTEM_PROMPT + voiceAddon,
-      messages: [{ role: "user", content: userMessage }],
+      model: "google/gemini-2.5-pro",
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT + voiceAddon },
+        { role: "user", content: userMessage },
+      ],
       tools: [TOOL],
-      tool_choice: { type: "tool", name: "build_site" },
+      tool_choice: { type: "function", function: { name: "build_site" } },
       stream,
     };
 
-    const aiResp = await fetch("https://api.anthropic.com/v1/messages", {
+    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        "x-api-key": ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(aiBody),
@@ -176,8 +179,14 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
+      if (aiResp.status === 402) {
+        return new Response(
+          JSON.stringify({ error: "Lovable AI credits exhausted. Add funds in Settings → Workspace → Usage." }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
       const t = await aiResp.text();
-      console.error("Anthropic error:", aiResp.status, t);
+      console.error("Lovable AI error:", aiResp.status, t);
       return new Response(JSON.stringify({ error: "AI provider error" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -186,24 +195,30 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
 
     if (!stream) {
       const data = await aiResp.json();
-      const toolUse = (data.content || []).find(
-        (b: { type: string; name?: string }) => b.type === "tool_use" && b.name === "build_site",
-      );
-      if (!toolUse?.input) {
+      const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+      const argStr = toolCall?.function?.arguments;
+      if (!argStr) {
         return new Response(JSON.stringify({ error: "AI returned no site" }), {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      const site = await persistSite(supabase, user.id, prompt, toolUse.input, profile, isUnlimited);
+      let parsed: unknown;
+      try { parsed = JSON.parse(argStr); } catch {
+        return new Response(JSON.stringify({ error: "AI returned invalid JSON" }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const site = await persistSite(supabase, user.id, prompt, parsed, profile, isUnlimited);
       return new Response(JSON.stringify({ site }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // STREAMING: parse Anthropic SSE, forward partial JSON deltas of the tool input as SSE to the client,
-    // accumulate the full JSON, then persist and emit a final "done" event with the saved site.
+    // STREAMING: parse OpenAI-style SSE, accumulate tool_call.function.arguments deltas,
+    // forward as our own "delta" events, then persist + emit "done".
     const reader = aiResp.body!.getReader();
     const decoder = new TextDecoder();
     const encoder = new TextEncoder();
@@ -225,23 +240,22 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
             leftover += decoder.decode(value, { stream: true });
             let nl: number;
             while ((nl = leftover.indexOf("\n")) !== -1) {
-              const line = leftover.slice(0, nl).replace(/\r$/, "");
+              let line = leftover.slice(0, nl);
               leftover = leftover.slice(nl + 1);
+              if (line.endsWith("\r")) line = line.slice(0, -1);
               if (!line.startsWith("data: ")) continue;
               const json = line.slice(6).trim();
-              if (!json) continue;
+              if (!json || json === "[DONE]") continue;
               try {
                 const evt = JSON.parse(json);
-                if (
-                  evt.type === "content_block_delta" &&
-                  evt.delta?.type === "input_json_delta" &&
-                  typeof evt.delta.partial_json === "string"
-                ) {
-                  accumulated += evt.delta.partial_json;
-                  send("delta", { partial_json: evt.delta.partial_json });
+                const delta = evt.choices?.[0]?.delta;
+                const argChunk = delta?.tool_calls?.[0]?.function?.arguments;
+                if (typeof argChunk === "string" && argChunk.length) {
+                  accumulated += argChunk;
+                  send("delta", { partial_json: argChunk });
                 }
               } catch {
-                // ignore partial / non-JSON lines
+                // ignore partial / non-JSON
               }
             }
           }
@@ -249,7 +263,7 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
           let parsed: unknown = null;
           try {
             parsed = JSON.parse(accumulated);
-          } catch (e) {
+          } catch {
             send("error", { error: "Failed to parse AI output" });
             controller.close();
             return;
