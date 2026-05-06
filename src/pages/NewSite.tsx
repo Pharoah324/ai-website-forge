@@ -100,7 +100,8 @@ export default function NewSite() {
     rec.continuous = true;
     rec.interimResults = true;
     rec.lang = navigator.language || "en-US";
-    baseTextRef.current = prompt ? prompt.trimEnd() + " " : "";
+    setLiveFinal("");
+    setLiveInterim("");
     rec.onstart = () => setListening(true);
     rec.onerror = (e: any) => {
       setListening(false);
@@ -110,7 +111,10 @@ export default function NewSite() {
         toast.error(`Voice input error: ${e.error}`);
       }
     };
-    rec.onend = () => setListening(false);
+    rec.onend = () => {
+      setListening(false);
+      setLiveInterim("");
+    };
     rec.onresult = (event: any) => {
       let finalText = "";
       let interimText = "";
@@ -119,7 +123,8 @@ export default function NewSite() {
         if (r.isFinal) finalText += r[0].transcript;
         else interimText += r[0].transcript;
       }
-      setPrompt(baseTextRef.current + finalText + interimText);
+      setLiveFinal(finalText);
+      setLiveInterim(interimText);
     };
     recognitionRef.current = rec;
     try {
@@ -127,6 +132,21 @@ export default function NewSite() {
     } catch {
       setListening(false);
     }
+  };
+
+  const appendTranscript = () => {
+    const text = (liveFinal + " " + liveInterim).trim();
+    if (!text) return;
+    setPrompt((p) => (p ? p.trimEnd() + " " : "") + text);
+    setLiveFinal("");
+    setLiveInterim("");
+    try { recognitionRef.current?.stop(); } catch { /* noop */ }
+  };
+
+  const discardTranscript = () => {
+    setLiveFinal("");
+    setLiveInterim("");
+    try { recognitionRef.current?.stop(); } catch { /* noop */ }
   };
 
   const { data: profile } = useProfile();
