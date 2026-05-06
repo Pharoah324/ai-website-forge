@@ -159,7 +159,13 @@ export default function NewSite() {
       toast.error("Business name and city required");
       return;
     }
-    if (noCredits) return toast.error("Out of build credits");
+    if (noCredits) {
+      toast.error("Out of build credits", {
+        action: { label: "Buy credits", onClick: () => setTopUpOpen(true) },
+      });
+      setTopUpOpen(true);
+      return;
+    }
 
     // Replace placeholders in the draft
     const replaced: SiteContent = JSON.parse(
