@@ -25,6 +25,7 @@ import {
   LayoutTemplate,
 } from "lucide-react";
 import { SitePreview } from "@/components/SitePreview";
+import { TopUpModal } from "@/components/TopUpModal";
 import type { SiteContent } from "@/types/site";
 import { toast } from "sonner";
 import { TEMPLATES, type Template } from "@/data/templates";
@@ -61,9 +62,11 @@ export default function NewSite() {
   const [content, setContent] = useState<SiteContent | null>(null);
   const [viewport, setViewport] = useState<keyof typeof VIEWPORTS>("desktop");
   const [templateModal, setTemplateModal] = useState<Template | null>(null);
+  const [topUpOpen, setTopUpOpen] = useState(false);
   const [bizName, setBizName] = useState("");
   const [bizCity, setBizCity] = useState("");
   const accumulatedRef = useRef("");
+  const abortRef = useRef<AbortController | null>(null);
   const { data: profile } = useProfile();
   const qc = useQueryClient();
   const navigate = useNavigate();
@@ -80,32 +83,73 @@ export default function NewSite() {
     setGenerating(true);
     setContent(null);
     accumulatedRef.current = "";
+    abortRef.current?.abort();
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
 
-    await streamGenerateSite(body, {
-      onDelta: (chunk) => {
-        accumulatedRef.current += chunk;
-        const partial = tryParsePartial(accumulatedRef.current);
-        if (partial) setContent(partial);
+    await streamGenerateSite(
+      body,
+      {
+        onDelta: (chunk) => {
+          accumulatedRef.current += chunk;
+          const partial = tryParsePartial(accumulatedRef.current);
+          if (partial) setContent(partial);
+        },
+        onDone: (site) => {
+          setContent(site.content);
+          qc.invalidateQueries({ queryKey: ["profile"] });
+          qc.invalidateQueries({ queryKey: ["sites"] });
+          toast.success("Site generated", {
+            action: { label: "Open", onClick: () => navigate(`/app/sites/${site.id}`) },
+          });
+          setGenerating(false);
+        },
+        onError: (msg, code) => {
+          setGenerating(false);
+          if (code === "aborted") return; // user cancelled — no toast
+          if (code === "no_credits") {
+            toast.error("Out of build credits", {
+              description: "Top up to keep generating.",
+              action: { label: "Buy credits", onClick: () => setTopUpOpen(true) },
+            });
+            setTopUpOpen(true);
+            return;
+          }
+          if (code === "rate_limited") {
+            toast.error("Rate limited", {
+              description: "Too many requests. Wait a moment and try again.",
+            });
+            return;
+          }
+          if (code === "stalled") {
+            toast.error("Generation stalled", {
+              description: "The AI took too long. Retry?",
+              action: { label: "Retry", onClick: () => runGeneration(body) },
+            });
+            return;
+          }
+          toast.error(msg, {
+            action: { label: "Retry", onClick: () => runGeneration(body) },
+          });
+        },
       },
-      onDone: (site) => {
-        setContent(site.content);
-        qc.invalidateQueries({ queryKey: ["profile"] });
-        qc.invalidateQueries({ queryKey: ["sites"] });
-        toast.success("Site generated", {
-          action: { label: "Open", onClick: () => navigate(`/app/sites/${site.id}`) },
-        });
-        setGenerating(false);
-      },
-      onError: (msg) => {
-        toast.error(msg);
-        setGenerating(false);
-      },
-    });
+      ctrl.signal,
+    );
+  };
+
+  const cancelGeneration = () => {
+    abortRef.current?.abort();
   };
 
   const generate = () => {
     if (!prompt.trim()) return toast.error("Describe your business first");
-    if (noCredits) return toast.error("Out of build credits");
+    if (noCredits) {
+      toast.error("Out of build credits", {
+        action: { label: "Buy credits", onClick: () => setTopUpOpen(true) },
+      });
+      setTopUpOpen(true);
+      return;
+    }
     runGeneration({ prompt });
   };
 
@@ -115,7 +159,13 @@ export default function NewSite() {
       toast.error("Business name and city required");
       return;
     }
-    if (noCredits) return toast.error("Out of build credits");
+    if (noCredits) {
+      toast.error("Out of build credits", {
+        action: { label: "Buy credits", onClick: () => setTopUpOpen(true) },
+      });
+      setTopUpOpen(true);
+      return;
+    }
 
     // Replace placeholders in the draft
     const replaced: SiteContent = JSON.parse(
@@ -160,7 +210,20 @@ export default function NewSite() {
         {noCredits && (
           <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-xs">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
-            <span>Out of build credits. Upgrade or buy a top-up pack.</span>
+            <div className="flex-1">
+              <p className="font-medium text-foreground">Out of build credits</p>
+              <p className="mt-0.5 text-muted-foreground">
+                Top up to keep generating, or upgrade your plan.
+              </p>
+              <Button
+                size="sm"
+                variant="default"
+                className="mt-2 h-7 px-2 text-xs"
+                onClick={() => setTopUpOpen(true)}
+              >
+                Buy credits
+              </Button>
+            </div>
           </div>
         )}
 
@@ -173,25 +236,37 @@ export default function NewSite() {
           disabled={generating}
         />
 
-        <Button
-          onClick={generate}
-          disabled={generating || !!noCredits || !prompt.trim()}
-          size="lg"
-          className="w-full"
-        >
-          {generating ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating…
-            </>
-          ) : (
-            <>
-              <Wand2 className="mr-2 h-4 w-4" /> Generate
-              <span className="ml-2 text-xs opacity-80">
-                {isUnlimited ? "(unlimited)" : "(1 credit)"}
-              </span>
-            </>
+        <div className="flex gap-2">
+          <Button
+            onClick={generate}
+            disabled={generating || !!noCredits || !prompt.trim()}
+            size="lg"
+            className="flex-1"
+          >
+            {generating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating…
+              </>
+            ) : (
+              <>
+                <Wand2 className="mr-2 h-4 w-4" /> Generate
+                <span className="ml-2 text-xs opacity-80">
+                  {isUnlimited ? "(unlimited)" : "(1 credit)"}
+                </span>
+              </>
+            )}
+          </Button>
+          {generating && (
+            <Button
+              onClick={cancelGeneration}
+              size="lg"
+              variant="outline"
+              type="button"
+            >
+              Cancel
+            </Button>
           )}
-        </Button>
+        </div>
 
         <div>
           <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -335,6 +410,8 @@ export default function NewSite() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <TopUpModal open={topUpOpen} onOpenChange={setTopUpOpen} />
     </div>
   );
 }
