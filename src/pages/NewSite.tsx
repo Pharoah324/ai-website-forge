@@ -317,6 +317,29 @@ export default function NewSite() {
               </>
             )}
           </Button>
+          {!generating && (
+            <Button
+              onClick={toggleDictation}
+              size="lg"
+              variant={listening ? "destructive" : "outline"}
+              type="button"
+              title={
+                !speechSupported
+                  ? "Voice input not supported in this browser"
+                  : listening
+                    ? "Stop recording"
+                    : "Dictate prompt"
+              }
+              aria-label={listening ? "Stop voice input" : "Start voice input"}
+              aria-pressed={listening}
+            >
+              {listening ? (
+                <MicOff className="h-4 w-4 animate-pulse" />
+              ) : (
+                <Mic className="h-4 w-4" />
+              )}
+            </Button>
+          )}
           {generating && (
             <Button
               onClick={cancelGeneration}
