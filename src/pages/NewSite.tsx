@@ -210,7 +210,20 @@ export default function NewSite() {
         {noCredits && (
           <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-xs">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
-            <span>Out of build credits. Upgrade or buy a top-up pack.</span>
+            <div className="flex-1">
+              <p className="font-medium text-foreground">Out of build credits</p>
+              <p className="mt-0.5 text-muted-foreground">
+                Top up to keep generating, or upgrade your plan.
+              </p>
+              <Button
+                size="sm"
+                variant="default"
+                className="mt-2 h-7 px-2 text-xs"
+                onClick={() => setTopUpOpen(true)}
+              >
+                Buy credits
+              </Button>
+            </div>
           </div>
         )}
 
