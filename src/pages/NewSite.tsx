@@ -25,6 +25,7 @@ import {
   LayoutTemplate,
 } from "lucide-react";
 import { SitePreview } from "@/components/SitePreview";
+import { TopUpModal } from "@/components/TopUpModal";
 import type { SiteContent } from "@/types/site";
 import { toast } from "sonner";
 import { TEMPLATES, type Template } from "@/data/templates";
