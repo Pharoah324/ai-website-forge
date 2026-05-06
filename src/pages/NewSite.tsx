@@ -317,6 +317,31 @@ export default function NewSite() {
           maxLength={4000}
           disabled={generating}
         />
+        {(listening || liveFinal || liveInterim) && (
+          <div className="rounded-md border border-primary/30 bg-primary/5 p-3">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary">
+                {listening && (
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+                  </span>
+                )}
+                {listening ? "Recording…" : "Transcript ready"}
+              </span>
+              <div className="flex gap-1">
+                <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={discardTranscript} type="button">Discard</Button>
+                <Button size="sm" className="h-7 px-2 text-xs" onClick={appendTranscript} disabled={!liveFinal.trim() && !liveInterim.trim()} type="button">Append to prompt</Button>
+              </div>
+            </div>
+            <p className="min-h-[2.5rem] text-sm leading-relaxed">
+              <span className="text-foreground">{liveFinal}</span>
+              {liveInterim && (<span className="italic text-muted-foreground"> {liveInterim}</span>)}
+              {!liveFinal && !liveInterim && (<span className="italic text-muted-foreground">Listening… start speaking.</span>)}
+            </p>
+          </div>
+        )}
+
 
         <div className="flex gap-2">
           <Button
