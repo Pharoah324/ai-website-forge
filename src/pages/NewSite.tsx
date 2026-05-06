@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useProfile } from "@/hooks/useProfile";
 import { useQueryClient } from "@tanstack/react-query";
@@ -23,6 +23,8 @@ import {
   Wand2,
   AlertTriangle,
   LayoutTemplate,
+  Mic,
+  MicOff,
 } from "lucide-react";
 import { SitePreview } from "@/components/SitePreview";
 import { TopUpModal } from "@/components/TopUpModal";
@@ -67,6 +69,65 @@ export default function NewSite() {
   const [bizCity, setBizCity] = useState("");
   const accumulatedRef = useRef("");
   const abortRef = useRef<AbortController | null>(null);
+  const recognitionRef = useRef<any>(null);
+  const baseTextRef = useRef("");
+  const [listening, setListening] = useState(false);
+  const SpeechRecognition =
+    typeof window !== "undefined"
+      ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+      : null;
+  const speechSupported = !!SpeechRecognition;
+
+  useEffect(() => {
+    return () => {
+      try { recognitionRef.current?.stop(); } catch { /* noop */ }
+    };
+  }, []);
+
+  const toggleDictation = () => {
+    if (!speechSupported) {
+      toast.error("Voice input not supported", {
+        description: "Try Chrome or Safari on desktop.",
+      });
+      return;
+    }
+    if (listening) {
+      try { recognitionRef.current?.stop(); } catch { /* noop */ }
+      return;
+    }
+    const rec = new SpeechRecognition();
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.lang = navigator.language || "en-US";
+    baseTextRef.current = prompt ? prompt.trimEnd() + " " : "";
+    rec.onstart = () => setListening(true);
+    rec.onerror = (e: any) => {
+      setListening(false);
+      if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+        toast.error("Microphone permission denied");
+      } else if (e.error !== "aborted" && e.error !== "no-speech") {
+        toast.error(`Voice input error: ${e.error}`);
+      }
+    };
+    rec.onend = () => setListening(false);
+    rec.onresult = (event: any) => {
+      let finalText = "";
+      let interimText = "";
+      for (let i = 0; i < event.results.length; i++) {
+        const r = event.results[i];
+        if (r.isFinal) finalText += r[0].transcript;
+        else interimText += r[0].transcript;
+      }
+      setPrompt(baseTextRef.current + finalText + interimText);
+    };
+    recognitionRef.current = rec;
+    try {
+      rec.start();
+    } catch {
+      setListening(false);
+    }
+  };
+
   const { data: profile } = useProfile();
   const qc = useQueryClient();
   const navigate = useNavigate();
@@ -256,6 +317,29 @@ export default function NewSite() {
               </>
             )}
           </Button>
+          {!generating && (
+            <Button
+              onClick={toggleDictation}
+              size="lg"
+              variant={listening ? "destructive" : "outline"}
+              type="button"
+              title={
+                !speechSupported
+                  ? "Voice input not supported in this browser"
+                  : listening
+                    ? "Stop recording"
+                    : "Dictate prompt"
+              }
+              aria-label={listening ? "Stop voice input" : "Start voice input"}
+              aria-pressed={listening}
+            >
+              {listening ? (
+                <MicOff className="h-4 w-4 animate-pulse" />
+              ) : (
+                <Mic className="h-4 w-4" />
+              )}
+            </Button>
+          )}
           {generating && (
             <Button
               onClick={cancelGeneration}
