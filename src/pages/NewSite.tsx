@@ -410,6 +410,8 @@ export default function NewSite() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <TopUpModal open={topUpOpen} onOpenChange={setTopUpOpen} />
     </div>
   );
 }
