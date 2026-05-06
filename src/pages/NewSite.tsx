@@ -62,9 +62,11 @@ export default function NewSite() {
   const [content, setContent] = useState<SiteContent | null>(null);
   const [viewport, setViewport] = useState<keyof typeof VIEWPORTS>("desktop");
   const [templateModal, setTemplateModal] = useState<Template | null>(null);
+  const [topUpOpen, setTopUpOpen] = useState(false);
   const [bizName, setBizName] = useState("");
   const [bizCity, setBizCity] = useState("");
   const accumulatedRef = useRef("");
+  const abortRef = useRef<AbortController | null>(null);
   const { data: profile } = useProfile();
   const qc = useQueryClient();
   const navigate = useNavigate();
