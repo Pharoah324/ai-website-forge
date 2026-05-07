@@ -1,7 +1,7 @@
 import * as LucideIcons from "lucide-react";
 import type { SiteContent, SiteSection, SiteSectionItem } from "@/types/site";
 
-type IconCmp = React.ComponentType<{ className?: string; size?: number; strokeWidth?: number }>;
+type IconCmp = React.ComponentType<{ className?: string; size?: number; strokeWidth?: number; style?: React.CSSProperties }>;
 
 function getIcon(name?: string): IconCmp | null {
   if (!name) return null;
