@@ -6,9 +6,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Globe, ArrowRight, Plus, Trash2, BarChart3 } from "lucide-react";
+import { Globe, ArrowRight, Plus, Trash2, BarChart3, Lock, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { useProfile } from "@/hooks/useProfile";
+import { useAdmin } from "@/hooks/useAdmin";
+import { getAccess } from "@/lib/optimizationAccess";
 
 type OptimizationProject = {
   id: string;
@@ -24,6 +27,9 @@ export default function Optimize() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [url, setUrl] = useState("");
+  const { data: profile } = useProfile();
+  const { data: adminLevel } = useAdmin();
+  const access = getAccess(profile?.plan ?? "free", !!adminLevel);
 
   const { data: projects } = useQuery({
     queryKey: ["optimization-projects", user?.id],
