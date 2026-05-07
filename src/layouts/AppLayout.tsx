@@ -22,6 +22,7 @@ import { LanguageSelector } from "@/components/LanguageSelector";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { BillingStatusBanner } from "@/components/BillingStatusBanner";
 import { useI18n } from "@/lib/i18n";
+import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 
 export default function AppLayout() {
   const { user, loading, signOut } = useAuth();
@@ -29,6 +30,7 @@ export default function AppLayout() {
   const { data: admin } = useAdmin();
   const { t } = useI18n();
   const navigate = useNavigate();
+  useSessionTimeout();
 
   const nav = [
     { to: "/app", label: t("nav.dashboard"), icon: LayoutDashboard, end: true },
