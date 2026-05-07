@@ -168,21 +168,21 @@ const STEPS = [
     emoji: "🎤",
     title: "Describe or Say It",
     body:
-      "Type your business description or tap the microphone and speak it. Any language. Any industry. The more detail you give, the better the result.",
+      "Type your business description or tap the microphone and speak it — in any language, anywhere in the world.",
   },
   {
     icon: Zap,
     emoji: "⚡",
-    title: "AI Builds It Live",
+    title: "AI Builds It in Minutes",
     body:
-      "Watch your website generate in real time. Real copy. Real colors. Real pages. SEO optimized automatically with Search Atlas keyword data.",
+      "Watch your professional website generate live. Real copy. Real SEO. Real pages. Automatically optimized with Search Atlas keyword data to rank on Google.",
   },
   {
     icon: Rocket,
     emoji: "🚀",
-    title: "Publish and Connect",
+    title: "Publish and Start Growing",
     body:
-      "Hit publish. Your site goes live instantly. Connect your GoHighLevel account and every lead flows straight into your pipeline automatically.",
+      "Hit publish. Your site goes live instantly at your own domain. Connect GoHighLevel and every lead flows straight into your pipeline automatically.",
   },
 ];
 
