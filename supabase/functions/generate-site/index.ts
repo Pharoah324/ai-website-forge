@@ -6,6 +6,8 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
 const SYSTEM_PROMPT = `You are a website generator. Given a business description (and optionally an existing template draft), return a complete, polished site structure.
 Use the build_site tool. Generate clear, conversion-focused copy. Pick a tasteful color palette that fits the industry.
 Sections should follow this order when relevant: hero, features, about, testimonials, pricing, faq, cta, contact.
