@@ -201,6 +201,8 @@ export default function Billing() {
         })}
       </div>
 
+      <GlobalCurrencyNote />
+
       <p className="mt-6 text-center text-xs text-muted-foreground">
         First-time setup: click <strong>Sync Stripe products</strong> above to create all plans &amp; packs in your Stripe account.
         After that, configure the webhook endpoint in Stripe pointing at <code className="rounded bg-muted px-1">/functions/v1/stripe-webhook</code>{" "}
