@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile, PLAN_LIMITS } from "@/hooks/useProfile";
 import { Button } from "@/components/ui/button";
-import { Plus, Sparkles, Globe, AlertTriangle } from "lucide-react";
+import { Plus, Sparkles, Globe, AlertTriangle, Wand2 } from "lucide-react";
 import { format } from "date-fns";
 
 export default function Dashboard() {
@@ -122,21 +122,23 @@ export default function Dashboard() {
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {sites.map((s) => (
-              <Link
+              <div
                 key={s.id}
-                to={`/app/sites/${s.id}`}
                 className="group rounded-lg border bg-card p-4 shadow-card transition-shadow hover:shadow-elevated"
               >
-                <h3 className="truncate font-semibold group-hover:text-primary">
-                  {s.name}
-                </h3>
-                <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
-                  {s.prompt}
-                </p>
-                <p className="mt-3 text-xs text-muted-foreground">
-                  {format(new Date(s.created_at), "MMM d, yyyy")}
-                </p>
-              </Link>
+                <Link to={`/app/sites/${s.id}`} className="block">
+                  <h3 className="truncate font-semibold group-hover:text-primary">{s.name}</h3>
+                  <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{s.prompt}</p>
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    {format(new Date(s.created_at), "MMM d, yyyy")}
+                  </p>
+                </Link>
+                <Button asChild size="sm" variant="outline" className="mt-3 w-full">
+                  <Link to={`/app/sites/${s.id}`}>
+                    <Wand2 className="mr-1 h-3.5 w-3.5" /> Edit with AI
+                  </Link>
+                </Button>
+              </div>
             ))}
           </div>
         )}
