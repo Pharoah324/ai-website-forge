@@ -22,7 +22,9 @@
     /* Brighter mint for accent text on dark — WCAG AA on #0A1A0F */
     --primary-glow: 152 76% 74%;
 
-    /* Lime CTA */
+    /* Lime CTA — black text for AAA contrast */
+    --cta: 84 81% 50%;
+    --cta-foreground: 0 0% 0%;
     --cta: 84 81% 44%;
     --cta-foreground: 140 40% 8%;
 
