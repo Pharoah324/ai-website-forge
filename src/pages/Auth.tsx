@@ -25,9 +25,12 @@ export default function Auth() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  const intent = params.get("intent");
+  const postAuthPath = intent === "optimize" ? "/app/optimize" : mode === "signup" ? "/app/onboarding" : "/app";
+
   useEffect(() => {
-    if (user) navigate("/app", { replace: true });
-  }, [user, navigate]);
+    if (user) navigate(postAuthPath, { replace: true });
+  }, [user, navigate, postAuthPath]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,7 +47,7 @@ export default function Auth() {
           email: parsed.data.email,
           password: parsed.data.password,
           options: {
-            emailRedirectTo: `${window.location.origin}/app`,
+            emailRedirectTo: `${window.location.origin}${postAuthPath}`,
             data: ref ? { affiliate_ref: ref } : undefined,
           },
         });
@@ -57,7 +60,7 @@ export default function Auth() {
         });
         if (error) throw error;
         toast.success("Welcome back");
-        navigate("/app");
+        navigate(postAuthPath);
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Authentication failed";
