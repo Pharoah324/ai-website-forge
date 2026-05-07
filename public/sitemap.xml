@@ -12,11 +12,6 @@
     <xhtml:link rel="alternate" hreflang="fr" href="https://builder.virtualengine.ai/" />
   </url>
   <url>
-    <loc>https://builder.virtualengine.ai/pricing</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://builder.virtualengine.ai/affiliates</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
