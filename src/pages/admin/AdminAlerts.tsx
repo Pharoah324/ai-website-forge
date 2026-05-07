@@ -200,7 +200,51 @@ export default function AdminAlerts() {
                   />
                 </div>
               </div>
-              <DialogFooter className="gap-2">
+              <DialogFooter className="flex-wrap gap-2">
+                {selected.alert_type === "account_paused" && selected.affected_user_id && (
+                  <>
+                    <Button
+                      variant="outline"
+                      className="border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/10"
+                      onClick={async () => {
+                        const { error } = await (supabase as any).rpc("resume_account", {
+                          _uid: selected.affected_user_id, _notes: notes || null,
+                        });
+                        if (error) return toast.error(error.message);
+                        toast.success("Account resumed");
+                        update.mutate(
+                          { id: selected.id, patch: { status: "resolved", action_notes: notes || "Resumed" } },
+                          { onSuccess: () => setSelected(null) },
+                        );
+                      }}
+                    >
+                      <Play className="mr-2 h-4 w-4" /> Resume Account
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="border-red-500/40 text-red-300 hover:bg-red-500/10"
+                      onClick={async () => {
+                        if (!confirm("Permanently suspend this account?")) return;
+                        const { error } = await (supabase as any)
+                          .from("account_flags")
+                          .insert({
+                            user_id: selected.affected_user_id,
+                            flag_type: "suspended",
+                            triggered_by: "admin",
+                            reason: notes || "Manual suspension",
+                          });
+                        if (error) return toast.error(error.message);
+                        toast.success("Account suspended");
+                        update.mutate(
+                          { id: selected.id, patch: { status: "resolved", action_notes: `Suspended. ${notes}` } },
+                          { onSuccess: () => setSelected(null) },
+                        );
+                      }}
+                    >
+                      <Ban className="mr-2 h-4 w-4" /> Suspend Account
+                    </Button>
+                  </>
+                )}
                 <Button
                   variant="outline"
                   onClick={() =>
