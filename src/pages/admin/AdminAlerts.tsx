@@ -11,8 +11,10 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { AlertTriangle, AlertCircle, Info, CheckCircle2, Eye } from "lucide-react";
+import { AlertTriangle, AlertCircle, Info, CheckCircle2, Eye, Play, Ban } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const sevStyle: Record<string, string> = {
   critical: "bg-red-500/15 text-red-400 border-red-500/30",
@@ -32,6 +34,8 @@ const typeLabel: Record<string, string> = {
   server_error: "500 Error",
   credit_anomaly: "Credit Anomaly",
   signup_abuse: "Signup Abuse",
+  account_paused: "Account Paused",
+  grace_period_expired: "Grace Expired",
   other: "Other",
 };
 
