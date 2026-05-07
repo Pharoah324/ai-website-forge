@@ -24,6 +24,7 @@ export default function AdminLayout() {
     { to: "/admin/alerts", label: "Alerts", icon: Bell, badge: unreadAlerts },
     { to: "/admin/announcements", label: "Announcements", icon: Megaphone },
     { to: "/admin/codes", label: "Access Codes", icon: KeyRound },
+    { to: "/admin/launch-tests", label: "Launch Tests", icon: FlaskConical },
     ...(isSuper ? [{ to: "/admin/admins", label: "Admin Users", icon: UserCog }] : []),
   ];
 
