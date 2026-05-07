@@ -145,7 +145,7 @@ export function ChatWidget() {
       </button>
 
       {open && (
-        <div className="animate-fade-in fixed bottom-24 right-6 z-50 flex h-[480px] w-[360px] max-w-[calc(100vw-2rem)] flex-col rounded-xl border border-primary/30 bg-card shadow-elevated">
+        <div dir={rtl ? "rtl" : "ltr"} className={`animate-fade-in fixed bottom-24 ${rtl ? "left-6" : "right-6"} z-50 flex h-[480px] w-[360px] max-w-[calc(100vw-2rem)] flex-col rounded-xl border border-primary/30 bg-card shadow-elevated`}>
           <div className="flex items-center justify-between rounded-t-xl bg-gradient-primary px-4 py-3 text-primary-foreground">
             <div>
               <p className="text-sm font-semibold">Virtual Engine Builder</p>
