@@ -20,6 +20,11 @@ export type Profile = {
   brand_voice_samples: string | null;
   brand_voice_active: boolean;
   voice_rules: string[] | null;
+  billing_status: "active" | "past_due" | "canceled" | "paused" | "disputed";
+  payment_failed_at: string | null;
+  grace_period_ends_at: string | null;
+  dispute_flagged: boolean;
+  plan_before_downgrade: string | null;
 };
 
 export const PLAN_LIMITS: Record<

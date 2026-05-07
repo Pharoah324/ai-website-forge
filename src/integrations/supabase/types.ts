@@ -604,6 +604,7 @@ export type Database = {
           avatar_url: string | null
           billing_cycle_start: string
           billing_interval: string
+          billing_status: string
           brand_voice_active: boolean
           brand_voice_samples: string | null
           build_credits: number
@@ -611,11 +612,16 @@ export type Database = {
           created_at: string
           current_period_start: string
           display_name: string | null
+          dispute_flagged: boolean
           email: string | null
+          grace_period_ends_at: string | null
           id: string
+          last_invoice_id: string | null
           monthly_build_limit: number
           monthly_runtime_limit: number
+          payment_failed_at: string | null
           plan: Database["public"]["Enums"]["plan_tier"]
+          plan_before_downgrade: string | null
           role: Database["public"]["Enums"]["user_role"]
           rollover_build_credits: number
           rollover_runtime_credits: number
@@ -632,6 +638,7 @@ export type Database = {
           avatar_url?: string | null
           billing_cycle_start?: string
           billing_interval?: string
+          billing_status?: string
           brand_voice_active?: boolean
           brand_voice_samples?: string | null
           build_credits?: number
@@ -639,11 +646,16 @@ export type Database = {
           created_at?: string
           current_period_start?: string
           display_name?: string | null
+          dispute_flagged?: boolean
           email?: string | null
+          grace_period_ends_at?: string | null
           id: string
+          last_invoice_id?: string | null
           monthly_build_limit?: number
           monthly_runtime_limit?: number
+          payment_failed_at?: string | null
           plan?: Database["public"]["Enums"]["plan_tier"]
+          plan_before_downgrade?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           rollover_build_credits?: number
           rollover_runtime_credits?: number
@@ -660,6 +672,7 @@ export type Database = {
           avatar_url?: string | null
           billing_cycle_start?: string
           billing_interval?: string
+          billing_status?: string
           brand_voice_active?: boolean
           brand_voice_samples?: string | null
           build_credits?: number
@@ -667,11 +680,16 @@ export type Database = {
           created_at?: string
           current_period_start?: string
           display_name?: string | null
+          dispute_flagged?: boolean
           email?: string | null
+          grace_period_ends_at?: string | null
           id?: string
+          last_invoice_id?: string | null
           monthly_build_limit?: number
           monthly_runtime_limit?: number
+          payment_failed_at?: string | null
           plan?: Database["public"]["Enums"]["plan_tier"]
+          plan_before_downgrade?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           rollover_build_credits?: number
           rollover_runtime_credits?: number
@@ -925,6 +943,7 @@ export type Database = {
         }
         Returns: Json
       }
+      downgrade_past_due_users: { Args: never; Returns: Json }
       generate_affiliate_code: { Args: never; Returns: string }
       get_admin_level: {
         Args: { _user_id: string }
@@ -955,6 +974,9 @@ export type Database = {
         | "credit_anomaly"
         | "signup_abuse"
         | "other"
+        | "payment_failed"
+        | "grace_period_expired"
+        | "subscription_canceled"
       affiliate_status: "pending" | "active" | "suspended"
       affiliate_tier: "starter" | "pro" | "elite" | "agency_partner"
       conversion_status: "pending" | "confirmed" | "paid"
@@ -1120,6 +1142,9 @@ export const Constants = {
         "credit_anomaly",
         "signup_abuse",
         "other",
+        "payment_failed",
+        "grace_period_expired",
+        "subscription_canceled",
       ],
       affiliate_status: ["pending", "active", "suspended"],
       affiliate_tier: ["starter", "pro", "elite", "agency_partner"],
