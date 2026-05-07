@@ -30,7 +30,7 @@ export default function AdminUsers() {
   const setPlan = async (id: string) => {
     const plan = prompt("Plan (free/starter/builder/pro/agency):", "builder");
     if (!plan) return;
-    const { error } = await supabase.from("profiles").update({ plan }).eq("id", id);
+    const { error } = await supabase.from("profiles").update({ plan: plan as any }).eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Plan updated");
     qc.invalidateQueries({ queryKey: ["admin-users"] });

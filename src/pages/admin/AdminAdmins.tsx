@@ -18,19 +18,19 @@ export default function AdminAdmins() {
     // find user
     const { data: prof } = await supabase.from("profiles").select("id, display_name, email").eq("email", form.email).maybeSingle();
     if (!prof) return toast.error("No user with that email — they must sign up first.");
-    const { error } = await supabase.from("admin_users").insert({
-      user_id: prof.id, email: prof.email, name: prof.display_name, access_level: form.level, notes: form.notes,
-    });
+    const { error } = await supabase.from("admin_users").insert([{
+      user_id: prof.id, email: prof.email, name: prof.display_name, access_level: form.level as any, notes: form.notes,
+    }]);
     if (error) return toast.error(error.message);
     await supabase.from("profiles").update({ role: "admin" }).eq("id", prof.id);
     toast.success("Admin added");
     setForm({ email: "", level: "admin", notes: "" });
     qc.invalidateQueries({ queryKey: ["admins"] });
   };
-  const remove = async (id: string, userId: string, level: string) => {
+  const remove = async (userId: string, level: string) => {
     if (level === "super_admin") return toast.error("Super admin can only be removed in DB");
     if (!confirm("Remove admin access?")) return;
-    await supabase.from("admin_users").delete().eq("id", id);
+    await supabase.from("admin_users").delete().eq("user_id", userId);
     await supabase.from("profiles").update({ role: "user" }).eq("id", userId);
     qc.invalidateQueries({ queryKey: ["admins"] });
   };
@@ -61,7 +61,7 @@ export default function AdminAdmins() {
                   <td className="capitalize">{a.access_level}</td>
                   <td className="text-xs">{a.last_active ? new Date(a.last_active).toLocaleDateString() : "—"}</td>
                   <td className="text-xs text-muted-foreground">{a.notes}</td>
-                  <td><Button size="sm" variant="outline" onClick={() => remove(a.id, a.user_id, a.access_level)}>Remove</Button></td>
+                  <td><Button size="sm" variant="outline" onClick={() => remove(a.user_id, a.access_level)}>Remove</Button></td>
                 </tr>
               ))}
             </tbody>
