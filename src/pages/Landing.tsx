@@ -422,9 +422,10 @@ export default function Landing() {
             <span className="font-bold text-primary-glow">12,400+</span> Websites Built ·{" "}
             <span className="font-bold text-primary-glow">3,200+</span> Active Users ·{" "}
             <span className="font-bold text-primary-glow">10 Min</span> Avg Build Time ·{" "}
-            <span className="font-bold text-primary-glow">50+</span> Languages ·{" "}
-            <span className="font-bold text-primary-glow">190+</span> Countries ·{" "}
             <span className="font-bold text-primary-glow">4.9★</span> Rating
+          </p>
+          <p className="mt-2 text-center text-sm font-semibold text-primary-glow md:text-base">
+            Available in 50+ Languages · 190+ Countries · 8 Billion Potential Customers
           </p>
         </div>
       </section>
