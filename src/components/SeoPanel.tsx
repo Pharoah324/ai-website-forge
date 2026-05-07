@@ -59,7 +59,7 @@ export function SeoPanel({ siteId }: { siteId: string }) {
       const { data, error } = await supabase
         .from("site_seo").select("*").eq("site_id", siteId).maybeSingle();
       if (error) throw error;
-      return data as SeoRow | null;
+      return data as unknown as SeoRow | null;
     },
   });
 
