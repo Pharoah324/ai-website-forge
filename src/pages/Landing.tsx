@@ -865,10 +865,11 @@ export default function Landing() {
             <div>
               <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-navy-foreground/80">Languages</h4>
               <ul className="space-y-2 text-sm text-navy-foreground/70">
-                <li>🇺🇸 English</li>
-                <li>🇲🇽 Español</li>
-                <li>🇧🇷 Português</li>
-                <li>🇫🇷 Français</li>
+                <li>🌎 Americas — EN, ES, PT, FR</li>
+                <li>🌍 Europe & Africa — 20+ languages</li>
+                <li>🌏 Asia & Pacific — 15+ languages</li>
+                <li>🕌 Middle East — AR, HE, FA, UR (RTL)</li>
+                <li className="text-primary-glow">+ 50 total languages worldwide</li>
               </ul>
             </div>
             <div>
