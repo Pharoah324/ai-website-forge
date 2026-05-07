@@ -209,6 +209,12 @@ const LANGUAGES = [
 const TESTIMONIALS = [
   {
     quote:
+      "I was quoted $4,500 by a web agency. I described my business to Virtual Engine Builder and had a live website in 8 minutes. It ranks on Google and connects to my GoHighLevel account automatically. I genuinely could not believe it.",
+    name: "David M.",
+    role: "HVAC contractor, Texas",
+  },
+  {
+    quote:
       "I described my medspa and had a fully designed website with online booking in under 2 minutes. The GoHighLevel connection is everything — leads go straight into my pipeline without me touching anything.",
     name: "Jessica R.",
     role: "Glow Aesthetics Miami",
