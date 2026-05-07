@@ -345,9 +345,9 @@ async function persistSite(
   userId: string,
   prompt: string,
   siteJson: unknown,
-  profile: { build_credits: number },
-  isUnlimited: boolean,
-  isAdmin: boolean,
+  _profile: { build_credits: number },
+  _isUnlimited: boolean,
+  _isAdmin: boolean,
 ) {
   const name = (siteJson as { name?: string }).name || "Untitled Site";
   const { data: site, error: siteErr } = await supabase
@@ -355,26 +355,14 @@ async function persistSite(
     .insert({ user_id: userId, name, prompt, content: siteJson })
     .select()
     .single();
-  if (siteErr) throw new Error("Failed to save site");
-
-  if (isAdmin) {
-    await supabase.from("admin_usage_log").insert({
-      admin_user_id: userId,
-      action_type: "site_generated",
-      notes: `Generated site: ${name}`,
-    });
-  } else if (!isUnlimited) {
-    await supabase
-      .from("profiles")
-      .update({ build_credits: profile.build_credits - 1 })
-      .eq("id", userId);
-    await supabase.from("credit_ledger").insert({
-      user_id: userId,
-      kind: "build",
-      amount: -1,
-      reason: "generate",
-      description: `Generated site: ${name}`,
-    });
+  if (siteErr) {
+    // Storage cap trigger raises 'storage_limit:sites:<n>:<plan>'
+    const msg = siteErr.message || "";
+    if (msg.includes("storage_limit:sites")) {
+      const parts = msg.split(":");
+      throw new Error(`storage_limit:sites:${parts[2]}:${parts[3]}`);
+    }
+    throw new Error("Failed to save site");
   }
   return site;
 }
