@@ -167,7 +167,12 @@ export async function streamGenerateSite(
               cbs.onDone(data.site);
             } else if (currentEvent === "error") {
               finished = true;
-              cbs.onError(data.error || "Generation error", "server");
+              const raw = data.error || "Generation error";
+              const cap = /storage_limit:sites:(\d+):(\w+)/.exec(raw);
+              const friendly = cap
+                ? `You've reached your plan limit of ${cap[1]} site${cap[1] === "1" ? "" : "s"} on the ${cap[2]} plan. Upgrade to save more.`
+                : raw;
+              cbs.onError(friendly, "server");
             }
           } catch {
             // Partial JSON across chunks: re-buffer and wait for more.
