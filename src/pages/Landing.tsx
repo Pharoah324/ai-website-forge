@@ -139,11 +139,11 @@ const WHY_CARDS = [
   },
   {
     icon: Globe,
-    emoji: "🌎",
-    title: "Built for North & South America",
+    emoji: "🌍",
+    title: "Built for Every Country Worldwide",
     body:
-      "Generate websites in English, Spanish, Portuguese, and French. Type your description in any language and get a fully built site in that same language — reaching 1.2 billion potential customers.",
-    badge: "4 Languages",
+      "Generate websites in 50+ languages — English, Spanish, Mandarin, Arabic, Hindi, Japanese, French, German, and any other major world language. Type your description in any language and get a fully native website in that same language. RTL support for Arabic, Hebrew, Persian, and Urdu.",
+    badge: "50+ Languages",
   },
 ];
 
