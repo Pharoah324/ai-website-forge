@@ -479,7 +479,7 @@ export default function NewSite() {
       </div>
 
       {/* Preview */}
-      <div className="flex min-w-0 flex-col bg-muted/30">
+      <div className={`${showChat && mobileTab === "chat" ? "hidden lg:flex" : "flex"} min-w-0 flex-col bg-muted/30`}>
         <div className="flex items-center justify-between border-b bg-card px-4 py-2">
           <div className="flex items-center gap-1 rounded-md border bg-background p-0.5">
             {(Object.keys(VIEWPORTS) as Array<keyof typeof VIEWPORTS>).map((k) => {
