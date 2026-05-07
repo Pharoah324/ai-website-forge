@@ -1,12 +1,13 @@
-import { useState } from "react";
 import { Navigate, NavLink, Outlet, Link } from "react-router-dom";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useAuth } from "@/contexts/AuthContext";
-import { ShieldCheck, LayoutDashboard, Users, Globe, DollarSign, Megaphone, KeyRound, UserCog, ArrowLeft } from "lucide-react";
+import { useUnreadAlertCount } from "@/hooks/useAdminAlerts";
+import { ShieldCheck, LayoutDashboard, Users, Globe, DollarSign, Megaphone, KeyRound, UserCog, ArrowLeft, Bell } from "lucide-react";
 
 export default function AdminLayout() {
   const { user, loading } = useAuth();
   const { data: admin, isLoading } = useAdmin();
+  const { data: unreadAlerts = 0 } = useUnreadAlertCount();
 
   if (loading || isLoading) return <div className="p-10 text-muted-foreground">Loading…</div>;
   if (!user) return <Navigate to="/auth" replace />;
@@ -19,6 +20,7 @@ export default function AdminLayout() {
     { to: "/admin/users", label: "Users", icon: Users },
     { to: "/admin/sites", label: "Sites", icon: Globe },
     { to: "/admin/affiliates", label: "Affiliates", icon: DollarSign },
+    { to: "/admin/alerts", label: "Alerts", icon: Bell, badge: unreadAlerts },
     { to: "/admin/announcements", label: "Announcements", icon: Megaphone },
     { to: "/admin/codes", label: "Access Codes", icon: KeyRound },
     ...(isSuper ? [{ to: "/admin/admins", label: "Admin Users", icon: UserCog }] : []),
