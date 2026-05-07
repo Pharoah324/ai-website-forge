@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/dialog";
 import { SitePreview } from "@/components/SitePreview";
 import { RefinementChat } from "@/components/RefinementChat";
+import { SeoPanel } from "@/components/SeoPanel";
 import { TopUpModal } from "@/components/TopUpModal";
 import type { SiteContent, SiteSection } from "@/types/site";
 import { toast } from "sonner";
