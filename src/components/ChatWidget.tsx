@@ -63,7 +63,7 @@ export function ChatWidget() {
       acc += chunk;
       setMessages((prev) => {
         const last = prev[prev.length - 1];
-        if (last?.role === "assistant" && last.content !== "Hi! Ask me anything about building your website.") {
+        if (last?.role === "assistant" && last.content !== greeting) {
           // only replace if it's the in-progress assistant message
           if ((last as Msg & { _pending?: boolean })._pending) {
             return prev.map((m, i) =>
