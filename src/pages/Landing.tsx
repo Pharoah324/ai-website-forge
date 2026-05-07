@@ -588,8 +588,8 @@ export default function Landing() {
           <FadeIn className="mx-auto max-w-2xl text-center">
             <h2 className="text-4xl font-bold tracking-tight md:text-5xl">Start Free. Scale When Ready.</h2>
             <p className="mt-3 text-muted-foreground">
-              Every plan includes GoHighLevel integration, Search Atlas SEO, credit rollover, and all 4 languages. No
-              hidden fees. No surprises.
+              Every plan connects to your own GoHighLevel account. Advanced SEO, credit rollover, and growth tools
+              unlock starting at <span className="font-semibold text-primary">Builder ($49)</span>.
             </p>
           </FadeIn>
           <div className="mt-12 grid gap-4 md:grid-cols-3 lg:grid-cols-5">
@@ -600,15 +600,16 @@ export default function Landing() {
                 <div
                   key={key}
                   className={`relative flex flex-col rounded-xl border bg-background p-6 ${
-                    featured ? "border-primary shadow-elevated lg:scale-105" : "shadow-card"
+                    featured ? "border-primary shadow-elevated lg:scale-105 ring-2 ring-primary/40" : "shadow-card"
                   }`}
                 >
                   {featured && (
-                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary-foreground">
-                      Most Popular
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-cta px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-cta-foreground shadow-glow-cta">
+                      ★ Most Popular
                     </span>
                   )}
                   <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">{p.label}</h3>
+                  <p className="mt-1 text-[11px] text-muted-foreground/80">{PLAN_TAGLINES[key]}</p>
                   <div className="mt-3 flex items-baseline gap-1">
                     <span className="text-4xl font-bold">${p.price}</span>
                     {p.price > 0 && <span className="text-sm text-muted-foreground">/mo</span>}
@@ -626,12 +627,19 @@ export default function Landing() {
                     className={`mt-6 w-full ${featured ? "bg-cta text-cta-foreground hover:bg-cta/90" : ""}`}
                     variant={featured ? "default" : "outline"}
                   >
-                    <Link to="/auth?mode=signup">{p.price === 0 ? "Start Free" : "Choose plan"}</Link>
+                    <Link to="/auth?mode=signup">{p.price === 0 ? "Start Free" : featured ? "Get Builder" : "Choose plan"}</Link>
                   </Button>
                   <ul className="mt-5 space-y-1.5 text-[11px] text-muted-foreground">
-                    {PLAN_TRUST.map((t) => (
-                      <li key={t} className="flex items-center gap-1.5">
-                        <Check className="h-3 w-3 text-primary" /> {t}
+                    {PLAN_TRUST[key].map((t) => (
+                      <li key={t} className="flex flex-col gap-0.5">
+                        <span className="flex items-center gap-1.5">
+                          <Check className="h-3 w-3 text-primary" /> {t}
+                        </span>
+                        {t === "GoHighLevel ready" && (
+                          <span className="ml-4 text-[10px] text-muted-foreground/70">
+                            Connect your own GoHighLevel account seamlessly.
+                          </span>
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -639,6 +647,23 @@ export default function Landing() {
               );
             })}
           </div>
+
+          {/* CRM SETUP UPSELL */}
+          <FadeIn className="mt-10">
+            <div className="mx-auto max-w-3xl rounded-xl border border-primary/30 bg-primary/5 p-5 text-center sm:flex sm:items-center sm:justify-between sm:text-left">
+              <div>
+                <p className="text-sm font-semibold">Need a CRM setup?</p>
+                <p className="text-xs text-muted-foreground">
+                  Virtual Engine can help connect and configure your GoHighLevel account.
+                </p>
+              </div>
+              <Button asChild variant="outline" size="sm" className="mt-3 sm:mt-0">
+                <a href="https://virtualengine.ai/contact" target="_blank" rel="noopener noreferrer">
+                  Talk to our team <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                </a>
+              </Button>
+            </div>
+          </FadeIn>
 
           {/* Top-up packs */}
           <FadeIn className="mt-16">
