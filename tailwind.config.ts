@@ -59,6 +59,7 @@ export default {
           DEFAULT: "hsl(var(--navy))",
           foreground: "hsl(var(--navy-foreground))",
           muted: "hsl(var(--navy-muted))",
+          mint: "hsl(var(--navy-mint))",
         },
         cta: {
           DEFAULT: "hsl(var(--cta))",

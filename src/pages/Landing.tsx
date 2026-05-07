@@ -240,9 +240,9 @@ const TESTIMONIALS = [
 ];
 
 function Cell({ value }: { value: string | boolean }) {
-  if (value === true) return <Check className="mx-auto h-4 w-4 text-primary" />;
-  if (value === false) return <X className="mx-auto h-4 w-4 text-muted-foreground/50" />;
-  return <span className="text-sm">{value}</span>;
+  if (value === true) return <Check className="mx-auto h-5 w-5 text-primary-glow" />;
+  if (value === false) return <X className="mx-auto h-5 w-5 text-destructive/80" />;
+  return <span className="text-base text-navy-foreground">{value}</span>;
 }
 
 function FadeIn({ children, className = "" }: { children: React.ReactNode; className?: string }) {
@@ -284,7 +284,7 @@ export default function Landing() {
           </Link>
           <div className="flex items-center gap-3">
             <LanguageSelector />
-            <Link to="/auth" className="text-sm text-navy-foreground/80 hover:text-navy-foreground">
+            <Link to="/auth" className="text-sm text-navy-foreground/95 hover:text-navy-foreground">
               Sign in
             </Link>
             <Button asChild size="sm" className="bg-cta text-cta-foreground hover:bg-cta/90">
@@ -309,7 +309,7 @@ export default function Landing() {
             <br />
             <span className="text-gradient">You Can Build It Yourself in 10 Minutes.</span>
           </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-balance text-lg text-navy-foreground/75">
+          <p className="mx-auto mt-6 max-w-2xl text-balance text-xl leading-relaxed text-navy-foreground md:text-2xl">
             Websites, funnels, and landing pages — powered by embedded AI and built to rank on Google. Live before lunch.
           </p>
           <div className="mt-10 flex flex-wrap justify-center gap-3">
@@ -329,7 +329,7 @@ export default function Landing() {
               </a>
             </Button>
           </div>
-          <p className="mt-5 text-xs text-navy-foreground/60">
+          <p className="mt-5 text-sm text-navy-mint">
             Free to start · No credit card · No tech skills needed · GoHighLevel pipeline ready
           </p>
           <p className="mt-2 text-xs font-semibold text-primary-glow">
@@ -400,7 +400,7 @@ export default function Landing() {
                     {c.icon}
                     <h3 className="text-lg font-semibold">{c.title}</h3>
                   </div>
-                  <ul className="space-y-2 text-sm text-muted-foreground">
+                  <ul className="space-y-2 text-base text-foreground/75">
                     {c.items.map((it) => (
                       <li key={it} className="flex items-start gap-2">
                         <span className={c.tone === "good" ? "text-primary" : "text-muted-foreground/60"}>•</span>
@@ -451,7 +451,7 @@ export default function Landing() {
                     {c.emoji}
                   </div>
                   <h3 className="mb-3 text-xl font-semibold">{c.title}</h3>
-                  <p className="text-sm leading-relaxed text-muted-foreground">{c.body}</p>
+                  <p className="text-base leading-relaxed text-foreground/80">{c.body}</p>
                   <div className="mt-5 inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary">
                     <CheckCircle2 className="h-3 w-3" /> {c.badge}
                   </div>
@@ -491,7 +491,7 @@ export default function Landing() {
               <FadeIn key={f.title}>
                 <div className="h-full rounded-xl border border-primary/15 bg-card p-6 shadow-card transition-all hover:border-primary/40 hover:shadow-elevated">
                   <h3 className="text-base font-semibold">{f.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{f.body}</p>
+                  <p className="mt-2 text-base leading-relaxed text-foreground/80">{f.body}</p>
                 </div>
               </FadeIn>
             ))}
@@ -507,7 +507,7 @@ export default function Landing() {
                 <h3 className="mt-3 text-2xl font-bold tracking-tight md:text-3xl">
                   Connect it. Optimize it. Scale it.
                 </h3>
-                <p className="mt-2 text-sm text-muted-foreground md:text-base">
+                <p className="mt-2 text-base text-foreground/75 md:text-base">
                   Connect your existing website and let Virtual Engine analyze SEO performance, identify growth
                   opportunities, recommend improvements, and optimize your business systems.
                 </p>
@@ -527,7 +527,7 @@ export default function Landing() {
         <div className="container max-w-5xl">
           <FadeIn className="mx-auto mb-12 max-w-3xl text-center">
             <h2 className="text-4xl font-bold tracking-tight md:text-5xl">Connect your systems.</h2>
-            <p className="mt-3 text-lg text-navy-foreground/70">
+            <p className="mt-3 text-lg text-navy-foreground/90">
               Plug in the tools your business already runs on. Virtual Engine ties them into one growth engine.
             </p>
           </FadeIn>
@@ -559,7 +559,7 @@ export default function Landing() {
             <h2 className="text-balance text-4xl font-bold tracking-tight md:text-5xl">
               Why Smart Business Owners Are Switching to Virtual Engine Builder
             </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-lg text-navy-foreground/70">
+            <p className="mx-auto mt-4 max-w-2xl text-lg text-navy-foreground/90">
               Same price as the competition. Ten features they don't have.
             </p>
           </FadeIn>
@@ -568,32 +568,32 @@ export default function Landing() {
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse text-sm">
                   <thead>
-                    <tr className="bg-navy-muted/80 text-navy-foreground">
-                      <th className="px-4 py-4 text-left font-semibold">Feature</th>
-                      <th className="px-4 py-4 text-center font-semibold text-navy-foreground/70">Base44</th>
-                      <th className="px-4 py-4 text-center font-semibold text-navy-foreground/70">Lovable</th>
-                      <th className="px-4 py-4 text-center font-bold text-primary-foreground" style={{ background: "hsl(var(--primary))" }}>
+                    <tr className="bg-navy-muted text-navy-foreground">
+                      <th className="px-5 py-5 text-left text-base font-semibold">Feature</th>
+                      <th className="px-5 py-5 text-center text-base font-semibold">Base44</th>
+                      <th className="px-5 py-5 text-center text-base font-semibold">Lovable</th>
+                      <th className="px-5 py-5 text-center text-base font-bold text-primary-foreground" style={{ background: "hsl(var(--primary))" }}>
                         Virtual Engine Builder
                       </th>
                     </tr>
                   </thead>
                   <tbody>
                     {COMPARISON_ROWS.map((r, i) => (
-                      <tr key={r.feature} className={i % 2 ? "bg-navy/40" : "bg-navy-muted/30"}>
-                        <td className="px-4 py-3.5 text-navy-foreground/90">{r.feature}</td>
-                        <td className="px-4 py-3.5 text-center text-navy-foreground/60">
+                      <tr key={r.feature} className={i % 2 ? "bg-navy/50" : "bg-navy-muted/50"}>
+                        <td className="px-5 py-4 text-base text-navy-foreground">{r.feature}</td>
+                        <td className="px-5 py-4 text-center text-navy-foreground/85">
                           <Cell value={r.base} />
                         </td>
-                        <td className="px-4 py-3.5 text-center text-navy-foreground/60">
+                        <td className="px-5 py-4 text-center text-navy-foreground/85">
                           <Cell value={r.lov} />
                         </td>
                         <td
-                          className="px-4 py-3.5 text-center font-semibold text-primary-glow"
-                          style={{ background: "rgba(16,185,129,0.12)" }}
+                          className="px-5 py-4 text-center text-base font-semibold text-navy-foreground"
+                          style={{ background: "rgba(16,185,129,0.18)" }}
                         >
                           {typeof r.veb === "string" ? (
                             <span className="inline-flex items-center gap-1.5">
-                              <Check className="h-4 w-4 text-primary" />
+                              <Check className="h-5 w-5 text-primary-glow" />
                               {r.veb}
                             </span>
                           ) : null}
@@ -628,7 +628,7 @@ export default function Landing() {
                   </div>
                   <div className="mb-4 text-3xl">{s.emoji}</div>
                   <h3 className="mb-2 text-xl font-semibold">{s.title}</h3>
-                  <p className="text-sm leading-relaxed text-muted-foreground">{s.body}</p>
+                  <p className="text-base leading-relaxed text-foreground/80">{s.body}</p>
                 </div>
               </FadeIn>
             ))}
@@ -646,7 +646,7 @@ export default function Landing() {
               <CheckCircle2 className="h-3 w-3" /> Available in GHL Marketplace
             </div>
             <h2 className="text-4xl font-bold tracking-tight md:text-5xl">GoHighLevel User?</h2>
-            <p className="mt-3 text-lg text-navy-foreground/75">This was built for you specifically.</p>
+            <p className="mt-3 text-lg text-navy-foreground/90">This was built for you specifically.</p>
           </FadeIn>
           <div className="grid gap-6 md:grid-cols-3">
             {GHL_COLS.map((c) => (
@@ -657,7 +657,7 @@ export default function Landing() {
                 >
                   <div className="mb-4 text-3xl">{c.emoji}</div>
                   <h3 className="mb-2 text-lg font-semibold">{c.title}</h3>
-                  <p className="text-sm leading-relaxed text-navy-foreground/70">{c.body}</p>
+                  <p className="text-sm leading-relaxed text-navy-foreground/90">{c.body}</p>
                 </div>
               </FadeIn>
             ))}
@@ -695,7 +695,7 @@ export default function Landing() {
                 >
                   <div className="mb-3 text-2xl">{b.emoji}</div>
                   <h3 className="mb-2 text-base font-semibold">{b.title}</h3>
-                  <p className="text-sm leading-relaxed text-muted-foreground">{b.body}</p>
+                  <p className="text-base leading-relaxed text-foreground/80">{b.body}</p>
                 </div>
               </FadeIn>
             ))}
@@ -722,12 +722,12 @@ export default function Landing() {
                 >
                   <div className="mb-3 text-4xl">{l.flag}</div>
                   <h3 className="mb-2 text-lg font-semibold">{l.name}</h3>
-                  <p className="text-sm leading-relaxed text-navy-foreground/70">{l.body}</p>
+                  <p className="text-sm leading-relaxed text-navy-foreground/90">{l.body}</p>
                 </div>
               </FadeIn>
             ))}
           </div>
-          <FadeIn className="mx-auto mt-10 max-w-2xl text-center text-base text-navy-foreground/75">
+          <FadeIn className="mx-auto mt-10 max-w-2xl text-center text-base text-navy-foreground/90">
             Type your description in any language. Get your complete website in that same language. No translation
             needed. No extra steps.
           </FadeIn>
@@ -796,7 +796,7 @@ export default function Landing() {
                   <p className="mt-1 text-[11px] text-muted-foreground/80">{PLAN_TAGLINES[key]}</p>
                   <div className="mt-3 flex items-baseline gap-1">
                     <span className="text-4xl font-bold">${p.price}</span>
-                    {p.price > 0 && <span className="text-sm text-muted-foreground">/mo</span>}
+                    {p.price > 0 && <span className="text-base text-foreground/75">/mo</span>}
                   </div>
                   <ul className="mt-6 space-y-2 text-sm">
                     {PLAN_FEATURES[key].map((f) => (
@@ -853,7 +853,7 @@ export default function Landing() {
           <FadeIn className="mt-16">
             <div className="mx-auto max-w-3xl rounded-2xl border border-primary/25 p-7 text-center" style={{ background: "rgba(16,185,129,0.05)" }}>
               <h3 className="text-xl font-bold">Need more credits? Top up anytime.</h3>
-              <p className="mt-2 text-sm text-muted-foreground">
+              <p className="mt-2 text-base text-foreground/75">
                 Buy extra build credits whenever you need them. They never expire.
               </p>
               <div className="mt-6 grid gap-3 sm:grid-cols-3">
@@ -883,7 +883,7 @@ export default function Landing() {
               <br />
               <span className="text-gradient">And Take 6 Weeks To Build.</span>
             </h2>
-            <p className="mx-auto mt-6 max-w-2xl text-lg text-navy-foreground/75">
+            <p className="mx-auto mt-6 max-w-2xl text-lg text-navy-foreground/90">
               It should cost nothing to start, take 10 minutes to build, rank on Google from day one, and connect to
               your CRM automatically. That is exactly what Virtual Engine Builder does.
             </p>
@@ -904,7 +904,7 @@ export default function Landing() {
                 </Link>
               </Button>
             </div>
-            <p className="mt-5 text-xs text-navy-foreground/60">
+            <p className="mt-5 text-sm text-navy-mint">
               Free forever plan available · No credit card required · Works in 50+ languages · 190+ countries served
             </p>
           </FadeIn>
@@ -942,13 +942,13 @@ export default function Landing() {
                   Virtual Engine <span className="text-primary-glow">Builder</span>
                 </span>
               </div>
-              <p className="text-xs text-navy-foreground/60">
+              <p className="text-sm text-navy-mint">
                 AI website builder with native GoHighLevel integration and Search Atlas SEO.
               </p>
             </div>
             <div>
-              <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-navy-foreground/80">Products</h4>
-              <ul className="space-y-2 text-sm text-navy-foreground/70">
+              <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-navy-foreground/95">Products</h4>
+              <ul className="space-y-2 text-sm text-navy-foreground/90">
                 <li><Link to="/app" className="hover:text-primary-glow">Dashboard</Link></li>
                 <li><Link to="/app" className="hover:text-primary-glow">Templates</Link></li>
                 <li><Link to="/app/integrations" className="hover:text-primary-glow">Integrations</Link></li>
@@ -957,8 +957,8 @@ export default function Landing() {
               </ul>
             </div>
             <div>
-              <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-navy-foreground/80">Languages</h4>
-              <ul className="space-y-2 text-sm text-navy-foreground/70">
+              <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-navy-foreground/95">Languages</h4>
+              <ul className="space-y-2 text-sm text-navy-foreground/90">
                 <li>🌎 Americas — EN, ES, PT, FR</li>
                 <li>🌍 Europe & Africa — 20+ languages</li>
                 <li>🌏 Asia & Pacific — 15+ languages</li>
@@ -967,8 +967,8 @@ export default function Landing() {
               </ul>
             </div>
             <div>
-              <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-navy-foreground/80">Support</h4>
-              <ul className="space-y-2 text-sm text-navy-foreground/70">
+              <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-navy-foreground/95">Support</h4>
+              <ul className="space-y-2 text-sm text-navy-foreground/90">
                 <li><Link to="/affiliates" className="hover:text-primary-glow">Affiliate Program</Link></li>
                 <li><a href="#" className="hover:text-primary-glow">Help Center</a></li>
                 <li><a href="#" className="hover:text-primary-glow">Contact</a></li>
@@ -980,7 +980,7 @@ export default function Landing() {
           </div>
 
           <div className="mt-12 flex flex-col items-center justify-between gap-3 border-t border-primary/15 pt-6 text-sm md:flex-row">
-            <span className="text-navy-foreground/60">© {new Date().getFullYear()} Virtual Engine Builder</span>
+            <span className="text-navy-foreground/95">© {new Date().getFullYear()} Virtual Engine Builder</span>
             <div className="flex flex-col items-center gap-1 text-center md:items-end">
               <a
                 href="https://virtualengine.ai"
@@ -991,7 +991,7 @@ export default function Landing() {
               >
                 A Virtual Engine product — virtualengine.ai
               </a>
-              <span className="text-[11px] text-navy-foreground/50">
+              <span className="text-xs text-navy-foreground/80">
                 Serving businesses worldwide in 50+ languages — every country, every continent
               </span>
             </div>

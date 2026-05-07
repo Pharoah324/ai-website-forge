@@ -19,11 +19,12 @@
     /* Emerald brand */
     --primary: 160 84% 39%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 158 64% 52%;
+    /* Brighter mint for accent text on dark — WCAG AA on #0A1A0F */
+    --primary-glow: 152 76% 74%;
 
-    /* Lime CTA */
-    --cta: 84 81% 44%;
-    --cta-foreground: 140 40% 8%;
+    /* Lime CTA — black text for AAA contrast */
+    --cta: 84 81% 50%;
+    --cta-foreground: 0 0% 0%;
 
     --secondary: 140 20% 96%;
     --secondary-foreground: 140 30% 8%;
@@ -60,11 +61,13 @@
     --sidebar-ring: 160 84% 45%;
 
     /* Marketing dark sections (hero, etc.) — deep forest */
-    --navy: 138 45% 7%;
-    --navy-foreground: 0 0% 100%;
-    --navy-muted: 145 40% 12%;
-    /* Parent brand accent — kept navy so Virtual Engine link stands out */
-    --parent-brand: 221 83% 53%;
+    --navy: 138 45% 6%;
+    --navy-foreground: 210 40% 98%; /* near-white #F1F5F9 for max readability */
+    --navy-muted: 145 40% 11%;
+    /* Secondary text on dark navy — bright mint for legibility */
+    --navy-mint: 152 76% 80%;
+    /* Parent brand accent */
+    --parent-brand: 221 83% 65%;
 
     /* Gradients */
     --gradient-hero: radial-gradient(ellipse at top, hsl(160 84% 39% / 0.28), transparent 60%),
@@ -89,10 +92,14 @@
     @apply bg-background text-foreground antialiased;
     font-family: 'Inter', system-ui, sans-serif;
     font-feature-settings: 'cv11', 'ss01';
+    font-size: 16px;
+    line-height: 1.75;
+    letter-spacing: 0.01em;
   }
   h1, h2, h3, h4 {
     font-family: 'Geist', 'Inter', sans-serif;
     letter-spacing: -0.02em;
+    line-height: 1.15;
   }
 }
 
