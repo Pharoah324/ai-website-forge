@@ -27,6 +27,7 @@ import AdminAnnouncements from "./pages/admin/AdminAnnouncements";
 import AdminAccessCodes from "./pages/admin/AdminAccessCodes";
 import AdminAdmins from "./pages/admin/AdminAdmins";
 import AdminAlerts from "./pages/admin/AdminAlerts";
+import AdminUsage from "./pages/admin/AdminUsage";
 import Optimize from "./pages/Optimize";
 import OptimizeDashboard from "./pages/OptimizeDashboard";
 import Onboarding from "./pages/Onboarding";
@@ -76,6 +77,7 @@ const App = () => {
               <Route path="codes" element={<AdminAccessCodes />} />
               <Route path="admins" element={<AdminAdmins />} />
               <Route path="alerts" element={<AdminAlerts />} />
+              <Route path="usage" element={<AdminUsage />} />
             </Route>
             <Route path="/app" element={<AppLayout />}>
               <Route index element={<Dashboard />} />

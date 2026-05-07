@@ -2,7 +2,7 @@ import { Navigate, NavLink, Outlet, Link } from "react-router-dom";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUnreadAlertCount } from "@/hooks/useAdminAlerts";
-import { ShieldCheck, LayoutDashboard, Users, Globe, DollarSign, Megaphone, KeyRound, UserCog, ArrowLeft, Bell } from "lucide-react";
+import { ShieldCheck, LayoutDashboard, Users, Globe, DollarSign, Megaphone, KeyRound, UserCog, ArrowLeft, Bell, Activity } from "lucide-react";
 
 export default function AdminLayout() {
   const { user, loading } = useAuth();
@@ -19,6 +19,7 @@ export default function AdminLayout() {
     { to: "/admin", end: true, label: "Overview", icon: LayoutDashboard },
     { to: "/admin/users", label: "Users", icon: Users },
     { to: "/admin/sites", label: "Sites", icon: Globe },
+    { to: "/admin/usage", label: "Usage Analytics", icon: Activity },
     { to: "/admin/affiliates", label: "Affiliates", icon: DollarSign },
     { to: "/admin/alerts", label: "Alerts", icon: Bell, badge: unreadAlerts },
     { to: "/admin/announcements", label: "Announcements", icon: Megaphone },
