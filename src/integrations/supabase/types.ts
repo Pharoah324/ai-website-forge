@@ -88,6 +88,60 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_alerts: {
+        Row: {
+          action_notes: string | null
+          affected_user_email: string | null
+          affected_user_id: string | null
+          alert_type: Database["public"]["Enums"]["admin_alert_type"]
+          created_at: string
+          description: string
+          id: string
+          metadata: Json | null
+          resolved_at: string | null
+          resolved_by: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          severity: Database["public"]["Enums"]["admin_alert_severity"]
+          status: Database["public"]["Enums"]["admin_alert_status"]
+          updated_at: string
+        }
+        Insert: {
+          action_notes?: string | null
+          affected_user_email?: string | null
+          affected_user_id?: string | null
+          alert_type: Database["public"]["Enums"]["admin_alert_type"]
+          created_at?: string
+          description: string
+          id?: string
+          metadata?: Json | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          severity?: Database["public"]["Enums"]["admin_alert_severity"]
+          status?: Database["public"]["Enums"]["admin_alert_status"]
+          updated_at?: string
+        }
+        Update: {
+          action_notes?: string | null
+          affected_user_email?: string | null
+          affected_user_id?: string | null
+          alert_type?: Database["public"]["Enums"]["admin_alert_type"]
+          created_at?: string
+          description?: string
+          id?: string
+          metadata?: Json | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          severity?: Database["public"]["Enums"]["admin_alert_severity"]
+          status?: Database["public"]["Enums"]["admin_alert_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       admin_usage_log: {
         Row: {
           action_type: string
@@ -892,6 +946,15 @@ export type Database = {
     }
     Enums: {
       admin_access_level: "super_admin" | "admin" | "support"
+      admin_alert_severity: "critical" | "warning" | "info"
+      admin_alert_status: "new" | "reviewed" | "resolved"
+      admin_alert_type:
+        | "dispute"
+        | "abuse"
+        | "server_error"
+        | "credit_anomaly"
+        | "signup_abuse"
+        | "other"
       affiliate_status: "pending" | "active" | "suspended"
       affiliate_tier: "starter" | "pro" | "elite" | "agency_partner"
       conversion_status: "pending" | "confirmed" | "paid"
@@ -1048,6 +1111,16 @@ export const Constants = {
   public: {
     Enums: {
       admin_access_level: ["super_admin", "admin", "support"],
+      admin_alert_severity: ["critical", "warning", "info"],
+      admin_alert_status: ["new", "reviewed", "resolved"],
+      admin_alert_type: [
+        "dispute",
+        "abuse",
+        "server_error",
+        "credit_anomaly",
+        "signup_abuse",
+        "other",
+      ],
       affiliate_status: ["pending", "active", "suspended"],
       affiliate_tier: ["starter", "pro", "elite", "agency_partner"],
       conversion_status: ["pending", "confirmed", "paid"],
