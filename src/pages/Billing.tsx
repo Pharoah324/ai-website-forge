@@ -252,3 +252,67 @@ export default function Billing() {
     </div>
   );
 }
+
+// Approximate USD→local conversion rates (refreshed periodically; for reference only).
+const FX: Array<{ code: string; symbol: string; flag: string; rate: number; name: string }> = [
+  { code: "USD", symbol: "$",  flag: "🇺🇸", rate: 1,    name: "US Dollar" },
+  { code: "EUR", symbol: "€",  flag: "🇪🇺", rate: 0.92, name: "Euro" },
+  { code: "GBP", symbol: "£",  flag: "🇬🇧", rate: 0.79, name: "British Pound" },
+  { code: "BRL", symbol: "R$", flag: "🇧🇷", rate: 5.10, name: "Brazilian Real" },
+  { code: "MXN", symbol: "$",  flag: "🇲🇽", rate: 17.5, name: "Mexican Peso" },
+  { code: "INR", symbol: "₹",  flag: "🇮🇳", rate: 83.5, name: "Indian Rupee" },
+  { code: "JPY", symbol: "¥",  flag: "🇯🇵", rate: 150,  name: "Japanese Yen" },
+  { code: "AUD", symbol: "A$", flag: "🇦🇺", rate: 1.52, name: "Australian Dollar" },
+  { code: "CAD", symbol: "C$", flag: "🇨🇦", rate: 1.36, name: "Canadian Dollar" },
+];
+
+function GlobalCurrencyNote() {
+  const [country, setCountry] = useState("USD");
+  const fx = FX.find((f) => f.code === country)!;
+  const sample = (usd: number) => {
+    const v = usd * fx.rate;
+    if (fx.code === "JPY") return `${fx.symbol}${Math.round(v).toLocaleString()}`;
+    return `${fx.symbol}${v.toFixed(2)}`;
+  };
+  return (
+    <div className="mt-8 rounded-lg border bg-muted/30 p-5 text-sm">
+      <div className="flex flex-col items-start justify-between gap-3 md:flex-row md:items-center">
+        <div>
+          <p className="font-semibold">🌍 Global pricing</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Prices shown in USD. Your card will be charged in USD. Stripe handles currency conversion automatically for all countries.
+          </p>
+        </div>
+        <select
+          value={country}
+          onChange={(e) => setCountry(e.target.value)}
+          className="rounded-md border bg-background px-2 py-1.5 text-xs"
+          aria-label="Show approximate prices in"
+        >
+          {FX.map((f) => (
+            <option key={f.code} value={f.code}>{f.flag} {f.code} — {f.name}</option>
+          ))}
+        </select>
+      </div>
+      {country !== "USD" && (
+        <div className="mt-3 grid grid-cols-2 gap-2 text-xs md:grid-cols-5">
+          {[
+            { label: "Starter", usd: 19 },
+            { label: "Builder", usd: 49 },
+            { label: "Pro", usd: 99 },
+            { label: "Agency", usd: 199 },
+            { label: "Top-up Starter", usd: 9 },
+          ].map((p) => (
+            <div key={p.label} className="rounded border bg-card px-2 py-1.5">
+              <div className="text-muted-foreground">{p.label}</div>
+              <div className="font-semibold">≈ {sample(p.usd)}</div>
+            </div>
+          ))}
+        </div>
+      )}
+      <p className="mt-3 text-[11px] text-muted-foreground">
+        Approximate prices for reference. Final charge in USD.
+      </p>
+    </div>
+  );
+}
