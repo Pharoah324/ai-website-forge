@@ -36,6 +36,8 @@ const TOOL = {
       properties: {
         name: { type: "string" },
         tagline: { type: "string" },
+        lang: { type: "string", description: "BCP-47 language code of generated copy, e.g. en, es, ar, ja" },
+        dir: { type: "string", enum: ["ltr", "rtl"], description: "Text direction" },
         theme: {
           type: "object",
           properties: {
