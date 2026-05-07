@@ -185,6 +185,9 @@ export default function NewSite() {
         },
         onDone: (site) => {
           setContent(site.content);
+          setSiteId(site.id);
+          setGeneratedPrompt(body.prompt);
+          setMobileTab("preview");
           qc.invalidateQueries({ queryKey: ["profile"] });
           qc.invalidateQueries({ queryKey: ["sites"] });
           toast.success(t("newsite.success"), {
