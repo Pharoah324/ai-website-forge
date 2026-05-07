@@ -1,4 +1,4 @@
-// Stripe webhook handler — verifies signature, dedupes events, applies credit/plan changes.
+// Stripe webhook handler — full lifecycle: subscriptions, invoices, grace period, disputes.
 import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
@@ -15,6 +15,8 @@ const PLAN_LIMITS: Record<string, { build: number; runtime: number }> = {
   pro: { build: 750, runtime: 35000 },
   agency: { build: 2147483647, runtime: 100000 },
 };
+
+const GRACE_PERIOD_DAYS = 3;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -39,9 +41,10 @@ Deno.serve(async (req) => {
   let event: Stripe.Event;
   try {
     event = await stripe.webhooks.constructEventAsync(raw, sig, webhookSecret, undefined, cryptoProvider);
-  } catch (err: any) {
-    console.error("Signature verification failed:", err.message);
-    return new Response(`Webhook Error: ${err.message}`, { status: 400 });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "verify failed";
+    console.error("Signature verification failed:", msg);
+    return new Response(`Webhook Error: ${msg}`, { status: 400 });
   }
 
   // Idempotency
@@ -49,11 +52,35 @@ Deno.serve(async (req) => {
     .from("stripe_events")
     .insert({ id: event.id, type: event.type });
   if (dupErr) {
-    // already processed
     return new Response(JSON.stringify({ received: true, duplicate: true }), {
       headers: { "Content-Type": "application/json" },
     });
   }
+
+  // Resolve a profile by stripe customer id
+  const findProfileByCustomer = async (customerId: string) => {
+    const { data } = await admin
+      .from("profiles")
+      .select("id, email, plan, billing_status, monthly_build_limit, monthly_runtime_limit, build_credits, runtime_credits")
+      .eq("stripe_customer_id", customerId)
+      .maybeSingle();
+    return data;
+  };
+
+  const logAlert = async (
+    alert_type: string,
+    severity: "critical" | "warning" | "info",
+    description: string,
+    affected_user_id: string | null,
+    affected_user_email: string | null,
+    metadata: Record<string, unknown> = {},
+  ) => {
+    await admin.from("admin_alerts").insert({
+      alert_type, severity, description,
+      affected_user_id, affected_user_email,
+      metadata,
+    });
+  };
 
   try {
     switch (event.type) {
@@ -63,7 +90,6 @@ Deno.serve(async (req) => {
         if (!userId) break;
 
         if (session.mode === "payment") {
-          // Top-up — add to top_up_* columns
           const packId = session.metadata?.pack_id;
           if (packId) {
             const { data: pack } = await admin
@@ -76,23 +102,18 @@ Deno.serve(async (req) => {
               const { data: prof } = await admin
                 .from("profiles")
                 .select("top_up_build_credits, top_up_runtime_credits")
-                .eq("id", userId)
-                .single();
+                .eq("id", userId).single();
               await admin.from("profiles").update({
                 top_up_build_credits: (prof?.top_up_build_credits ?? 0) + pack.build_credits,
                 top_up_runtime_credits: (prof?.top_up_runtime_credits ?? 0) + pack.runtime_credits,
               }).eq("id", userId);
               await admin.from("credit_ledger").insert({
-                user_id: userId,
-                kind: "build",
-                amount: pack.build_credits,
-                reason: "topup",
-                description: `Top-up pack: ${packId}`,
+                user_id: userId, kind: "build", amount: pack.build_credits,
+                reason: "topup", description: `Top-up pack: ${packId}`,
               });
             }
           }
         } else if (session.mode === "subscription") {
-          // Subscription created/upgraded — set plan and reset monthly credits
           const planTier = session.metadata?.plan_tier;
           const interval = session.metadata?.interval ?? "monthly";
           const limits = PLAN_LIMITS[planTier ?? "free"];
@@ -101,7 +122,12 @@ Deno.serve(async (req) => {
               plan: planTier,
               billing_interval: interval,
               stripe_subscription_id: session.subscription as string,
+              stripe_customer_id: session.customer as string,
               subscription_status: "active",
+              billing_status: "active",
+              payment_failed_at: null,
+              grace_period_ends_at: null,
+              plan_before_downgrade: null,
               monthly_build_limit: limits.build,
               monthly_runtime_limit: limits.runtime,
               build_credits: limits.build,
@@ -113,54 +139,180 @@ Deno.serve(async (req) => {
         break;
       }
 
-      case "customer.subscription.updated":
-      case "customer.subscription.deleted": {
+      case "customer.subscription.created":
+      case "customer.subscription.updated": {
         const sub = event.data.object as Stripe.Subscription;
         const customerId = sub.customer as string;
-        const status = event.type === "customer.subscription.deleted" ? "canceled" : sub.status;
-        const update: Record<string, any> = { subscription_status: status };
-        if (event.type === "customer.subscription.deleted") {
-          update.plan = "free";
-          update.monthly_build_limit = PLAN_LIMITS.free.build;
-          update.monthly_runtime_limit = PLAN_LIMITS.free.runtime;
+        const update: Record<string, unknown> = {
+          subscription_status: sub.status,
+          stripe_subscription_id: sub.id,
+        };
+        // If Stripe says status active and we'd been past_due, recover.
+        if (sub.status === "active") {
+          update.billing_status = "active";
+          update.payment_failed_at = null;
+          update.grace_period_ends_at = null;
+        } else if (sub.status === "past_due" || sub.status === "unpaid") {
+          update.billing_status = "past_due";
+        } else if (sub.status === "paused") {
+          update.billing_status = "paused";
+        } else if (sub.status === "canceled") {
+          update.billing_status = "canceled";
         }
         await admin.from("profiles").update(update).eq("stripe_customer_id", customerId);
         break;
       }
 
-      case "invoice.paid": {
-        // Recurring renewal — refresh monthly credits, run rollover
-        const invoice = event.data.object as Stripe.Invoice;
-        if (invoice.billing_reason !== "subscription_cycle") break;
-        const customerId = invoice.customer as string;
-        const { data: prof } = await admin
-          .from("profiles")
-          .select("id, build_credits, runtime_credits, monthly_build_limit, monthly_runtime_limit")
-          .eq("stripe_customer_id", customerId)
-          .maybeSingle();
-        if (!prof) break;
-
-        const buildUnused = Math.max(0, prof.build_credits);
-        const runtimeUnused = Math.max(0, prof.runtime_credits);
-        const buildRollover = Math.min(prof.monthly_build_limit, Math.floor(buildUnused / 2));
-        const runtimeRollover = Math.min(prof.monthly_runtime_limit, Math.floor(runtimeUnused / 2));
-
+      case "customer.subscription.deleted": {
+        const sub = event.data.object as Stripe.Subscription;
+        const customerId = sub.customer as string;
+        const prof = await findProfileByCustomer(customerId);
         await admin.from("profiles").update({
-          build_credits: prof.monthly_build_limit,
-          runtime_credits: prof.monthly_runtime_limit,
-          rollover_build_credits: buildRollover,
-          rollover_runtime_credits: runtimeRollover,
-          billing_cycle_start: new Date().toISOString(),
-        }).eq("id", prof.id);
+          subscription_status: "canceled",
+          billing_status: "canceled",
+          plan: "free",
+          monthly_build_limit: PLAN_LIMITS.free.build,
+          monthly_runtime_limit: PLAN_LIMITS.free.runtime,
+          plan_before_downgrade: prof?.plan ?? null,
+        }).eq("stripe_customer_id", customerId);
+        if (prof) {
+          await logAlert("subscription_canceled", "info",
+            `Subscription canceled — downgraded to free.`,
+            prof.id, prof.email, { previous_plan: prof.plan });
+        }
         break;
       }
+
+      case "customer.subscription.paused": {
+        const sub = event.data.object as Stripe.Subscription;
+        await admin.from("profiles").update({
+          subscription_status: "paused",
+          billing_status: "paused",
+        }).eq("stripe_customer_id", sub.customer as string);
+        break;
+      }
+
+      case "customer.subscription.resumed": {
+        const sub = event.data.object as Stripe.Subscription;
+        await admin.from("profiles").update({
+          subscription_status: sub.status,
+          billing_status: "active",
+          payment_failed_at: null,
+          grace_period_ends_at: null,
+        }).eq("stripe_customer_id", sub.customer as string);
+        break;
+      }
+
+      case "invoice.payment_succeeded":
+      case "invoice.paid": {
+        const invoice = event.data.object as Stripe.Invoice;
+        const customerId = invoice.customer as string;
+        const prof = await findProfileByCustomer(customerId);
+        if (!prof) break;
+
+        // Always clear past_due on successful payment
+        const baseUpdate: Record<string, unknown> = {
+          billing_status: "active",
+          payment_failed_at: null,
+          grace_period_ends_at: null,
+          last_invoice_id: invoice.id,
+        };
+
+        if (invoice.billing_reason === "subscription_cycle") {
+          // Renewal — refresh credits + rollover
+          const buildUnused = Math.max(0, prof.build_credits ?? 0);
+          const runtimeUnused = Math.max(0, prof.runtime_credits ?? 0);
+          const buildRollover = Math.min(prof.monthly_build_limit, Math.floor(buildUnused / 2));
+          const runtimeRollover = Math.min(prof.monthly_runtime_limit, Math.floor(runtimeUnused / 2));
+          Object.assign(baseUpdate, {
+            build_credits: prof.monthly_build_limit,
+            runtime_credits: prof.monthly_runtime_limit,
+            rollover_build_credits: buildRollover,
+            rollover_runtime_credits: runtimeRollover,
+            billing_cycle_start: new Date().toISOString(),
+          });
+        }
+        await admin.from("profiles").update(baseUpdate).eq("id", prof.id);
+        break;
+      }
+
+      case "invoice.payment_failed": {
+        const invoice = event.data.object as Stripe.Invoice;
+        const customerId = invoice.customer as string;
+        const prof = await findProfileByCustomer(customerId);
+        if (!prof) break;
+
+        // Set grace period only on first failure (don't keep extending it)
+        const { data: existing } = await admin
+          .from("profiles")
+          .select("payment_failed_at, grace_period_ends_at")
+          .eq("id", prof.id).single();
+
+        const update: Record<string, unknown> = {
+          billing_status: "past_due",
+          last_invoice_id: invoice.id,
+        };
+        if (!existing?.payment_failed_at) {
+          const failedAt = new Date();
+          const graceEnd = new Date(failedAt.getTime() + GRACE_PERIOD_DAYS * 86400_000);
+          update.payment_failed_at = failedAt.toISOString();
+          update.grace_period_ends_at = graceEnd.toISOString();
+        }
+        await admin.from("profiles").update(update).eq("id", prof.id);
+
+        await logAlert("payment_failed", "warning",
+          `Payment failed for ${prof.email}. ${GRACE_PERIOD_DAYS}-day grace period started. Amount: ${(invoice.amount_due / 100).toFixed(2)} ${invoice.currency?.toUpperCase()}.`,
+          prof.id, prof.email,
+          { invoice_id: invoice.id, amount_due: invoice.amount_due, currency: invoice.currency });
+        break;
+      }
+
+      case "charge.dispute.created": {
+        const dispute = event.data.object as Stripe.Dispute;
+        const customerId = (dispute.charge && typeof dispute.charge === "string"
+          ? (await stripe.charges.retrieve(dispute.charge)).customer
+          : null) as string | null;
+        let prof = customerId ? await findProfileByCustomer(customerId) : null;
+
+        if (prof) {
+          await admin.from("profiles").update({
+            dispute_flagged: true,
+            billing_status: "disputed",
+          }).eq("id", prof.id);
+        }
+
+        await logAlert("dispute", "critical",
+          `🚨 CHARGE DISPUTE: ${prof?.email ?? "unknown user"} disputed ${(dispute.amount / 100).toFixed(2)} ${dispute.currency.toUpperCase()}. Reason: ${dispute.reason}.`,
+          prof?.id ?? null, prof?.email ?? null,
+          {
+            dispute_id: dispute.id,
+            amount: dispute.amount,
+            currency: dispute.currency,
+            reason: dispute.reason,
+            status: dispute.status,
+            charge_id: dispute.charge,
+          });
+        break;
+      }
+
+      default:
+        // Unhandled — already logged in stripe_events
+        break;
     }
 
     return new Response(JSON.stringify({ received: true }), {
       headers: { "Content-Type": "application/json" },
     });
-  } catch (err: any) {
-    console.error("Webhook handler error:", err);
-    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "handler error";
+    console.error("Webhook handler error:", msg, event.type);
+    // Log handler errors as critical alerts so we don't lose them silently
+    await admin.from("admin_alerts").insert({
+      alert_type: "server_error",
+      severity: "critical",
+      description: `Stripe webhook handler error on ${event.type}: ${msg}`,
+      metadata: { event_id: event.id, event_type: event.type },
+    }).catch(() => {});
+    return new Response(JSON.stringify({ error: msg }), { status: 500 });
   }
 });
