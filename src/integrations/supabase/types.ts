@@ -956,6 +956,54 @@ export type Database = {
           },
         ]
       }
+      site_seo: {
+        Row: {
+          blog_topics: Json
+          created_at: string
+          id: string
+          industry: string | null
+          keywords: Json
+          location: string | null
+          meta_description: string | null
+          meta_title: string | null
+          score: number
+          site_id: string
+          source: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          blog_topics?: Json
+          created_at?: string
+          id?: string
+          industry?: string | null
+          keywords?: Json
+          location?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          score?: number
+          site_id: string
+          source?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          blog_topics?: Json
+          created_at?: string
+          id?: string
+          industry?: string | null
+          keywords?: Json
+          location?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          score?: number
+          site_id?: string
+          source?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       site_versions: {
         Row: {
           content: Json
