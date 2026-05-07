@@ -26,7 +26,7 @@ import {
   Mic,
   MicOff,
 } from "lucide-react";
-import { SitePreview } from "@/components/SitePreview";
+import { SitePreview, computeDesignScore } from "@/components/SitePreview";
 import { TopUpModal } from "@/components/TopUpModal";
 import { RefinementChat } from "@/components/RefinementChat";
 import type { SiteContent } from "@/types/site";
@@ -41,6 +41,15 @@ const VIEWPORTS = {
   tablet: { width: "768px", icon: Tablet, label: "Tablet" },
   mobile: { width: "390px", icon: Smartphone, label: "Mobile" },
 } as const;
+
+const FUNNEL_TYPES = [
+  { id: "website", label: "Business Website", desc: "Full multi-section site" },
+  { id: "lead_capture", label: "Lead Capture", desc: "Single-page form, no nav" },
+  { id: "sales_landing", label: "Sales Landing", desc: "Long-form, urgency-driven" },
+  { id: "appointment", label: "Appointment", desc: "Booking-focused page" },
+  { id: "coming_soon", label: "Coming Soon", desc: "Email capture + countdown" },
+  { id: "link_in_bio", label: "Link in Bio", desc: "Vertical card stack" },
+] as const;
 
 const SAMPLES = [
   "A modern coffee shop in Brooklyn serving single-origin pour-overs and pastries, with online ordering and a loyalty program.",
