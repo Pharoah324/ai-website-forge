@@ -113,11 +113,11 @@ function RotatingPrompt() {
 }
 
 const STATS = [
-  { value: "12,400+", label: "Websites Built", icon: Globe },
-  { value: "3,200+", label: "Active Users", icon: Users },
+  { value: "50+", label: "Languages Supported", icon: Languages },
+  { value: "190+", label: "Countries Served", icon: Globe },
   { value: "60 sec", label: "Avg Build Time", icon: Timer },
   { value: "4.9★", label: "Rating", icon: Star },
-  { value: "4", label: "Languages Supported", icon: Languages },
+  { value: "8B+", label: "Potential Customers", icon: Users },
 ];
 
 const WHY_CARDS = [
@@ -139,11 +139,11 @@ const WHY_CARDS = [
   },
   {
     icon: Globe,
-    emoji: "🌎",
-    title: "Built for North & South America",
+    emoji: "🌍",
+    title: "Built for Every Country Worldwide",
     body:
-      "Generate websites in English, Spanish, Portuguese, and French. Type your description in any language and get a fully built site in that same language — reaching 1.2 billion potential customers.",
-    badge: "4 Languages",
+      "Generate websites in 50+ languages — English, Spanish, Mandarin, Arabic, Hindi, Japanese, French, German, and any other major world language. Type your description in any language and get a fully native website in that same language. RTL support for Arabic, Hebrew, Persian, and Urdu.",
+    badge: "50+ Languages",
   },
 ];
 
@@ -152,7 +152,7 @@ const COMPARISON_ROWS: Array<{ feature: string; base: string | boolean; lov: str
   { feature: "Search Atlas SEO", base: false, lov: false, veb: "Builder & up" },
   { feature: "Credits Roll Over", base: false, lov: false, veb: "Builder & up (50%)" },
   { feature: "Buy Extra Credits", base: false, lov: false, veb: "Anytime" },
-  { feature: "Multi-Language", base: false, lov: false, veb: "4 Languages" },
+  { feature: "Multi-Language", base: false, lov: false, veb: "50+ Languages + RTL" },
   { feature: "Agency Sub-Accounts", base: false, lov: false, veb: "Included" },
   { feature: "White-Label Mode", base: false, lov: false, veb: "Agency Plan" },
   { feature: "Voice Prompt Input", base: false, lov: false, veb: "Built In" },
@@ -199,10 +199,10 @@ const SEO_BOXES = [
 ];
 
 const LANGUAGES = [
-  { flag: "🇺🇸", name: "English", body: "The US, Canada, and English-speaking Caribbean" },
-  { flag: "🇲🇽", name: "Español", body: "Mexico, Colombia, Argentina, Chile, and all of Latin America" },
-  { flag: "🇧🇷", name: "Português", body: "Brazil — the largest economy in South America with 215 million people" },
-  { flag: "🇫🇷", name: "Français", body: "Canada, Haiti, and French-speaking markets" },
+  { flag: "🌎", name: "Americas", body: "English, Español, Português, Français and every regional dialect — North, Central & South America" },
+  { flag: "🌍", name: "Europe & Africa", body: "Deutsch, Italiano, Polski, Русский, Kiswahili, Yorùbá, isiZulu and 20+ more" },
+  { flag: "🌏", name: "Asia & Pacific", body: "中文, 日本語, 한국어, हिन्दी, ภาษาไทย, Tiếng Việt, Bahasa Indonesia and many more" },
+  { flag: "🕌", name: "Middle East (RTL)", body: "العربية, עברית, فارسی, اردو — full right-to-left layout support" },
 ];
 
 const TESTIMONIALS = [
@@ -618,9 +618,9 @@ export default function Landing() {
         <div className="container max-w-6xl">
           <FadeIn className="mx-auto mb-14 max-w-3xl text-center">
             <h2 className="text-balance text-4xl font-bold tracking-tight md:text-5xl">
-              One Platform. Four Languages.
+              One Platform. Every Language.
               <br />
-              <span className="text-gradient">1.2 Billion Potential Customers.</span>
+              <span className="text-gradient">8 Billion Potential Customers.</span>
             </h2>
           </FadeIn>
           <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
@@ -865,10 +865,11 @@ export default function Landing() {
             <div>
               <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-navy-foreground/80">Languages</h4>
               <ul className="space-y-2 text-sm text-navy-foreground/70">
-                <li>🇺🇸 English</li>
-                <li>🇲🇽 Español</li>
-                <li>🇧🇷 Português</li>
-                <li>🇫🇷 Français</li>
+                <li>🌎 Americas — EN, ES, PT, FR</li>
+                <li>🌍 Europe & Africa — 20+ languages</li>
+                <li>🌏 Asia & Pacific — 15+ languages</li>
+                <li>🕌 Middle East — AR, HE, FA, UR (RTL)</li>
+                <li className="text-primary-glow">+ 50 total languages worldwide</li>
               </ul>
             </div>
             <div>
@@ -897,7 +898,7 @@ export default function Landing() {
                 A Virtual Engine product — virtualengine.ai
               </a>
               <span className="text-[11px] text-navy-foreground/50">
-                Serving North America and South America in English, Español, Português & Français
+                Serving businesses worldwide in 50+ languages — every country, every continent
               </span>
             </div>
           </div>

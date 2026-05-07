@@ -8,12 +8,23 @@ const corsHeaders = {
 
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-const SYSTEM_PROMPT = `You are a website generator. Given a business description (and optionally an existing template draft), return a complete, polished site structure.
+const SYSTEM_PROMPT = `You are a global AI website builder that serves businesses in every country worldwide. Given a business description (and optionally an existing template draft), return a complete, polished site structure.
 Use the build_site tool. Generate clear, conversion-focused copy. Pick a tasteful color palette that fits the industry.
 Sections should follow this order when relevant: hero, features, about, testimonials, pricing, faq, cta, contact.
 Color values must be raw HSL triples like "221 83% 53%" (no hsl() wrapper, no commas).
 
-LANGUAGE: Detect the language of the user's business description and write ALL copy (name, tagline, headings, subheadings, CTAs, item titles & bodies) in that SAME language. If the user explicitly specifies a target language, use it. Supported: English, Spanish, Portuguese, French. Do not translate proper nouns.`;
+CRITICAL LANGUAGE RULE:
+Detect the language of the user's input. Generate the ENTIRE website — all copy, headlines, button text, navigation, meta tags, and content — in that SAME language. Never switch to English unless the user wrote their description in English. Works for ANY language in the world: English, Spanish, Portuguese, French, German, Italian, Dutch, Polish, Russian, Ukrainian, Arabic, Hebrew, Persian, Urdu, Turkish, Hindi, Bengali, Mandarin, Japanese, Korean, Thai, Vietnamese, Indonesian, Malay, Tagalog, Swahili, and every other major world language. If you can understand it, generate the site in it. Do not translate proper nouns.
+
+For RTL languages (Arabic, Hebrew, Persian, Urdu) include "dir": "rtl" at the top level of the JSON and ensure copy reads naturally right-to-left.
+
+Respect cultural context:
+- Middle Eastern businesses: conservative, professional tone
+- Japanese businesses: formal honorific tone
+- Latin American businesses: warm, personal tone
+- German businesses: precise, technical tone
+- Brazilian businesses: energetic, friendly tone
+Generate websites that feel native to the user's culture — not just translated from English.`;
 
 const TOOL = {
   type: "function" as const,
@@ -25,6 +36,8 @@ const TOOL = {
       properties: {
         name: { type: "string" },
         tagline: { type: "string" },
+        lang: { type: "string", description: "BCP-47 language code of generated copy, e.g. en, es, ar, ja" },
+        dir: { type: "string", enum: ["ltr", "rtl"], description: "Text direction" },
         theme: {
           type: "object",
           properties: {
@@ -170,9 +183,23 @@ Deno.serve(async (req) => {
       }
     }
 
-    const langMap: Record<string, string> = { en: "English", es: "Spanish", pt: "Portuguese", fr: "French" };
-    const langInstruction = language && langMap[language]
-      ? `\n\nIMPORTANT: Write ALL copy in ${langMap[language]}.`
+    // Accept ANY BCP-47 language code. We pass it through verbatim and let the model
+    // resolve the human-readable name. If empty, the model auto-detects from the prompt.
+    const LANG_NAMES: Record<string, string> = {
+      en: "English", es: "Spanish", pt: "Portuguese", fr: "French", de: "German",
+      it: "Italian", nl: "Dutch", pl: "Polish", ru: "Russian", uk: "Ukrainian",
+      ar: "Arabic", he: "Hebrew", fa: "Persian", ur: "Urdu", tr: "Turkish",
+      hi: "Hindi", bn: "Bengali", zh: "Mandarin Chinese", "zh-TW": "Traditional Chinese",
+      ja: "Japanese", ko: "Korean", th: "Thai", vi: "Vietnamese",
+      id: "Indonesian", ms: "Malay", tl: "Tagalog", sw: "Swahili",
+    };
+    const RTL_CODES = new Set(["ar", "he", "fa", "ur"]);
+    const langName = language ? (LANG_NAMES[language] || language) : "";
+    const rtlNote = language && RTL_CODES.has(language)
+      ? ` This is a right-to-left language; include "dir": "rtl" in the JSON.`
+      : "";
+    const langInstruction = langName
+      ? `\n\nIMPORTANT: Write ALL copy in ${langName}.${rtlNote}`
       : "";
 
     let userMessage = prompt + langInstruction;

@@ -1,22 +1,50 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { MessageCircle, X, Send, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/lib/i18n";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat-assistant`;
 
+const GREETINGS: Record<string, string> = {
+  en: "Hi! How can we help you today?",
+  es: "¡Hola! ¿Cómo podemos ayudarte hoy?",
+  pt: "Olá! Como podemos ajudá-lo hoje?",
+  ar: "مرحباً! كيف يمكننا مساعدتك اليوم؟",
+  zh: "您好！今天我们能为您提供什么帮助？",
+  fr: "Bonjour! Comment pouvons-nous vous aider aujourd'hui?",
+  de: "Hallo! Wie können wir Ihnen heute helfen?",
+  ja: "こんにちは！本日はどのようなご用件でしょうか？",
+  hi: "नमस्ते! आज हम आपकी कैसे मदद कर सकते हैं?",
+  ko: "안녕하세요! 오늘 어떻게 도와드릴까요?",
+  it: "Ciao! Come possiamo aiutarti oggi?",
+  ru: "Здравствуйте! Чем мы можем вам помочь сегодня?",
+  tr: "Merhaba! Bugün size nasıl yardımcı olabiliriz?",
+  vi: "Xin chào! Hôm nay chúng tôi có thể giúp gì cho bạn?",
+  th: "สวัสดี! วันนี้เราจะช่วยอะไรคุณได้บ้าง?",
+  id: "Halo! Ada yang bisa kami bantu hari ini?",
+  he: "שלום! איך נוכל לעזור לך היום?",
+  fa: "سلام! امروز چگونه می‌توانیم به شما کمک کنیم؟",
+  ur: "ہیلو! آج ہم آپ کی کیسے مدد کر سکتے ہیں؟",
+};
+
 export function ChatWidget() {
+  const { lang, rtl } = useI18n();
+  const greeting = useMemo(
+    () => GREETINGS[lang] || GREETINGS[lang.split("-")[0]] || GREETINGS.en,
+    [lang],
+  );
   const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState<Msg[]>([
-    {
-      role: "assistant",
-      content: "Hi! Ask me anything about building your website.",
-    },
-  ]);
+  const [messages, setMessages] = useState<Msg[]>([{ role: "assistant", content: greeting }]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Update greeting when language changes (only if no real conversation yet)
+  useEffect(() => {
+    setMessages((prev) => (prev.length <= 1 ? [{ role: "assistant", content: greeting }] : prev));
+  }, [greeting]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
@@ -35,7 +63,7 @@ export function ChatWidget() {
       acc += chunk;
       setMessages((prev) => {
         const last = prev[prev.length - 1];
-        if (last?.role === "assistant" && last.content !== "Hi! Ask me anything about building your website.") {
+        if (last?.role === "assistant" && last.content !== greeting) {
           // only replace if it's the in-progress assistant message
           if ((last as Msg & { _pending?: boolean })._pending) {
             return prev.map((m, i) =>
@@ -55,6 +83,7 @@ export function ChatWidget() {
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
         body: JSON.stringify({
+          language: lang,
           messages: [...messages, userMsg].map(({ role, content }) => ({ role, content })),
         }),
       });
@@ -116,7 +145,7 @@ export function ChatWidget() {
       </button>
 
       {open && (
-        <div className="animate-fade-in fixed bottom-24 right-6 z-50 flex h-[480px] w-[360px] max-w-[calc(100vw-2rem)] flex-col rounded-xl border border-primary/30 bg-card shadow-elevated">
+        <div dir={rtl ? "rtl" : "ltr"} className={`animate-fade-in fixed bottom-24 ${rtl ? "left-6" : "right-6"} z-50 flex h-[480px] w-[360px] max-w-[calc(100vw-2rem)] flex-col rounded-xl border border-primary/30 bg-card shadow-elevated`}>
           <div className="flex items-center justify-between rounded-t-xl bg-gradient-primary px-4 py-3 text-primary-foreground">
             <div>
               <p className="text-sm font-semibold">Virtual Engine Builder</p>

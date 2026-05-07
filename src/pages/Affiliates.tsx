@@ -289,6 +289,9 @@ export default function Affiliates() {
                 <div>
                   <Label>{t.paypal}</Label>
                   <Input type="email" value={form.paypal_email} onChange={(e) => setForm({ ...form, paypal_email: e.target.value })} required />
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    🌍 Global payouts via PayPal (200+ countries) or Wise/TransferWise for regions where PayPal is limited. Tell us which you prefer in the notes above.
+                  </p>
                 </div>
               </div>
               <label className="flex items-center gap-2 text-sm">
