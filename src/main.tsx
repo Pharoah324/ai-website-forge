@@ -1,3 +1,18 @@
+// SSR/SSG polyfills must run BEFORE importing modules that touch browser globals
+// at evaluation time (e.g. supabase-js reads `localStorage` when constructing the client).
+if (typeof globalThis.localStorage === "undefined") {
+  const store = new Map<string, string>();
+  // @ts-expect-error - polyfill for Node SSG
+  globalThis.localStorage = {
+    getItem: (k: string) => (store.has(k) ? store.get(k)! : null),
+    setItem: (k: string, v: string) => { store.set(k, String(v)); },
+    removeItem: (k: string) => { store.delete(k); },
+    clear: () => { store.clear(); },
+    key: (i: number) => Array.from(store.keys())[i] ?? null,
+    get length() { return store.size; },
+  };
+}
+
 import { ViteReactSSG } from "vite-react-ssg";
 import { routes } from "./App";
 import "./index.css";
