@@ -83,6 +83,7 @@ export function ChatWidget() {
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
         body: JSON.stringify({
+          language: lang,
           messages: [...messages, userMsg].map(({ role, content }) => ({ role, content })),
         }),
       });
