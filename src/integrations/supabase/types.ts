@@ -88,6 +88,45 @@ export type Database = {
         }
         Relationships: []
       }
+      account_flags: {
+        Row: {
+          flag_type: Database["public"]["Enums"]["account_flag_type"]
+          id: string
+          metadata: Json | null
+          notes: string | null
+          reason: string
+          resolved_at: string | null
+          reviewed_by_admin: string | null
+          triggered_at: string
+          triggered_by: string
+          user_id: string
+        }
+        Insert: {
+          flag_type: Database["public"]["Enums"]["account_flag_type"]
+          id?: string
+          metadata?: Json | null
+          notes?: string | null
+          reason: string
+          resolved_at?: string | null
+          reviewed_by_admin?: string | null
+          triggered_at?: string
+          triggered_by?: string
+          user_id: string
+        }
+        Update: {
+          flag_type?: Database["public"]["Enums"]["account_flag_type"]
+          id?: string
+          metadata?: Json | null
+          notes?: string | null
+          reason?: string
+          resolved_at?: string | null
+          reviewed_by_admin?: string | null
+          triggered_at?: string
+          triggered_by?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       admin_alerts: {
         Row: {
           action_notes: string | null
@@ -565,6 +604,7 @@ export type Database = {
       }
       plan_caps: {
         Row: {
+          build_rollover_pct: number
           daily_optimization_runs: number
           daily_site_generations: number
           gsc_enabled: boolean
@@ -572,10 +612,16 @@ export type Database = {
           max_optimization_reports: number
           max_sites: number
           max_upload_mb: number
+          monthly_build_credits: number
+          monthly_runtime_credits: number
           plan: string
+          priority_queue: boolean
+          runtime_rollover_pct: number
           search_atlas_enabled: boolean
+          white_label: boolean
         }
         Insert: {
+          build_rollover_pct?: number
           daily_optimization_runs: number
           daily_site_generations: number
           gsc_enabled?: boolean
@@ -583,10 +629,16 @@ export type Database = {
           max_optimization_reports: number
           max_sites: number
           max_upload_mb: number
+          monthly_build_credits?: number
+          monthly_runtime_credits?: number
           plan: string
+          priority_queue?: boolean
+          runtime_rollover_pct?: number
           search_atlas_enabled?: boolean
+          white_label?: boolean
         }
         Update: {
+          build_rollover_pct?: number
           daily_optimization_runs?: number
           daily_site_generations?: number
           gsc_enabled?: boolean
@@ -594,8 +646,13 @@ export type Database = {
           max_optimization_reports?: number
           max_sites?: number
           max_upload_mb?: number
+          monthly_build_credits?: number
+          monthly_runtime_credits?: number
           plan?: string
+          priority_queue?: boolean
+          runtime_rollover_pct?: number
           search_atlas_enabled?: boolean
+          white_label?: boolean
         }
         Relationships: []
       }
@@ -943,6 +1000,7 @@ export type Database = {
         }
         Returns: Json
       }
+      detect_abuse_and_pause: { Args: never; Returns: Json }
       downgrade_past_due_users: { Args: never; Returns: Json }
       generate_affiliate_code: { Args: never; Returns: string }
       get_admin_level: {
@@ -950,8 +1008,19 @@ export type Database = {
         Returns: Database["public"]["Enums"]["admin_access_level"]
       }
       get_effective_plan: { Args: { _uid: string }; Returns: string }
+      is_account_paused: { Args: { _uid: string }; Returns: boolean }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      pause_account: {
+        Args: {
+          _flag_type?: Database["public"]["Enums"]["account_flag_type"]
+          _metadata?: Json
+          _reason: string
+          _triggered_by?: string
+          _uid: string
+        }
+        Returns: Json
+      }
       redeem_access_code: { Args: { _code: string }; Returns: Json }
       refund_credits: {
         Args: {
@@ -962,8 +1031,15 @@ export type Database = {
         }
         Returns: Json
       }
+      resume_account: { Args: { _notes?: string; _uid: string }; Returns: Json }
     }
     Enums: {
+      account_flag_type:
+        | "emergency_pause"
+        | "abuse_suspected"
+        | "dispute_flagged"
+        | "manual_review"
+        | "suspended"
       admin_access_level: "super_admin" | "admin" | "support"
       admin_alert_severity: "critical" | "warning" | "info"
       admin_alert_status: "new" | "reviewed" | "resolved"
@@ -977,6 +1053,7 @@ export type Database = {
         | "payment_failed"
         | "grace_period_expired"
         | "subscription_canceled"
+        | "account_paused"
       affiliate_status: "pending" | "active" | "suspended"
       affiliate_tier: "starter" | "pro" | "elite" | "agency_partner"
       conversion_status: "pending" | "confirmed" | "paid"
@@ -1132,6 +1209,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      account_flag_type: [
+        "emergency_pause",
+        "abuse_suspected",
+        "dispute_flagged",
+        "manual_review",
+        "suspended",
+      ],
       admin_access_level: ["super_admin", "admin", "support"],
       admin_alert_severity: ["critical", "warning", "info"],
       admin_alert_status: ["new", "reviewed", "resolved"],
@@ -1145,6 +1229,7 @@ export const Constants = {
         "payment_failed",
         "grace_period_expired",
         "subscription_canceled",
+        "account_paused",
       ],
       affiliate_status: ["pending", "active", "suspended"],
       affiliate_tier: ["starter", "pro", "elite", "agency_partner"],
