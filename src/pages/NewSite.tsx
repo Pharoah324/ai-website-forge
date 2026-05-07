@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { SitePreview } from "@/components/SitePreview";
 import { TopUpModal } from "@/components/TopUpModal";
+import { RefinementChat } from "@/components/RefinementChat";
 import type { SiteContent } from "@/types/site";
 import { toast } from "sonner";
 import { TEMPLATES, type Template } from "@/data/templates";
@@ -64,6 +65,9 @@ export default function NewSite() {
   const [prompt, setPrompt] = useState("");
   const [generating, setGenerating] = useState(false);
   const [content, setContent] = useState<SiteContent | null>(null);
+  const [siteId, setSiteId] = useState<string | null>(null);
+  const [generatedPrompt, setGeneratedPrompt] = useState<string>("");
+  const [mobileTab, setMobileTab] = useState<"chat" | "preview">("chat");
   const [viewport, setViewport] = useState<keyof typeof VIEWPORTS>("desktop");
   const [templateModal, setTemplateModal] = useState<Template | null>(null);
   const [topUpOpen, setTopUpOpen] = useState(false);
@@ -181,6 +185,9 @@ export default function NewSite() {
         },
         onDone: (site) => {
           setContent(site.content);
+          setSiteId(site.id);
+          setGeneratedPrompt(body.prompt);
+          setMobileTab("preview");
           qc.invalidateQueries({ queryKey: ["profile"] });
           qc.invalidateQueries({ queryKey: ["sites"] });
           toast.success(t("newsite.success"), {
@@ -273,10 +280,39 @@ export default function NewSite() {
   };
 
   const v = VIEWPORTS[viewport];
+  const showChat = !!siteId && !!content;
 
   return (
     <div className="grid h-[calc(100vh-3.5rem)] grid-cols-1 lg:grid-cols-[420px_1fr]">
-      <div className="flex flex-col gap-4 overflow-y-auto border-r bg-card p-6">
+      {/* Mobile tab switcher */}
+      {showChat && (
+        <div className="flex border-b bg-card lg:hidden">
+          {(["chat", "preview"] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setMobileTab(tab)}
+              className={`flex-1 py-2 text-sm font-medium capitalize transition-colors ${
+                mobileTab === tab ? "border-b-2 border-primary text-foreground" : "text-muted-foreground"
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div
+        className={`${showChat ? (mobileTab === "chat" ? "flex" : "hidden lg:flex") : "flex"} flex-col gap-4 overflow-y-auto border-r bg-card ${showChat ? "p-0" : "p-6"}`}
+      >
+        {showChat && siteId && content ? (
+          <RefinementChat
+            siteId={siteId}
+            originalPrompt={generatedPrompt}
+            onContentUpdated={setContent}
+            onTopUp={() => setTopUpOpen(true)}
+          />
+        ) : (
+          <div className="flex flex-col gap-4 p-6">
         <div>
           <div className="mb-2 flex items-center gap-2">
             <h1 className="text-xl font-bold">{t("newsite.title")}</h1>
@@ -438,10 +474,12 @@ export default function NewSite() {
             ))}
           </div>
         </div>
+          </div>
+        )}
       </div>
 
       {/* Preview */}
-      <div className="flex min-w-0 flex-col bg-muted/30">
+      <div className={`${showChat && mobileTab === "chat" ? "hidden lg:flex" : "flex"} min-w-0 flex-col bg-muted/30`}>
         <div className="flex items-center justify-between border-b bg-card px-4 py-2">
           <div className="flex items-center gap-1 rounded-md border bg-background p-0.5">
             {(Object.keys(VIEWPORTS) as Array<keyof typeof VIEWPORTS>).map((k) => {
