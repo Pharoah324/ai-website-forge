@@ -618,9 +618,9 @@ export default function Landing() {
         <div className="container max-w-6xl">
           <FadeIn className="mx-auto mb-14 max-w-3xl text-center">
             <h2 className="text-balance text-4xl font-bold tracking-tight md:text-5xl">
-              One Platform. Four Languages.
+              One Platform. Every Language.
               <br />
-              <span className="text-gradient">1.2 Billion Potential Customers.</span>
+              <span className="text-gradient">8 Billion Potential Customers.</span>
             </h2>
           </FadeIn>
           <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
