@@ -309,7 +309,7 @@ export default function Landing() {
             <br />
             <span className="text-gradient">You Can Build It Yourself in 10 Minutes.</span>
           </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-balance text-lg text-navy-foreground/90">
+          <p className="mx-auto mt-6 max-w-2xl text-balance text-xl leading-relaxed text-navy-foreground md:text-2xl">
             Websites, funnels, and landing pages — powered by embedded AI and built to rank on Google. Live before lunch.
           </p>
           <div className="mt-10 flex flex-wrap justify-center gap-3">
