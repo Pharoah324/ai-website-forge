@@ -133,15 +133,17 @@ export default function Affiliates() {
     if (!parsed.success) return toast.error(parsed.error.issues[0].message);
 
     setSubmitting(true);
-    const { error } = await supabase.from("affiliates").insert([{
-      ...parsed.data,
+    const row = {
+      full_name: parsed.data.full_name,
+      email: parsed.data.email,
+      paypal_email: parsed.data.paypal_email,
       website_url: parsed.data.website_url || null,
       promotion_plan: parsed.data.promotion_plan || null,
       expected_referrals: parsed.data.expected_referrals || null,
       user_id: user?.id ?? null,
       affiliate_code: "VEB-PEND" + Math.random().toString(36).slice(2, 6).toUpperCase(),
-      // server will replace via admin approve; placeholder code for pending row
-    }]);
+    };
+    const { error } = await supabase.from("affiliates").insert(row);
     setSubmitting(false);
     if (error) return toast.error(error.message);
     toast.success(t.success);
