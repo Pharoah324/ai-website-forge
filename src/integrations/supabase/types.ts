@@ -877,6 +877,50 @@ export type Database = {
           },
         ]
       }
+      site_chat_messages: {
+        Row: {
+          content: string
+          created_at: string
+          credits_used: number
+          id: string
+          role: string
+          site_id: string
+          summary: string | null
+          user_id: string
+          version_id: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          credits_used?: number
+          id?: string
+          role: string
+          site_id: string
+          summary?: string | null
+          user_id: string
+          version_id?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          credits_used?: number
+          id?: string
+          role?: string
+          site_id?: string
+          summary?: string | null
+          user_id?: string
+          version_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_chat_messages_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       site_feedback: {
         Row: {
           author_name: string
@@ -905,6 +949,44 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "site_feedback_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      site_versions: {
+        Row: {
+          content: Json
+          created_at: string
+          id: string
+          label: string | null
+          site_id: string
+          user_id: string
+          version_number: number
+        }
+        Insert: {
+          content: Json
+          created_at?: string
+          id?: string
+          label?: string | null
+          site_id: string
+          user_id: string
+          version_number: number
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          id?: string
+          label?: string | null
+          site_id?: string
+          user_id?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_versions_site_id_fkey"
             columns: ["site_id"]
             isOneToOne: false
             referencedRelation: "sites"
