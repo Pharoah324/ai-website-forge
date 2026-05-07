@@ -330,7 +330,10 @@ export default function Landing() {
             </Button>
           </div>
           <p className="mt-5 text-xs text-navy-foreground/60">
-            Free to start · No credit card · No tech skills needed · GoHighLevel pipeline ready · Works in 50+ languages
+            Free to start · No credit card · No tech skills needed · GoHighLevel pipeline ready
+          </p>
+          <p className="mt-2 text-xs font-semibold text-primary-glow">
+            Available in 50+ Languages · 190+ Countries · 8 Billion Potential Customers
           </p>
           <RotatingPrompt />
         </div>
