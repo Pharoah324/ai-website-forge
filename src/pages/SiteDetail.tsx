@@ -55,6 +55,8 @@ export default function SiteDetail() {
   const [publishing, setPublishing] = useState(false);
   const [subdomainInput, setSubdomainInput] = useState("");
   const [publishError, setPublishError] = useState<string | null>(null);
+  const [topUpOpen, setTopUpOpen] = useState(false);
+  const [mobileTab, setMobileTab] = useState<"chat" | "preview">("preview");
   const qc = useQueryClient();
   const navigate = useNavigate();
 
