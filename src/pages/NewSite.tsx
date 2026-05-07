@@ -89,6 +89,7 @@ export default function NewSite() {
   const [listening, setListening] = useState(false);
   const [liveFinal, setLiveFinal] = useState("");
   const [liveInterim, setLiveInterim] = useState("");
+  const [funnelType, setFunnelType] = useState<typeof FUNNEL_TYPES[number]["id"]>("website");
   const SpeechRecognition =
     typeof window !== "undefined"
       ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
@@ -186,7 +187,7 @@ export default function NewSite() {
     abortRef.current = ctrl;
 
     await streamGenerateSite(
-      { ...body, language: lang },
+      { ...body, language: lang, funnel_type: funnelType },
       {
         onDelta: (chunk) => {
           accumulatedRef.current += chunk;
