@@ -1,10 +1,25 @@
-import { AlertTriangle, XCircle, ShieldAlert } from "lucide-react";
+import { AlertTriangle, XCircle, ShieldAlert, Pause } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useProfile } from "@/hooks/useProfile";
+import { useActivePause } from "@/hooks/useAccountStatus";
 
 export function BillingStatusBanner() {
   const { data: profile } = useProfile();
+  const { data: pause } = useActivePause();
   if (!profile) return null;
+
+  if (pause) {
+    return (
+      <div className="flex items-center gap-3 border-b border-red-500/40 bg-red-500/10 px-6 py-3 text-sm">
+        <Pause className="h-4 w-4 shrink-0 text-red-400" />
+        <p className="flex-1 text-red-100">
+          <span className="font-semibold">Your account has been temporarily paused</span> due to
+          unusual activity. Our team has been notified and will review your account within 24 hours.
+          If you believe this is an error please contact support.
+        </p>
+      </div>
+    );
+  }
 
   const status = profile.billing_status;
 
