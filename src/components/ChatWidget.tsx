@@ -41,6 +41,11 @@ export function ChatWidget() {
   const [streaming, setStreaming] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Update greeting when language changes (only if no real conversation yet)
+  useEffect(() => {
+    setMessages((prev) => (prev.length <= 1 ? [{ role: "assistant", content: greeting }] : prev));
+  }, [greeting]);
+
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
   }, [messages, open]);
