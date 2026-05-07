@@ -2,7 +2,7 @@
 // at evaluation time (e.g. supabase-js reads `localStorage` when constructing the client).
 if (typeof globalThis.localStorage === "undefined") {
   const store = new Map<string, string>();
-  // @ts-expect-error - polyfill for Node SSG
+  // @ts-ignore - polyfill for Node SSG
   globalThis.localStorage = {
     getItem: (k: string) => (store.has(k) ? store.get(k)! : null),
     setItem: (k: string, v: string) => { store.set(k, String(v)); },
