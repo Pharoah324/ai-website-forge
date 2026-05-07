@@ -149,8 +149,8 @@ const WHY_CARDS = [
 
 const COMPARISON_ROWS: Array<{ feature: string; base: string | boolean; lov: string | boolean; veb: string }> = [
   { feature: "Native GHL Integration", base: false, lov: false, veb: "Native" },
-  { feature: "Search Atlas SEO", base: false, lov: false, veb: "Built In" },
-  { feature: "Credits Roll Over", base: false, lov: false, veb: "50% Monthly" },
+  { feature: "Search Atlas SEO", base: false, lov: false, veb: "Builder & up" },
+  { feature: "Credits Roll Over", base: false, lov: false, veb: "Builder & up (50%)" },
   { feature: "Buy Extra Credits", base: false, lov: false, veb: "Anytime" },
   { feature: "Multi-Language", base: false, lov: false, veb: "4 Languages" },
   { feature: "Agency Sub-Accounts", base: false, lov: false, veb: "Included" },
