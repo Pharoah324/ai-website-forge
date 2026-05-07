@@ -24,9 +24,11 @@ export default defineConfig(({ mode }) => ({
     dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime", "@tanstack/react-query", "@tanstack/query-core"],
   },
   // Consumed by `vite-react-ssg build` — restricts pre-rendering to public marketing pages.
+  // Consumed by `vite-react-ssg build` — restricts pre-rendering to public marketing pages.
   ssgOptions: {
     script: "async",
     formatting: "minify",
+    mock: true,
     includedRoutes: (paths: string[]) => paths.filter((p) => PRERENDER.has(p)),
   },
 } as any));
