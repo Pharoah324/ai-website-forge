@@ -18,6 +18,7 @@ import {
   ExternalLink,
   Globe,
   Rocket,
+  Search,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { PUBLISH_ROOT } from "@/lib/subdomain";
@@ -30,6 +31,7 @@ import {
 } from "@/components/ui/dialog";
 import { SitePreview } from "@/components/SitePreview";
 import { RefinementChat } from "@/components/RefinementChat";
+import { SeoPanel } from "@/components/SeoPanel";
 import { TopUpModal } from "@/components/TopUpModal";
 import type { SiteContent, SiteSection } from "@/types/site";
 import { toast } from "sonner";
@@ -56,7 +58,8 @@ export default function SiteDetail() {
   const [subdomainInput, setSubdomainInput] = useState("");
   const [publishError, setPublishError] = useState<string | null>(null);
   const [topUpOpen, setTopUpOpen] = useState(false);
-  const [mobileTab, setMobileTab] = useState<"chat" | "preview">("preview");
+  const [mobileTab, setMobileTab] = useState<"chat" | "preview" | "seo">("preview");
+  const [rightPane, setRightPane] = useState<"preview" | "seo">("preview");
   const qc = useQueryClient();
   const navigate = useNavigate();
 
@@ -316,11 +319,11 @@ export default function SiteDetail() {
 
       {/* Mobile tabs */}
       <div className="flex border-b bg-card lg:hidden">
-        {(["chat", "preview"] as const).map((tab) => (
+        {(["chat", "preview", "seo"] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setMobileTab(tab)}
-            className={`flex-1 py-2 text-sm font-medium capitalize transition-colors ${
+            className={`flex-1 py-2 text-sm font-medium uppercase transition-colors ${
               mobileTab === tab ? "border-b-2 border-primary text-foreground" : "text-muted-foreground"
             }`}
           >
@@ -357,13 +360,39 @@ export default function SiteDetail() {
           </div>
         </aside>
 
-        <div className={`${mobileTab === "chat" ? "hidden lg:flex" : "flex"} flex-1 items-start justify-center overflow-y-auto bg-muted/30 p-6`}>
-          <div
-            className="overflow-hidden rounded-lg border bg-card shadow-elevated transition-all"
-            style={{ width: v.width, maxWidth: "100%" }}
-          >
-            <SitePreview content={content} />
+        <div className={`${mobileTab === "chat" ? "hidden lg:flex" : "flex"} flex-1 flex-col overflow-hidden bg-muted/30`}>
+          {/* Right-pane toggle (desktop) */}
+          <div className="hidden border-b bg-card px-3 py-1.5 lg:flex">
+            <div className="flex items-center gap-1 rounded-md border bg-background p-0.5">
+              {(["preview", "seo"] as const).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setRightPane(p)}
+                  className={`flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium uppercase transition-colors ${
+                    rightPane === p ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {p === "seo" && <Search className="h-3 w-3" />}
+                  {p}
+                </button>
+              ))}
+            </div>
           </div>
+
+          {(mobileTab === "seo" || rightPane === "seo") ? (
+            <div className="flex-1 overflow-y-auto">
+              <SeoPanel siteId={id!} />
+            </div>
+          ) : (
+            <div className="flex flex-1 items-start justify-center overflow-y-auto p-6">
+              <div
+                className="overflow-hidden rounded-lg border bg-card shadow-elevated transition-all"
+                style={{ width: v.width, maxWidth: "100%" }}
+              >
+                <SitePreview content={content} />
+              </div>
+            </div>
+          )}
         </div>
       </div>
       <TopUpModal open={topUpOpen} onOpenChange={setTopUpOpen} />
