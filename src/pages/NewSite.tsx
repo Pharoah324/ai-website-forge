@@ -473,6 +473,8 @@ export default function NewSite() {
             ))}
           </div>
         </div>
+          </div>
+        )}
       </div>
 
       {/* Preview */}
