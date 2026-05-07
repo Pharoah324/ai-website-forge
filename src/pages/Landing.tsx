@@ -568,32 +568,32 @@ export default function Landing() {
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse text-sm">
                   <thead>
-                    <tr className="bg-navy-muted/80 text-navy-foreground">
-                      <th className="px-4 py-4 text-left font-semibold">Feature</th>
-                      <th className="px-4 py-4 text-center font-semibold text-navy-foreground/90">Base44</th>
-                      <th className="px-4 py-4 text-center font-semibold text-navy-foreground/90">Lovable</th>
-                      <th className="px-4 py-4 text-center font-bold text-primary-foreground" style={{ background: "hsl(var(--primary))" }}>
+                    <tr className="bg-navy-muted text-navy-foreground">
+                      <th className="px-5 py-5 text-left text-base font-semibold">Feature</th>
+                      <th className="px-5 py-5 text-center text-base font-semibold">Base44</th>
+                      <th className="px-5 py-5 text-center text-base font-semibold">Lovable</th>
+                      <th className="px-5 py-5 text-center text-base font-bold text-primary-foreground" style={{ background: "hsl(var(--primary))" }}>
                         Virtual Engine Builder
                       </th>
                     </tr>
                   </thead>
                   <tbody>
                     {COMPARISON_ROWS.map((r, i) => (
-                      <tr key={r.feature} className={i % 2 ? "bg-navy/40" : "bg-navy-muted/30"}>
-                        <td className="px-4 py-3.5 text-navy-foreground/90">{r.feature}</td>
-                        <td className="px-4 py-3.5 text-center text-navy-foreground/95">
+                      <tr key={r.feature} className={i % 2 ? "bg-navy/50" : "bg-navy-muted/50"}>
+                        <td className="px-5 py-4 text-base text-navy-foreground">{r.feature}</td>
+                        <td className="px-5 py-4 text-center text-navy-foreground/85">
                           <Cell value={r.base} />
                         </td>
-                        <td className="px-4 py-3.5 text-center text-navy-foreground/95">
+                        <td className="px-5 py-4 text-center text-navy-foreground/85">
                           <Cell value={r.lov} />
                         </td>
                         <td
-                          className="px-4 py-3.5 text-center font-semibold text-primary-glow"
-                          style={{ background: "rgba(16,185,129,0.12)" }}
+                          className="px-5 py-4 text-center text-base font-semibold text-navy-foreground"
+                          style={{ background: "rgba(16,185,129,0.18)" }}
                         >
                           {typeof r.veb === "string" ? (
                             <span className="inline-flex items-center gap-1.5">
-                              <Check className="h-4 w-4 text-primary" />
+                              <Check className="h-5 w-5 text-primary-glow" />
                               {r.veb}
                             </span>
                           ) : null}
