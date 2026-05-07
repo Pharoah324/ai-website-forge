@@ -143,8 +143,8 @@ const WHY_CARDS = [
     emoji: "🌍",
     title: "Built for Every Country Worldwide",
     body:
-      "Generate websites in 50+ languages — English, Spanish, Mandarin, Arabic, Hindi, Japanese, French, German, and any other major world language. Type your description in any language and get a fully native website in that same language. RTL support for Arabic, Hebrew, Persian, and Urdu.",
-    badge: "50+ Languages",
+      "Available in 50+ Languages · 190+ Countries · 8 Billion Potential Customers. Type your description in any language — English, Spanish, Mandarin, Arabic, Hindi, Japanese, French, German — and get a fully native website in that same language. Full RTL support for Arabic, Hebrew, Persian, and Urdu.",
+    badge: "50+ Languages · 190+ Countries",
   },
 ];
 
