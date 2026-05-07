@@ -122,6 +122,30 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Plan + rate-limit gate (optimization runs cost 0 build credits today,
+    // but still consume daily/hourly quota).
+    const { data: gate, error: gateErr } = await supa.rpc("check_and_consume", {
+      _uid: user.id,
+      _action: "optimization_run",
+      _credit_cost: 0,
+    });
+    if (gateErr) {
+      console.error("gate error", gateErr);
+      return new Response(JSON.stringify({ error: "Internal gate error" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const g = gate as { ok: boolean; reason?: string; retry_after_seconds?: number; daily_limit?: number; plan?: string };
+    if (!g.ok) {
+      const status = g.reason === "daily_limit" || g.reason === "hourly_limit" || g.reason === "blocked" ? 429 : 403;
+      return new Response(JSON.stringify({
+        error: g.reason ?? "blocked",
+        plan: g.plan,
+        retry_after_seconds: g.retry_after_seconds,
+        daily_limit: g.daily_limit,
+      }), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     await supa
       .from("optimization_projects")
       .update({ status: "analyzing" })
