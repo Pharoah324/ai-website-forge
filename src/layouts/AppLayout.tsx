@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { CreditBadge } from "@/components/CreditBadge";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
+import { BillingStatusBanner } from "@/components/BillingStatusBanner";
 import { useI18n } from "@/lib/i18n";
 
 export default function AppLayout() {
