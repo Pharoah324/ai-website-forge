@@ -542,10 +542,11 @@ export default function NewSite() {
             })}
           </div>
           {content && (
-            <span className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
               {generating && <Loader2 className="h-3 w-3 animate-spin" />}
-              {content.name}
-            </span>
+              <span>{content.name}</span>
+              <DesignScoreBadge content={content} />
+            </div>
           )}
         </div>
 
