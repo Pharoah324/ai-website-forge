@@ -351,6 +351,77 @@ export type Database = {
         }
         Relationships: []
       }
+      optimization_projects: {
+        Row: {
+          created_at: string
+          id: string
+          integrations: Json
+          last_analyzed_at: string | null
+          latest_report: Json | null
+          name: string
+          status: string
+          updated_at: string
+          user_id: string
+          website_url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          integrations?: Json
+          last_analyzed_at?: string | null
+          latest_report?: Json | null
+          name?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          website_url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          integrations?: Json
+          last_analyzed_at?: string | null
+          latest_report?: Json | null
+          name?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          website_url?: string
+        }
+        Relationships: []
+      }
+      optimization_reports: {
+        Row: {
+          created_at: string
+          id: string
+          project_id: string
+          report: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          project_id: string
+          report: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          project_id?: string
+          report?: Json
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "optimization_reports_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "optimization_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null

@@ -14,6 +14,7 @@ import {
   Plug,
   DollarSign,
   ShieldCheck,
+  TrendingUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CreditBadge } from "@/components/CreditBadge";
@@ -31,6 +32,7 @@ export default function AppLayout() {
   const nav = [
     { to: "/app", label: t("nav.dashboard"), icon: LayoutDashboard, end: true },
     { to: "/app/new", label: t("nav.newsite"), icon: Plus },
+    { to: "/app/optimize", label: "Optimize Site", icon: TrendingUp },
     { to: "/app/integrations", label: t("nav.integrations"), icon: Plug },
     { to: "/app/affiliate", label: "Affiliate Program", icon: DollarSign },
     { to: "/app/billing", label: t("nav.billing"), icon: CreditCard },
