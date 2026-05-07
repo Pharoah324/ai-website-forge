@@ -379,8 +379,98 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* INFRASTRUCTURE FEATURES */}
+      <section className="bg-background py-24">
+        <div className="container max-w-6xl">
+          <FadeIn className="mx-auto mb-14 max-w-3xl text-center">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[11px] font-semibold text-primary">
+              Business Growth Infrastructure
+            </span>
+            <h2 className="mt-4 text-4xl font-bold tracking-tight md:text-5xl">
+              Everything you need to grow — in one platform.
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              Websites, SEO, CRM, and automation working together. Not a stack of disconnected tools.
+            </p>
+          </FadeIn>
+          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+            {[
+              { title: "AI Website Building", body: "Generate complete, on-brand sites from a single description." },
+              { title: "Existing Website Optimization", body: "Connect what you already have. Audit, improve, and grow." },
+              { title: "SEO Optimization", body: "On-page, technical, and content SEO baked into every build." },
+              { title: "Search Atlas Integration", body: "Real keyword data and ranking insights from a $200/mo SEO platform." },
+              { title: "CRM Connectivity", body: "Sync contacts, leads, and pipeline stages — automatically." },
+              { title: "GoHighLevel Ready", body: "Native GHL pipeline sync, calendars, and workflow triggers." },
+              { title: "AI Automation", body: "Trigger flows from form fills, purchases, and site events." },
+              { title: "Lead Capture", body: "Smart forms, exit intent, and instant CRM hand-off." },
+              { title: "AI Business Intelligence", body: "Growth recommendations from your traffic, leads, and revenue." },
+            ].map((f) => (
+              <FadeIn key={f.title}>
+                <div className="h-full rounded-xl border border-primary/15 bg-card p-6 shadow-card transition-all hover:border-primary/40 hover:shadow-elevated">
+                  <h3 className="text-base font-semibold">{f.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{f.body}</p>
+                </div>
+              </FadeIn>
+            ))}
+          </div>
+
+          {/* "Already have a website?" feature card */}
+          <FadeIn className="mt-10">
+            <div className="rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 to-transparent p-8 md:flex md:items-center md:justify-between md:gap-8">
+              <div className="max-w-2xl">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-cta/40 bg-cta/10 px-2.5 py-1 text-[11px] font-semibold text-cta">
+                  Already have a website?
+                </span>
+                <h3 className="mt-3 text-2xl font-bold tracking-tight md:text-3xl">
+                  Connect it. Optimize it. Scale it.
+                </h3>
+                <p className="mt-2 text-sm text-muted-foreground md:text-base">
+                  Connect your existing website and let Virtual Engine analyze SEO performance, identify growth
+                  opportunities, recommend improvements, and optimize your business systems.
+                </p>
+              </div>
+              <Button asChild size="lg" className="mt-5 bg-cta text-cta-foreground hover:bg-cta/90 md:mt-0">
+                <Link to="/auth?mode=signup&intent=optimize">
+                  Optimize my website <ArrowRight className="ml-1 h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* CONNECT YOUR SYSTEMS */}
+      <section className="bg-navy py-24 text-navy-foreground">
+        <div className="container max-w-5xl">
+          <FadeIn className="mx-auto mb-12 max-w-3xl text-center">
+            <h2 className="text-4xl font-bold tracking-tight md:text-5xl">Connect your systems.</h2>
+            <p className="mt-3 text-lg text-navy-foreground/70">
+              Plug in the tools your business already runs on. Virtual Engine ties them into one growth engine.
+            </p>
+          </FadeIn>
+          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+            {[
+              "Google Search Console",
+              "Google Analytics",
+              "Search Atlas",
+              "GoHighLevel",
+              "Stripe",
+            ].map((s) => (
+              <div
+                key={s}
+                className="flex h-24 items-center justify-center rounded-xl border border-primary/25 px-4 text-center text-sm font-semibold"
+                style={{ background: "rgba(16,185,129,0.06)" }}
+              >
+                {s}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* COMPARISON */}
       <section className="bg-navy py-24 text-navy-foreground">
+
         <div className="container max-w-5xl">
           <FadeIn className="mb-12 text-center">
             <h2 className="text-4xl font-bold tracking-tight md:text-5xl">We Built What They Forgot.</h2>
