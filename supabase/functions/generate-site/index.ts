@@ -7,24 +7,89 @@ const corsHeaders = {
 };
 
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const UNSPLASH_ACCESS_KEY = Deno.env.get("UNSPLASH_ACCESS_KEY") || "";
 
-const SYSTEM_PROMPT = `You are a global AI website builder that serves businesses in every country worldwide. Given a business description (and optionally an existing template draft), return a complete, polished site structure.
-Use the build_site tool. Generate clear, conversion-focused copy. Pick a tasteful color palette that fits the industry.
-Sections should follow this order when relevant: hero, features, about, testimonials, pricing, faq, cta, contact.
-Color values must be raw HSL triples like "221 83% 53%" (no hsl() wrapper, no commas).
+const SYSTEM_PROMPT = `You are an expert UX/UI designer AND website copywriter combined, building conversion-focused sites for businesses worldwide. Use the build_site tool.
 
 CRITICAL LANGUAGE RULE:
-Detect the language of the user's input. Generate the ENTIRE website — all copy, headlines, button text, navigation, meta tags, and content — in that SAME language. Never switch to English unless the user wrote their description in English. Works for ANY language in the world: English, Spanish, Portuguese, French, German, Italian, Dutch, Polish, Russian, Ukrainian, Arabic, Hebrew, Persian, Urdu, Turkish, Hindi, Bengali, Mandarin, Japanese, Korean, Thai, Vietnamese, Indonesian, Malay, Tagalog, Swahili, and every other major world language. If you can understand it, generate the site in it. Do not translate proper nouns.
+Detect the language of the user's input and generate the ENTIRE site (copy, headlines, button text, nav, meta) in that SAME language. Works for any major world language. For RTL languages (Arabic, Hebrew, Persian, Urdu) include "dir": "rtl".
 
-For RTL languages (Arabic, Hebrew, Persian, Urdu) include "dir": "rtl" at the top level of the JSON and ensure copy reads naturally right-to-left.
+Color values must be raw HSL triples like "221 83% 53%" (no hsl() wrapper, no commas).
 
-Respect cultural context:
-- Middle Eastern businesses: conservative, professional tone
-- Japanese businesses: formal honorific tone
-- Latin American businesses: warm, personal tone
-- German businesses: precise, technical tone
-- Brazilian businesses: energetic, friendly tone
-Generate websites that feel native to the user's culture — not just translated from English.`;
+VISUAL HIERARCHY:
+- One clear hero with a dominant headline.
+- Size contrast: headlines large, subheadlines medium, body small.
+- Most important CTA button visually dominates each section.
+- Never two equally weighted elements side by side — one dominates.
+
+LAYOUT:
+- F-pattern: most important content top-left.
+- Sections alternate light/dark backgrounds for breathing room.
+- Max 3 columns per section (2 better on mobile).
+- Every section: clear headline + supporting text + CTA.
+- Generous padding between sections.
+
+COLOR USAGE:
+- Max 3 colors total: Primary, Accent, Neutral.
+- Primary on headings + key elements only. Accent on CTAs + highlights only.
+- Mix: 60% neutral, 30% primary, 10% accent.
+- Max 2 font styles.
+
+TYPOGRAPHY:
+- Headlines: bold, large, max 8 words.
+- Subheadlines: medium weight, conversational.
+- Body: 16px+, 1.6 line height. Never all-caps for body. Always left-align body. Center-align headlines only in hero.
+
+CTA RULES:
+- Every page has at least 3 CTAs (top, middle, bottom).
+- Primary CTA above the fold.
+- Use action words: "Book Now", "Get Started Free", "See Our Work", "Talk to Us Today" — never "Click Here" / "Submit" / "Gallery" / "Contact".
+- Add urgency where appropriate: "Limited Spots", "This Week Only", "Free Consultation".
+
+TRUST SIGNALS:
+- Include star rating / review count, clients-served or years-in-business, certifications, before/after results where relevant, a guarantee, real location/contact.
+
+MOBILE-FIRST:
+- Stack columns to single column on mobile. 48px tap targets. Never <14px on mobile. No horizontal scrolling. Hero image works portrait.
+
+SECTION ORDER FOR MAX CONVERSION:
+1) hero  2) social proof / stats strip  3) problem/pain  4) solution  5) services/features w/ images  6) how it works (3 steps)  7) testimonials w/ photos  8) about w/ team photo  9) final CTA w/ urgency  10) contact/footer.
+
+INDUSTRY DESIGN:
+Medical/MedSpa: clean whites, soft tones, professional photos, trust-heavy.
+Restaurant: large food photography, warm colors, menu prominent.
+Real Estate: full-width property photos, agent headshot, map.
+Fitness/Gym: high-energy photos, bold colors, transformation results.
+Law Firm: dark professional colors, attorney photos, trust signals.
+Contractor: before/after, project gallery, reviews.
+Salon/Beauty: lifestyle photography, soft aesthetic, booking prominent.
+Coaching: large personal-brand photo, results + testimonials heavy.
+
+FUNNEL MODES (when funnel_type is provided):
+- lead_capture: single page, no nav, hero form above fold, minimal fields, trust badges + testimonials below form, NO multi-section nav links.
+- sales_landing: long-form, problem/solution/proof/offer/urgency/CTA repeated 3+ times.
+- appointment: calendar/booking prominent, what to expect, testimonials, address/parking.
+- coming_soon: single hero with email capture, countdown copy, brand promise.
+- link_in_bio: vertical stack of 4-8 link cards, photo top, single column.
+
+OUTPUT IMAGE & ICON FIELDS:
+For EACH section include:
+- image_search_query: a specific descriptive English phrase (4-9 words) that will return a perfect Unsplash photo for the section, including business type + setting (e.g. "luxury medspa treatment room miami", "cozy italian restaurant interior candlelight"). ALWAYS in English even when copy is in another language — Unsplash search is English-only.
+- image_placement: one of "background" | "side" | "card" | "avatar" | "none".
+- layout: one of "image-right" | "image-left" | "image-background" | "grid" | "stacked".
+- cta_urgency: optional short urgency line (e.g. "Limited slots this week").
+
+For EACH item inside services/features/pricing/testimonials include:
+- icon_name: a Lucide icon PascalCase name relevant to the item (e.g. "Syringe","Dumbbell","Scale","UtensilsCrossed","Home","Sparkles","Shield","Award","Star","Phone","MapPin","Clock","CalendarCheck","Users","DollarSign").
+- image_search_query: short English phrase for a matching photo (used for service cards / testimonial avatars).
+
+Use these icon mappings as a starting guide:
+Medical: Botox/Fillers→Syringe, Laser→Zap, Facial→Sparkles, Consult→MessageCircle.
+Restaurant: Dining→UtensilsCrossed, Delivery→Truck, Reservations→Calendar, Menu→BookOpen.
+Real Estate: Buying→Home, Selling→TrendingUp, Rentals→Key, Valuation→BarChart.
+Fitness: Training→Dumbbell, Classes→Users, Nutrition→Apple, Results→Trophy.
+Legal: Consultation→Scale, Contract→FileText, Court→Building, Research→Search.
+Generic: Phone, Mail, MapPin, Clock, Users, Shield, Award, Star, DollarSign, CalendarCheck.`;
 
 const TOOL = {
   type: "function" as const,
@@ -36,8 +101,8 @@ const TOOL = {
       properties: {
         name: { type: "string" },
         tagline: { type: "string" },
-        lang: { type: "string", description: "BCP-47 language code of generated copy, e.g. en, es, ar, ja" },
-        dir: { type: "string", enum: ["ltr", "rtl"], description: "Text direction" },
+        lang: { type: "string" },
+        dir: { type: "string", enum: ["ltr", "rtl"] },
         theme: {
           type: "object",
           properties: {
@@ -60,6 +125,10 @@ const TOOL = {
               heading: { type: "string" },
               subheading: { type: "string" },
               cta: { type: "string" },
+              cta_urgency: { type: "string" },
+              image_search_query: { type: "string", description: "English search phrase for Unsplash" },
+              image_placement: { type: "string", enum: ["background", "side", "card", "avatar", "none"] },
+              layout: { type: "string", enum: ["image-right", "image-left", "image-background", "grid", "stacked"] },
               items: {
                 type: "array",
                 items: {
@@ -69,6 +138,8 @@ const TOOL = {
                     body: { type: "string" },
                     price: { type: "string" },
                     author: { type: "string" },
+                    icon_name: { type: "string", description: "Lucide PascalCase icon name" },
+                    image_search_query: { type: "string" },
                   },
                   required: ["title"],
                 },
@@ -121,6 +192,7 @@ Deno.serve(async (req) => {
     const businessName: string | undefined = body.business_name;
     const businessCity: string | undefined = body.business_city;
     const language: string | undefined = body.language;
+    const funnelType: string | undefined = body.funnel_type; // "website" | "lead_capture" | "sales_landing" | "appointment" | "coming_soon" | "link_in_bio"
     const stream: boolean = body.stream !== false;
 
     if (!prompt.trim() && !templateDraft) {
@@ -143,7 +215,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Atomic plan + rate-limit + credit gate via DB function (service role)
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const { data: gate, error: gateErr } = await admin.rpc("check_and_consume", {
       _uid: user.id,
@@ -183,8 +254,6 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Accept ANY BCP-47 language code. We pass it through verbatim and let the model
-    // resolve the human-readable name. If empty, the model auto-detects from the prompt.
     const LANG_NAMES: Record<string, string> = {
       en: "English", es: "Spanish", pt: "Portuguese", fr: "French", de: "German",
       it: "Italian", nl: "Dutch", pl: "Polish", ru: "Russian", uk: "Ukrainian",
@@ -199,13 +268,17 @@ Deno.serve(async (req) => {
       ? ` This is a right-to-left language; include "dir": "rtl" in the JSON.`
       : "";
     const langInstruction = langName
-      ? `\n\nIMPORTANT: Write ALL copy in ${langName}.${rtlNote}`
+      ? `\n\nIMPORTANT: Write ALL copy in ${langName}. (image_search_query fields stay in English.)${rtlNote}`
       : "";
 
-    let userMessage = prompt + langInstruction;
+    const funnelInstruction = funnelType && funnelType !== "website"
+      ? `\n\nFUNNEL MODE: ${funnelType}. Apply the funnel rules from the system prompt strictly.`
+      : "";
+
+    let userMessage = prompt + langInstruction + funnelInstruction;
     if (templateDraft) {
       userMessage = `Personalize this template for "${businessName || "the business"}"${businessCity ? ` in ${businessCity}` : ""}.
-Replace placeholders, sharpen the copy, keep section structure. Original prompt: ${prompt || "(template start)"}.${langInstruction}
+Replace placeholders, sharpen the copy, keep section structure. Original prompt: ${prompt || "(template start)"}.${langInstruction}${funnelInstruction}
 
 Existing template JSON:
 ${JSON.stringify(templateDraft).slice(0, 6000)}`;
@@ -269,6 +342,7 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+      await hydrateImages(parsed);
       const site = await persistSite(supabase, user.id, prompt, parsed, profile, isUnlimited, isAdmin);
       return new Response(JSON.stringify({ site }), {
         status: 200,
@@ -276,8 +350,7 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
       });
     }
 
-    // STREAMING: parse OpenAI-style SSE, accumulate tool_call.function.arguments deltas,
-    // forward as our own "delta" events, then persist + emit "done".
+    // STREAMING
     const reader = aiResp.body!.getReader();
     const decoder = new TextDecoder();
     const encoder = new TextEncoder();
@@ -313,9 +386,7 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
                   accumulated += argChunk;
                   send("delta", { partial_json: argChunk });
                 }
-              } catch {
-                // ignore partial / non-JSON
-              }
+              } catch { /* ignore */ }
             }
           }
 
@@ -327,6 +398,8 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
             controller.close();
             return;
           }
+
+          await hydrateImages(parsed);
 
           const site = await persistSite(
             supabase,
@@ -366,6 +439,93 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
   }
 });
 
+// ----- Unsplash hydration -----
+const unsplashCache = new Map<string, { regular: string; thumb: string; alt: string; credit: string } | null>();
+
+async function unsplashSearch(query: string, orientation: "landscape" | "portrait" | "squarish" = "landscape") {
+  if (!UNSPLASH_ACCESS_KEY || !query) return null;
+  const cacheKey = `${orientation}:${query}`;
+  if (unsplashCache.has(cacheKey)) return unsplashCache.get(cacheKey)!;
+  try {
+    const url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&orientation=${orientation}&per_page=1&content_filter=high`;
+    const r = await fetch(url, {
+      headers: {
+        Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}`,
+        "Accept-Version": "v1",
+      },
+    });
+    if (!r.ok) {
+      console.warn("unsplash error", r.status, query);
+      unsplashCache.set(cacheKey, null);
+      return null;
+    }
+    const data = await r.json();
+    const photo = data?.results?.[0];
+    if (!photo) {
+      unsplashCache.set(cacheKey, null);
+      return null;
+    }
+    const result = {
+      regular: photo.urls.regular,
+      thumb: photo.urls.thumb,
+      alt: photo.alt_description || query,
+      credit: `Photo by ${photo.user?.name || "Unsplash"} on Unsplash`,
+    };
+    unsplashCache.set(cacheKey, result);
+    return result;
+  } catch (e) {
+    console.warn("unsplash exception", e);
+    unsplashCache.set(cacheKey, null);
+    return null;
+  }
+}
+
+async function hydrateImages(siteJson: unknown) {
+  if (!siteJson || typeof siteJson !== "object") return;
+  if (!UNSPLASH_ACCESS_KEY) return;
+  // deno-lint-ignore no-explicit-any
+  const site = siteJson as any;
+  const sections = Array.isArray(site.sections) ? site.sections : [];
+
+  // Run a bounded number of parallel queries to avoid Unsplash rate limits (50/hour demo).
+  const tasks: Array<Promise<void>> = [];
+
+  for (const sec of sections) {
+    if (sec?.image_search_query && sec?.image_placement !== "none") {
+      const orientation = sec.image_placement === "background" || sec.type === "hero" ? "landscape" : "landscape";
+      tasks.push(unsplashSearch(sec.image_search_query, orientation).then((r) => {
+        if (r) {
+          sec.image_url = r.regular;
+          sec.image_thumb = r.thumb;
+          sec.image_alt = r.alt;
+          sec.image_credit = r.credit;
+        }
+      }));
+    }
+    if (Array.isArray(sec?.items)) {
+      for (const item of sec.items) {
+        if (item?.image_search_query) {
+          const orient = sec.type === "testimonials" ? "squarish" : "landscape";
+          tasks.push(unsplashSearch(item.image_search_query, orient).then((r) => {
+            if (r) {
+              item.image_url = r.regular;
+              item.image_thumb = r.thumb;
+              item.image_alt = r.alt;
+              item.image_credit = r.credit;
+            }
+          }));
+        }
+      }
+    }
+  }
+
+  // Cap concurrency at 8
+  const chunkSize = 8;
+  for (let i = 0; i < tasks.length; i += chunkSize) {
+    await Promise.all(tasks.slice(i, i + chunkSize));
+  }
+}
+
 async function persistSite(
   // deno-lint-ignore no-explicit-any
   supabase: any,
@@ -383,7 +543,6 @@ async function persistSite(
     .select()
     .single();
   if (siteErr) {
-    // Storage cap trigger raises 'storage_limit:sites:<n>:<plan>'
     const msg = siteErr.message || "";
     if (msg.includes("storage_limit:sites")) {
       const parts = msg.split(":");
