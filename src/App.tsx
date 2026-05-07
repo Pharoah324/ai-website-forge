@@ -28,6 +28,8 @@ import AdminAccessCodes from "./pages/admin/AdminAccessCodes";
 import AdminAdmins from "./pages/admin/AdminAdmins";
 import AdminAlerts from "./pages/admin/AdminAlerts";
 import AdminUsage from "./pages/admin/AdminUsage";
+import AdminLaunchTests from "./pages/admin/AdminLaunchTests";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import Optimize from "./pages/Optimize";
 import OptimizeDashboard from "./pages/OptimizeDashboard";
 import Onboarding from "./pages/Onboarding";
