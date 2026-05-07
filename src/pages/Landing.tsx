@@ -605,7 +605,9 @@ export default function Landing() {
       <section id="how" className="bg-background py-24">
         <div className="container max-w-6xl">
           <FadeIn className="mb-14 text-center">
-            <h2 className="text-4xl font-bold tracking-tight md:text-5xl">Three Steps. A Real Business Website.</h2>
+            <h2 className="text-balance text-4xl font-bold tracking-tight md:text-5xl">
+              From Description to Live Website in Three Steps.
+            </h2>
           </FadeIn>
           <div className="grid gap-6 md:grid-cols-3">
             {STEPS.map((s, i) => (
