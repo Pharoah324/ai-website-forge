@@ -2,6 +2,7 @@ import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile, PLAN_LIMITS } from "@/hooks/useProfile";
+import { useAdmin } from "@/hooks/useAdmin";
 import {
   LayoutDashboard,
   Plus,
@@ -12,15 +13,18 @@ import {
   Zap,
   Plug,
   DollarSign,
+  ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CreditBadge } from "@/components/CreditBadge";
 import { LanguageSelector } from "@/components/LanguageSelector";
+import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { useI18n } from "@/lib/i18n";
 
 export default function AppLayout() {
   const { user, loading, signOut } = useAuth();
   const { data: profile } = useProfile();
+  const { data: admin } = useAdmin();
   const { t } = useI18n();
   const navigate = useNavigate();
 
@@ -31,6 +35,7 @@ export default function AppLayout() {
     { to: "/app/affiliate", label: "Affiliate Program", icon: DollarSign },
     { to: "/app/billing", label: t("nav.billing"), icon: CreditCard },
     { to: "/app/settings", label: t("nav.settings"), icon: Settings },
+    ...(admin ? [{ to: "/admin", label: "Admin Panel", icon: ShieldCheck }] : []),
   ];
 
   useEffect(() => {
@@ -120,6 +125,7 @@ export default function AppLayout() {
             </Button>
           </div>
         </header>
+        <AnnouncementBanner />
         <main className="min-w-0 flex-1 overflow-x-hidden">
           <Outlet />
         </main>

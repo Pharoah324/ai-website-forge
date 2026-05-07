@@ -19,6 +19,13 @@ import NotFound from "./pages/NotFound";
 import Affiliates from "./pages/Affiliates";
 import AffiliateDashboard from "./pages/AffiliateDashboard";
 import AdminAffiliates from "./pages/AdminAffiliates";
+import AdminLayout from "./layouts/AdminLayout";
+import AdminOverview from "./pages/admin/AdminOverview";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminSites from "./pages/admin/AdminSites";
+import AdminAnnouncements from "./pages/admin/AdminAnnouncements";
+import AdminAccessCodes from "./pages/admin/AdminAccessCodes";
+import AdminAdmins from "./pages/admin/AdminAdmins";
 import { getCustomerSubdomain } from "./lib/subdomain";
 import { I18nProvider } from "./lib/i18n";
 import { captureRefFromUrl } from "./lib/affiliateTracking";
@@ -56,7 +63,15 @@ const App = () => {
             <Route path="/share/:token" element={<Share />} />
             <Route path="/affiliates" element={<Affiliates />} />
             <Route path="/affiliates/:lang" element={<Affiliates />} />
-            <Route path="/admin/affiliates" element={<AdminAffiliates />} />
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminOverview />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="sites" element={<AdminSites />} />
+              <Route path="affiliates" element={<AdminAffiliates />} />
+              <Route path="announcements" element={<AdminAnnouncements />} />
+              <Route path="codes" element={<AdminAccessCodes />} />
+              <Route path="admins" element={<AdminAdmins />} />
+            </Route>
             <Route path="/app" element={<AppLayout />}>
               <Route index element={<Dashboard />} />
               <Route path="new" element={<NewSite />} />

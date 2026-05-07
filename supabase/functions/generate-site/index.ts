@@ -117,7 +117,7 @@ Deno.serve(async (req) => {
 
     const { data: profile, error: profileErr } = await supabase
       .from("profiles")
-      .select("build_credits, plan, brand_voice_active, brand_voice_samples, voice_rules")
+      .select("build_credits, plan, brand_voice_active, brand_voice_samples, voice_rules, role")
       .eq("id", user.id)
       .single();
 
@@ -128,7 +128,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    const isUnlimited = profile.plan === "agency";
+    const { data: adminRow } = await supabase
+      .from("admin_users").select("access_level").eq("user_id", user.id).maybeSingle();
+    const isAdmin = !!adminRow;
+    const isUnlimited = isAdmin || profile.plan === "agency";
     if (!isUnlimited && profile.build_credits <= 0) {
       return new Response(
         JSON.stringify({ error: "Out of build credits. Top up or upgrade." }),
@@ -218,7 +221,7 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      const site = await persistSite(supabase, user.id, prompt, parsed, profile, isUnlimited);
+      const site = await persistSite(supabase, user.id, prompt, parsed, profile, isUnlimited, isAdmin);
       return new Response(JSON.stringify({ site }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -284,6 +287,7 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
             parsed,
             profile,
             isUnlimited,
+            isAdmin,
           );
           send("done", { site });
           controller.close();
@@ -322,6 +326,7 @@ async function persistSite(
   siteJson: unknown,
   profile: { build_credits: number },
   isUnlimited: boolean,
+  isAdmin: boolean,
 ) {
   const name = (siteJson as { name?: string }).name || "Untitled Site";
   const { data: site, error: siteErr } = await supabase
@@ -331,7 +336,13 @@ async function persistSite(
     .single();
   if (siteErr) throw new Error("Failed to save site");
 
-  if (!isUnlimited) {
+  if (isAdmin) {
+    await supabase.from("admin_usage_log").insert({
+      admin_user_id: userId,
+      action_type: "site_generated",
+      notes: `Generated site: ${name}`,
+    });
+  } else if (!isUnlimited) {
     await supabase
       .from("profiles")
       .update({ build_credits: profile.build_credits - 1 })

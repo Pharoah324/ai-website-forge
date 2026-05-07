@@ -14,17 +14,133 @@ export type Database = {
   }
   public: {
     Tables: {
-      admin_users: {
+      access_code_redemptions: {
         Row: {
+          code_id: string
           created_at: string
+          id: string
           user_id: string
         }
         Insert: {
+          code_id: string
           created_at?: string
+          id?: string
           user_id: string
         }
         Update: {
+          code_id?: string
           created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "access_code_redemptions_code_id_fkey"
+            columns: ["code_id"]
+            isOneToOne: false
+            referencedRelation: "access_codes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      access_codes: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          created_by: string | null
+          credits_granted: number
+          expires_at: string | null
+          id: string
+          max_uses: number
+          notes: string | null
+          plan_granted: string
+          runtime_credits_granted: number
+          times_used: number
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          created_by?: string | null
+          credits_granted?: number
+          expires_at?: string | null
+          id?: string
+          max_uses?: number
+          notes?: string | null
+          plan_granted?: string
+          runtime_credits_granted?: number
+          times_used?: number
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          credits_granted?: number
+          expires_at?: string | null
+          id?: string
+          max_uses?: number
+          notes?: string | null
+          plan_granted?: string
+          runtime_credits_granted?: number
+          times_used?: number
+        }
+        Relationships: []
+      }
+      admin_usage_log: {
+        Row: {
+          action_type: string
+          admin_user_id: string
+          created_at: string
+          log_id: string
+          notes: string | null
+        }
+        Insert: {
+          action_type: string
+          admin_user_id: string
+          created_at?: string
+          log_id?: string
+          notes?: string | null
+        }
+        Update: {
+          action_type?: string
+          admin_user_id?: string
+          created_at?: string
+          log_id?: string
+          notes?: string | null
+        }
+        Relationships: []
+      }
+      admin_users: {
+        Row: {
+          access_level: Database["public"]["Enums"]["admin_access_level"]
+          added_by: string | null
+          created_at: string
+          email: string | null
+          last_active: string | null
+          name: string | null
+          notes: string | null
+          user_id: string
+        }
+        Insert: {
+          access_level?: Database["public"]["Enums"]["admin_access_level"]
+          added_by?: string | null
+          created_at?: string
+          email?: string | null
+          last_active?: string | null
+          name?: string | null
+          notes?: string | null
+          user_id: string
+        }
+        Update: {
+          access_level?: Database["public"]["Enums"]["admin_access_level"]
+          added_by?: string | null
+          created_at?: string
+          email?: string | null
+          last_active?: string | null
+          name?: string | null
+          notes?: string | null
           user_id?: string
         }
         Relationships: []
@@ -133,6 +249,36 @@ export type Database = {
         }
         Relationships: []
       }
+      announcements: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          message: string
+          variant: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          message: string
+          variant?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          message?: string
+          variant?: string
+        }
+        Relationships: []
+      }
       credit_ledger: {
         Row: {
           amount: number
@@ -222,6 +368,7 @@ export type Database = {
           monthly_build_limit: number
           monthly_runtime_limit: number
           plan: Database["public"]["Enums"]["plan_tier"]
+          role: Database["public"]["Enums"]["user_role"]
           rollover_build_credits: number
           rollover_runtime_credits: number
           runtime_credits: number
@@ -249,6 +396,7 @@ export type Database = {
           monthly_build_limit?: number
           monthly_runtime_limit?: number
           plan?: Database["public"]["Enums"]["plan_tier"]
+          role?: Database["public"]["Enums"]["user_role"]
           rollover_build_credits?: number
           rollover_runtime_credits?: number
           runtime_credits?: number
@@ -276,6 +424,7 @@ export type Database = {
           monthly_build_limit?: number
           monthly_runtime_limit?: number
           plan?: Database["public"]["Enums"]["plan_tier"]
+          role?: Database["public"]["Enums"]["user_role"]
           rollover_build_credits?: number
           rollover_runtime_credits?: number
           runtime_credits?: number
@@ -482,9 +631,16 @@ export type Database = {
     }
     Functions: {
       generate_affiliate_code: { Args: never; Returns: string }
+      get_admin_level: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["admin_access_level"]
+      }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      redeem_access_code: { Args: { _code: string }; Returns: Json }
     }
     Enums: {
+      admin_access_level: "super_admin" | "admin" | "support"
       affiliate_status: "pending" | "active" | "suspended"
       affiliate_tier: "starter" | "pro" | "elite" | "agency_partner"
       conversion_status: "pending" | "confirmed" | "paid"
@@ -498,6 +654,7 @@ export type Database = {
         | "admin_adjust"
       payout_status: "pending" | "processing" | "paid" | "failed"
       plan_tier: "free" | "starter" | "builder" | "pro" | "agency"
+      user_role: "user" | "admin" | "agency" | "affiliate"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -625,6 +782,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      admin_access_level: ["super_admin", "admin", "support"],
       affiliate_status: ["pending", "active", "suspended"],
       affiliate_tier: ["starter", "pro", "elite", "agency_partner"],
       conversion_status: ["pending", "confirmed", "paid"],
@@ -639,6 +797,7 @@ export const Constants = {
       ],
       payout_status: ["pending", "processing", "paid", "failed"],
       plan_tier: ["free", "starter", "builder", "pro", "agency"],
+      user_role: ["user", "admin", "agency", "affiliate"],
     },
   },
 } as const

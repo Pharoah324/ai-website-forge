@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useI18n } from "@/lib/i18n";
+import { AccessCodeRedeem } from "@/components/AccessCodeRedeem";
 
 type Interval = "monthly" | "annual";
 
@@ -110,6 +111,8 @@ export default function Billing() {
           </Button>
         </div>
       </div>
+
+      <div className="mt-6"><AccessCodeRedeem /></div>
 
       <div className="mt-6 rounded-lg border bg-card p-6 shadow-card">
         <div className="flex items-center justify-between">
