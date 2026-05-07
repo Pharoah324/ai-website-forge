@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Zap } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { getStoredRef } from "@/lib/affiliateTracking";
 
 const schema = z.object({
   email: z.string().trim().email("Invalid email").max(255),
@@ -38,10 +39,14 @@ export default function Auth() {
     setLoading(true);
     try {
       if (mode === "signup") {
+        const ref = getStoredRef();
         const { error } = await supabase.auth.signUp({
           email: parsed.data.email,
           password: parsed.data.password,
-          options: { emailRedirectTo: `${window.location.origin}/app` },
+          options: {
+            emailRedirectTo: `${window.location.origin}/app`,
+            data: ref ? { affiliate_ref: ref } : undefined,
+          },
         });
         if (error) throw error;
         toast.success("Account created. Check your email to confirm.");

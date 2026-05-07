@@ -732,6 +732,7 @@ export default function Landing() {
             <div>
               <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-navy-foreground/80">Support</h4>
               <ul className="space-y-2 text-sm text-navy-foreground/70">
+                <li><Link to="/affiliates" className="hover:text-primary-glow">Affiliate Program</Link></li>
                 <li><a href="#" className="hover:text-primary-glow">Help Center</a></li>
                 <li><a href="#" className="hover:text-primary-glow">Contact</a></li>
                 <li><a href="#" className="hover:text-primary-glow">Status</a></li>
