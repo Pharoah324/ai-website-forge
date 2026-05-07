@@ -257,10 +257,10 @@ const dicts: Record<string, Dict> = {
 
 function detectLang(): string {
   if (typeof window === "undefined") return "en";
-  const stored = localStorage.getItem(STORAGE_KEY);
+  let stored: string | null = null;
+  try { stored = localStorage.getItem(STORAGE_KEY); } catch { /* noop */ }
   if (stored) return stored;
-  const nav = (navigator.language || "en").toLowerCase();
-  // Match against any known LANGUAGES code (e.g. "zh-TW", "pt-BR" → "pt")
+  const nav = (typeof navigator !== "undefined" ? (navigator.language || "en") : "en").toLowerCase();
   const exact = LANGUAGES.find((l) => l.code.toLowerCase() === nav);
   if (exact) return exact.code;
   const base = nav.split("-")[0];
