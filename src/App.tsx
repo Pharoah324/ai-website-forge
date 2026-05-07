@@ -26,6 +26,8 @@ import AdminSites from "./pages/admin/AdminSites";
 import AdminAnnouncements from "./pages/admin/AdminAnnouncements";
 import AdminAccessCodes from "./pages/admin/AdminAccessCodes";
 import AdminAdmins from "./pages/admin/AdminAdmins";
+import Optimize from "./pages/Optimize";
+import Onboarding from "./pages/Onboarding";
 import { getCustomerSubdomain } from "./lib/subdomain";
 import { I18nProvider } from "./lib/i18n";
 import { captureRefFromUrl } from "./lib/affiliateTracking";
@@ -74,6 +76,8 @@ const App = () => {
             </Route>
             <Route path="/app" element={<AppLayout />}>
               <Route index element={<Dashboard />} />
+              <Route path="onboarding" element={<Onboarding />} />
+              <Route path="optimize" element={<Optimize />} />
               <Route path="new" element={<NewSite />} />
               <Route path="sites/:id" element={<SiteDetail />} />
               <Route path="billing" element={<Billing />} />
