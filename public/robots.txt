@@ -1,3 +1,11 @@
+User-agent: *
+Allow: /
+Allow: /pricing
+Allow: /affiliates
+Disallow: /app/
+Disallow: /admin/
+Disallow: /api/
+
 User-agent: Googlebot
 Allow: /
 
@@ -10,9 +18,4 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
-User-agent: *
-Allow: /
-Disallow: /app/
-Disallow: /admin/
-
-Sitemap: https://virtualengine.ai/sitemap.xml
+Sitemap: https://builder.virtualengine.ai/sitemap.xml
