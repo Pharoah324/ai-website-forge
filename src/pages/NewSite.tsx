@@ -33,6 +33,7 @@ import type { SiteContent } from "@/types/site";
 import { toast } from "sonner";
 import { TEMPLATES, type Template } from "@/data/templates";
 import { streamGenerateSite } from "@/lib/streamGenerate";
+import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 
 const VIEWPORTS = {
