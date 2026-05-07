@@ -279,6 +279,7 @@ export default function NewSite() {
     void tpl;
   };
 
+  const v = VIEWPORTS[viewport];
   const showChat = !!siteId && !!content;
 
   return (
