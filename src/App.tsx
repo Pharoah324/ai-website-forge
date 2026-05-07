@@ -17,6 +17,7 @@ import LiveSite from "./pages/LiveSite";
 import AppLayout from "./layouts/AppLayout";
 import NotFound from "./pages/NotFound";
 import { getCustomerSubdomain } from "./lib/subdomain";
+import { I18nProvider } from "./lib/i18n";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, refetchOnWindowFocus: false } },
@@ -40,6 +41,7 @@ const App = () => {
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <I18nProvider>
       <BrowserRouter>
         <AuthProvider>
           <Routes>
@@ -58,6 +60,7 @@ const App = () => {
           </Routes>
         </AuthProvider>
       </BrowserRouter>
+      </I18nProvider>
     </TooltipProvider>
   </QueryClientProvider>
   );
