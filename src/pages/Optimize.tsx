@@ -6,9 +6,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Globe, ArrowRight, Plus, Trash2, BarChart3 } from "lucide-react";
+import { Globe, ArrowRight, Plus, Trash2, BarChart3, Lock, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { useProfile } from "@/hooks/useProfile";
+import { useAdmin } from "@/hooks/useAdmin";
+import { getAccess } from "@/lib/optimizationAccess";
 
 type OptimizationProject = {
   id: string;
@@ -24,6 +27,9 @@ export default function Optimize() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [url, setUrl] = useState("");
+  const { data: profile } = useProfile();
+  const { data: adminLevel } = useAdmin();
+  const access = getAccess(profile?.plan ?? "free", !!adminLevel);
 
   const { data: projects } = useQuery({
     queryKey: ["optimization-projects", user?.id],
@@ -41,6 +47,10 @@ export default function Optimize() {
   const createMut = useMutation({
     mutationFn: async (websiteUrl: string) => {
       if (!user) throw new Error("Not signed in");
+      // Multi-client gate: only Agency (or admin) can manage more than one site
+      if (!access.multiClient && (projects?.length ?? 0) >= 1) {
+        throw new Error("Multi-site management is an Agency feature. Upgrade to add unlimited client sites.");
+      }
       let normalized = websiteUrl.trim();
       if (!/^https?:\/\//i.test(normalized)) normalized = `https://${normalized}`;
       const host = new URL(normalized).hostname.replace(/^www\./, "");
@@ -106,6 +116,21 @@ export default function Optimize() {
           </Button>
         </form>
       </Card>
+
+      {!access.multiClient && (projects?.length ?? 0) >= 1 && (
+        <Card className="mt-4 flex items-start gap-3 border-amber-200 bg-amber-50/60 p-4 dark:border-amber-500/20 dark:bg-amber-500/5">
+          <Lock className="mt-0.5 h-4 w-4 text-amber-600" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold">Want to optimize multiple client sites?</p>
+            <p className="text-xs text-muted-foreground">
+              The Agency plan ($199/mo) unlocks multi-client workspaces, white-label reports, and PDF exports.
+            </p>
+          </div>
+          <Link to="/app/billing" className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90">
+            <Sparkles className="h-3 w-3" /> Upgrade
+          </Link>
+        </Card>
+      )}
 
       <div className="mt-8">
         <h2 className="mb-4 text-lg font-semibold">Connected sites</h2>
