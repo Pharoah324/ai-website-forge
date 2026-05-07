@@ -73,10 +73,11 @@ const PLAN_TRUST: Record<string, string[]> = {
 };
 
 const ROTATING_PROMPTS = [
-  "A luxury medspa in Miami called Glow Aesthetics offering Botox, facials, and online booking…",
-  "A real estate agent in Atlanta specializing in luxury condos with IDX listings and lead capture…",
-  "Un restaurante de mariscos en Ciudad de México con menú, reservas online y reseñas de clientes…",
-  "Uma academia de fitness em São Paulo chamada Forma Total com aulas, planos e agendamento…",
+  "A medspa in Miami called Glow Aesthetics. Botox, fillers, laser treatments. Luxury feel, online booking required…",
+  "Un restaurante de mariscos en Ciudad de México llamado El Rincón del Mar. Ambiente familiar, reservaciones en línea…",
+  "مطعم عربي فاخر في دبي يقدم المأكولات الشامية التقليدية. نريد نظام حجز إلكتروني…",
+  "Uma clínica de estética em São Paulo chamada Bella Vita. Tratamentos faciais, agendamento online obrigatório…",
+  "東京にある和食レストラン「桜庭」。伝統的な日本料理、オンライン予約システム必須…",
 ];
 
 function RotatingPrompt() {
