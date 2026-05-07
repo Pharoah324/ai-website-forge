@@ -46,7 +46,13 @@ export default function AdminLayout() {
                   isActive ? "bg-sidebar-accent text-sidebar-accent-foreground" : "hover:bg-sidebar-accent/60"
                 }`
               }>
-              <n.icon className="h-4 w-4" /> {n.label}
+              <n.icon className="h-4 w-4" />
+              <span className="flex-1">{n.label}</span>
+              {"badge" in n && (n as any).badge > 0 && (
+                <span className="ml-auto inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-cta px-1.5 text-[10px] font-bold text-cta-foreground">
+                  {(n as any).badge}
+                </span>
+              )}
             </NavLink>
           ))}
         </nav>
