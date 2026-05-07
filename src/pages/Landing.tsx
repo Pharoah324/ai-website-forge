@@ -298,18 +298,19 @@ export default function Landing() {
             ✦ Now Available in the GoHighLevel Marketplace
           </div>
           <h1 className="text-balance text-5xl font-bold leading-[1.02] tracking-tight md:text-7xl">
-            Your Business Deserves
+            Build. Optimize.
             <br />
-            <span className="text-gradient">A Website That Gets Found.</span>
+            <span className="text-gradient">Automate. Scale.</span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-balance text-lg text-navy-foreground/75">
-            Type it. Say it out loud. Virtual Engine Builder turns your description into a live, SEO-optimized website,
-            funnel, or landing page — connected to GoHighLevel and ready to take customers — in 60 seconds.
+            AI-powered business infrastructure for companies that want more visibility, better systems, and smarter
+            growth. Most websites never get found — Virtual Engine helps businesses build smarter sites, optimize SEO,
+            automate lead flow, and connect the systems that drive growth.
           </p>
           <div className="mt-10 flex flex-wrap justify-center gap-3">
             <Button asChild size="lg" className="bg-cta text-cta-foreground shadow-glow-cta hover:bg-cta/90">
               <Link to="/auth?mode=signup">
-                ✦ Build My Website Free <ArrowRight className="ml-1 h-4 w-4" />
+                Build a New Website <ArrowRight className="ml-1 h-4 w-4" />
               </Link>
             </Button>
             <Button
@@ -318,13 +319,13 @@ export default function Landing() {
               size="lg"
               className="border-navy-foreground/20 bg-transparent text-navy-foreground hover:bg-navy-foreground/10"
             >
-              <a href="#how">
-                See It In Action <ArrowDown className="ml-1 h-4 w-4" />
-              </a>
+              <Link to="/auth?mode=signup&intent=optimize">
+                Optimize an Existing Website <ArrowRight className="ml-1 h-4 w-4" />
+              </Link>
             </Button>
           </div>
           <p className="mt-5 text-xs text-navy-foreground/60">
-            Free to start · No tech skills needed · GoHighLevel pipeline ready
+            For startups, local businesses, agencies, and enterprise brands · No credit card required
           </p>
           <RotatingPrompt />
         </div>
