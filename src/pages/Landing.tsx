@@ -23,6 +23,7 @@ import {
   X,
   CheckCircle2,
   Settings2,
+  DollarSign,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { PLAN_LIMITS } from "@/hooks/useProfile";
