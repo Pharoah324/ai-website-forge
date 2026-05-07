@@ -146,10 +146,15 @@ Deno.serve(async (req) => {
       }
     }
 
-    let userMessage = prompt;
+    const langMap: Record<string, string> = { en: "English", es: "Spanish", pt: "Portuguese", fr: "French" };
+    const langInstruction = language && langMap[language]
+      ? `\n\nIMPORTANT: Write ALL copy in ${langMap[language]}.`
+      : "";
+
+    let userMessage = prompt + langInstruction;
     if (templateDraft) {
       userMessage = `Personalize this template for "${businessName || "the business"}"${businessCity ? ` in ${businessCity}` : ""}.
-Replace placeholders, sharpen the copy, keep section structure. Original prompt: ${prompt || "(template start)"}.
+Replace placeholders, sharpen the copy, keep section structure. Original prompt: ${prompt || "(template start)"}.${langInstruction}
 
 Existing template JSON:
 ${JSON.stringify(templateDraft).slice(0, 6000)}`;
