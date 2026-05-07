@@ -628,3 +628,22 @@ export default function NewSite() {
     </div>
   );
 }
+
+function DesignScoreBadge({ content }: { content: SiteContent }) {
+  const score = computeDesignScore(content);
+  const tone =
+    score.total >= 80
+      ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+      : score.total >= 60
+        ? "bg-yellow-500/15 text-yellow-400 border-yellow-500/30"
+        : "bg-orange-500/15 text-orange-400 border-orange-500/30";
+  const tip = score.notes.length ? score.notes.join(" • ") : "Great design";
+  return (
+    <span
+      className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${tone}`}
+      title={tip}
+    >
+      UX {score.total}/100
+    </span>
+  );
+}
