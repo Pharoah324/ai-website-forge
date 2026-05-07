@@ -24,6 +24,7 @@ import { useI18n } from "@/lib/i18n";
 export default function AppLayout() {
   const { user, loading, signOut } = useAuth();
   const { data: profile } = useProfile();
+  const { data: admin } = useAdmin();
   const { t } = useI18n();
   const navigate = useNavigate();
 
@@ -34,6 +35,7 @@ export default function AppLayout() {
     { to: "/app/affiliate", label: "Affiliate Program", icon: DollarSign },
     { to: "/app/billing", label: t("nav.billing"), icon: CreditCard },
     { to: "/app/settings", label: t("nav.settings"), icon: Settings },
+    ...(admin ? [{ to: "/admin", label: "Admin Panel", icon: ShieldCheck }] : []),
   ];
 
   useEffect(() => {
