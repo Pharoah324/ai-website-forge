@@ -125,6 +125,7 @@ export default function AppLayout() {
             </Button>
           </div>
         </header>
+        <AnnouncementBanner />
         <main className="min-w-0 flex-1 overflow-x-hidden">
           <Outlet />
         </main>
