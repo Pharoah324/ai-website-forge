@@ -133,7 +133,7 @@ export default function Affiliates() {
     if (!parsed.success) return toast.error(parsed.error.issues[0].message);
 
     setSubmitting(true);
-    const { error } = await supabase.from("affiliates").insert({
+    const { error } = await supabase.from("affiliates").insert([{
       ...parsed.data,
       website_url: parsed.data.website_url || null,
       promotion_plan: parsed.data.promotion_plan || null,
