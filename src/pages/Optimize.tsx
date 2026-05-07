@@ -47,6 +47,10 @@ export default function Optimize() {
   const createMut = useMutation({
     mutationFn: async (websiteUrl: string) => {
       if (!user) throw new Error("Not signed in");
+      // Multi-client gate: only Agency (or admin) can manage more than one site
+      if (!access.multiClient && (projects?.length ?? 0) >= 1) {
+        throw new Error("Multi-site management is an Agency feature. Upgrade to add unlimited client sites.");
+      }
       let normalized = websiteUrl.trim();
       if (!/^https?:\/\//i.test(normalized)) normalized = `https://${normalized}`;
       const host = new URL(normalized).hostname.replace(/^www\./, "");
