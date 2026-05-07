@@ -101,7 +101,7 @@ export function RefinementChat({
         .eq("site_id", siteId)
         .order("version_number", { ascending: false });
       if (error) throw error;
-      return data as VersionRow[];
+      return data as unknown as VersionRow[];
     },
   });
 
