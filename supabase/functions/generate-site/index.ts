@@ -181,9 +181,23 @@ Deno.serve(async (req) => {
       }
     }
 
-    const langMap: Record<string, string> = { en: "English", es: "Spanish", pt: "Portuguese", fr: "French" };
-    const langInstruction = language && langMap[language]
-      ? `\n\nIMPORTANT: Write ALL copy in ${langMap[language]}.`
+    // Accept ANY BCP-47 language code. We pass it through verbatim and let the model
+    // resolve the human-readable name. If empty, the model auto-detects from the prompt.
+    const LANG_NAMES: Record<string, string> = {
+      en: "English", es: "Spanish", pt: "Portuguese", fr: "French", de: "German",
+      it: "Italian", nl: "Dutch", pl: "Polish", ru: "Russian", uk: "Ukrainian",
+      ar: "Arabic", he: "Hebrew", fa: "Persian", ur: "Urdu", tr: "Turkish",
+      hi: "Hindi", bn: "Bengali", zh: "Mandarin Chinese", "zh-TW": "Traditional Chinese",
+      ja: "Japanese", ko: "Korean", th: "Thai", vi: "Vietnamese",
+      id: "Indonesian", ms: "Malay", tl: "Tagalog", sw: "Swahili",
+    };
+    const RTL_CODES = new Set(["ar", "he", "fa", "ur"]);
+    const langName = language ? (LANG_NAMES[language] || language) : "";
+    const rtlNote = language && RTL_CODES.has(language)
+      ? ` This is a right-to-left language; include "dir": "rtl" in the JSON.`
+      : "";
+    const langInstruction = langName
+      ? `\n\nIMPORTANT: Write ALL copy in ${langName}.${rtlNote}`
       : "";
 
     let userMessage = prompt + langInstruction;
