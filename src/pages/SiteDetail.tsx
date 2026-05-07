@@ -314,33 +314,50 @@ export default function SiteDetail() {
         </div>
       </div>
 
-      <div className="grid flex-1 grid-cols-1 overflow-hidden lg:grid-cols-[240px_1fr]">
-        {/* Section list with rewrite buttons */}
-        <aside className="overflow-y-auto border-r bg-card p-3">
-          <p className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Sections · Rewrite is free
-          </p>
-          <ul className="space-y-1">
-            {content.sections.map((s, i) => (
-              <li key={i} className="group flex items-center justify-between rounded-md p-2 hover:bg-muted">
-                <div className="min-w-0">
-                  <p className="text-[10px] font-semibold uppercase text-muted-foreground">{s.type}</p>
-                  <p className="truncate text-xs font-medium">{s.heading}</p>
-                </div>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-7 px-2 opacity-0 transition-opacity group-hover:opacity-100"
-                  onClick={() => openRewrite(i)}
-                >
-                  <Wand2 className="h-3.5 w-3.5" />
-                </Button>
-              </li>
-            ))}
-          </ul>
+      {/* Mobile tabs */}
+      <div className="flex border-b bg-card lg:hidden">
+        {(["chat", "preview"] as const).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setMobileTab(tab)}
+            className={`flex-1 py-2 text-sm font-medium capitalize transition-colors ${
+              mobileTab === tab ? "border-b-2 border-primary text-foreground" : "text-muted-foreground"
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid flex-1 grid-cols-1 overflow-hidden lg:grid-cols-[360px_1fr]">
+        <aside className={`${mobileTab === "chat" ? "flex" : "hidden lg:flex"} flex-col overflow-hidden border-r`}>
+          <RefinementChat
+            siteId={id!}
+            originalPrompt={site.prompt}
+            onContentUpdated={() => qc.invalidateQueries({ queryKey: ["site", id] })}
+            onTopUp={() => setTopUpOpen(true)}
+          />
+          {/* Per-section rewrite (free) */}
+          <div className="border-t bg-card p-2">
+            <p className="mb-1 px-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Quick rewrite (free)
+            </p>
+            <ul className="max-h-40 space-y-0.5 overflow-y-auto">
+              {content.sections.map((s, i) => (
+                <li key={i} className="group flex items-center justify-between rounded p-1.5 text-xs hover:bg-muted">
+                  <span className="truncate">
+                    <span className="text-[9px] uppercase text-muted-foreground">{s.type}</span> · {s.heading}
+                  </span>
+                  <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => openRewrite(i)}>
+                    <Wand2 className="h-3 w-3" />
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </div>
         </aside>
 
-        <div className="flex flex-1 items-start justify-center overflow-y-auto bg-muted/30 p-6">
+        <div className={`${mobileTab === "chat" ? "hidden lg:flex" : "flex"} flex-1 items-start justify-center overflow-y-auto bg-muted/30 p-6`}>
           <div
             className="overflow-hidden rounded-lg border bg-card shadow-elevated transition-all"
             style={{ width: v.width, maxWidth: "100%" }}
@@ -349,6 +366,8 @@ export default function SiteDetail() {
           </div>
         </div>
       </div>
+      <TopUpModal open={topUpOpen} onOpenChange={setTopUpOpen} />
+
 
       <Dialog open={rewriteIdx !== null} onOpenChange={(o) => !o && setRewriteIdx(null)}>
         <DialogContent className="max-w-4xl">
