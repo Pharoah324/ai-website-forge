@@ -1,5 +1,16 @@
-import { createRoot } from "react-dom/client";
-import App from "./App.tsx";
+import { ViteReactSSG } from "vite-react-ssg";
+import { routes } from "./App";
 import "./index.css";
 
-createRoot(document.getElementById("root")!).render(<App />);
+// Pre-render only marketing/public routes at build time.
+// All /app/* and /admin/* stay client-only (require auth/session).
+export const createRoot = ViteReactSSG(
+  {
+    routes,
+    basename: "/",
+  },
+  () => {},
+  {
+    rootContainer: "#root",
+  },
+);
