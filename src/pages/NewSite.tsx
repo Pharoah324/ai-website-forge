@@ -362,6 +362,33 @@ export default function NewSite() {
           </div>
         )}
 
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            What are you building?
+          </p>
+          <div className="grid grid-cols-2 gap-1.5">
+            {FUNNEL_TYPES.map((f) => {
+              const active = funnelType === f.id;
+              return (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => setFunnelType(f.id)}
+                  disabled={generating}
+                  className={`rounded-md border p-2 text-left text-xs transition-colors ${
+                    active
+                      ? "border-primary bg-primary/10 text-foreground"
+                      : "border-border bg-background text-muted-foreground hover:border-primary/50"
+                  }`}
+                >
+                  <div className="font-semibold">{f.label}</div>
+                  <div className="mt-0.5 text-[10px] opacity-80">{f.desc}</div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         <Textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
