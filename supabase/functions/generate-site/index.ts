@@ -9,7 +9,9 @@ const corsHeaders = {
 const SYSTEM_PROMPT = `You are a website generator. Given a business description (and optionally an existing template draft), return a complete, polished site structure.
 Use the build_site tool. Generate clear, conversion-focused copy. Pick a tasteful color palette that fits the industry.
 Sections should follow this order when relevant: hero, features, about, testimonials, pricing, faq, cta, contact.
-Color values must be raw HSL triples like "221 83% 53%" (no hsl() wrapper, no commas).`;
+Color values must be raw HSL triples like "221 83% 53%" (no hsl() wrapper, no commas).
+
+LANGUAGE: Detect the language of the user's business description and write ALL copy (name, tagline, headings, subheadings, CTAs, item titles & bodies) in that SAME language. If the user explicitly specifies a target language, use it. Supported: English, Spanish, Portuguese, French. Do not translate proper nouns.`;
 
 const TOOL = {
   type: "function" as const,
@@ -103,6 +105,7 @@ Deno.serve(async (req) => {
     const templateDraft = body.template_draft ?? null;
     const businessName: string | undefined = body.business_name;
     const businessCity: string | undefined = body.business_city;
+    const language: string | undefined = body.language;
     const stream: boolean = body.stream !== false;
 
     if (!prompt.trim() && !templateDraft) {
@@ -143,10 +146,15 @@ Deno.serve(async (req) => {
       }
     }
 
-    let userMessage = prompt;
+    const langMap: Record<string, string> = { en: "English", es: "Spanish", pt: "Portuguese", fr: "French" };
+    const langInstruction = language && langMap[language]
+      ? `\n\nIMPORTANT: Write ALL copy in ${langMap[language]}.`
+      : "";
+
+    let userMessage = prompt + langInstruction;
     if (templateDraft) {
       userMessage = `Personalize this template for "${businessName || "the business"}"${businessCity ? ` in ${businessCity}` : ""}.
-Replace placeholders, sharpen the copy, keep section structure. Original prompt: ${prompt || "(template start)"}.
+Replace placeholders, sharpen the copy, keep section structure. Original prompt: ${prompt || "(template start)"}.${langInstruction}
 
 Existing template JSON:
 ${JSON.stringify(templateDraft).slice(0, 6000)}`;

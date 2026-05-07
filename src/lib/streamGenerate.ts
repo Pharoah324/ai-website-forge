@@ -22,6 +22,7 @@ type GenerateBody = {
   template_draft?: SiteContent | null;
   business_name?: string;
   business_city?: string;
+  language?: string;
 };
 
 const STALL_MS = 45_000; // no data for 45s = stalled

@@ -16,6 +16,8 @@ import {
 import { useEffect, useState } from "react";
 import { PLAN_LIMITS } from "@/hooks/useProfile";
 import { ChatWidget } from "@/components/ChatWidget";
+import { useI18n } from "@/lib/i18n";
+import { LanguageSelector } from "@/components/LanguageSelector";
 
 const PLAN_FEATURES: Record<string, string[]> = {
   free: ["20 build credits/mo", "300 runtime credits", "Live preview", "1 user"],
@@ -136,6 +138,7 @@ const STATS = [
 ];
 
 export default function Landing() {
+  const { t } = useI18n();
   return (
     <div className="min-h-screen bg-background">
       {/* Nav */}
@@ -150,11 +153,12 @@ export default function Landing() {
             </span>
           </Link>
           <div className="flex items-center gap-3">
+            <LanguageSelector />
             <Link to="/auth" className="text-sm text-navy-foreground/80 hover:text-navy-foreground">
-              Sign in
+              {t("nav.signin")}
             </Link>
             <Button asChild size="sm" className="bg-cta text-cta-foreground hover:bg-cta/90">
-              <Link to="/auth?mode=signup">Get started</Link>
+              <Link to="/auth?mode=signup">{t("nav.getstarted")}</Link>
             </Button>
           </div>
         </div>
@@ -165,17 +169,15 @@ export default function Landing() {
         <div className="container relative z-10 mx-auto max-w-4xl text-center">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary-glow">
             <Sparkles className="h-3 w-3" />
-            AI-powered site generation
+            {t("hero.badge")}
           </div>
           <h1 className="text-balance text-5xl font-bold leading-[1.05] tracking-tight md:text-6xl">
-            You Have an Idea.
+            {t("hero.title1")}
             <br />
-            <span className="text-gradient">We'll Build It in Minutes.</span>
+            <span className="text-gradient">{t("hero.title2")}</span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-balance text-lg text-navy-foreground/75">
-            Type it or say it out loud. Virtual Engine Builder turns your business
-            description into a real website, funnel, or landing page — live and
-            ready to take customers.
+            {t("hero.subtitle")}
           </p>
           <div className="mt-10 flex flex-wrap justify-center gap-3">
             <Button
@@ -184,7 +186,7 @@ export default function Landing() {
               className="bg-cta text-cta-foreground shadow-glow-cta hover:bg-cta/90"
             >
               <Link to="/auth?mode=signup">
-                ✦ Bring My Idea to Life <ArrowRight className="ml-1 h-4 w-4" />
+                {t("hero.cta")} <ArrowRight className="ml-1 h-4 w-4" />
               </Link>
             </Button>
             <Button
@@ -193,13 +195,13 @@ export default function Landing() {
               size="lg"
               className="border-navy-foreground/20 bg-transparent text-navy-foreground hover:bg-navy-foreground/10"
             >
-              <a href="#pricing">See pricing</a>
+              <a href="#pricing">{t("hero.seePricing")}</a>
             </Button>
           </div>
           <div className="mt-5 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-navy-foreground/60">
-            <span className="flex items-center gap-1.5"><CheckCircle2 className="h-3 w-3 text-primary-glow" /> Free to start</span>
-            <span className="flex items-center gap-1.5"><CheckCircle2 className="h-3 w-3 text-primary-glow" /> No tech skills needed</span>
-            <span className="flex items-center gap-1.5"><CheckCircle2 className="h-3 w-3 text-primary-glow" /> GoHighLevel ready</span>
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="h-3 w-3 text-primary-glow" /> {t("hero.bullet1")}</span>
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="h-3 w-3 text-primary-glow" /> {t("hero.bullet2")}</span>
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="h-3 w-3 text-primary-glow" /> {t("hero.bullet3")}</span>
           </div>
         </div>
         <div className="pointer-events-none absolute inset-x-0 top-1/2 h-[500px] -translate-y-1/2 bg-gradient-glow" />
@@ -224,9 +226,9 @@ export default function Landing() {
       <section className="bg-navy py-20 text-navy-foreground">
         <div className="container max-w-5xl">
           <div className="mb-10 text-center">
-            <h2 className="text-3xl font-bold tracking-tight md:text-4xl">See It In Action</h2>
+            <h2 className="text-3xl font-bold tracking-tight md:text-4xl">{t("demo.title")}</h2>
             <p className="mt-3 text-navy-foreground/60">
-              From description to live website in 60 seconds.
+              {t("demo.subtitle")}
             </p>
           </div>
           <TypingDemo />
@@ -259,7 +261,7 @@ export default function Landing() {
         <div className="container max-w-6xl">
           <div className="mx-auto mb-12 max-w-2xl text-center">
             <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
-              Loved by builders, agencies, and coaches
+              {t("testimonials.title")}
             </h2>
           </div>
           <div className="grid gap-6 md:grid-cols-3">
@@ -288,9 +290,9 @@ export default function Landing() {
       <section id="pricing" className="bg-card py-20">
         <div className="container">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-4xl font-bold tracking-tight">Simple pricing</h2>
+            <h2 className="text-4xl font-bold tracking-tight">{t("pricing.title")}</h2>
             <p className="mt-3 text-muted-foreground">
-              Pay for what you build. Unused credits roll over (50%, capped at one month).
+              {t("pricing.subtitle")}
             </p>
           </div>
           <div className="mt-12 grid gap-4 md:grid-cols-3 lg:grid-cols-5">
@@ -306,7 +308,7 @@ export default function Landing() {
                 >
                   {featured && (
                     <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary-foreground">
-                      Most popular
+                      {t("pricing.popular")}
                     </span>
                   )}
                   <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
@@ -330,7 +332,7 @@ export default function Landing() {
                     variant={featured ? "default" : "outline"}
                   >
                     <Link to="/auth?mode=signup">
-                      {p.price === 0 ? "Start free" : "Choose plan"}
+                      {p.price === 0 ? t("pricing.startFree") : t("pricing.choose")}
                     </Link>
                   </Button>
                 </div>
@@ -352,7 +354,7 @@ export default function Landing() {
             className="font-semibold text-parent-brand hover:underline"
             style={{ color: "hsl(var(--parent-brand))" }}
           >
-            A Virtual Engine product — virtualengine.ai →
+            {t("footer.product")}
           </a>
         </div>
       </footer>
