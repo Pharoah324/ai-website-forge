@@ -30,20 +30,47 @@ import { PLAN_LIMITS } from "@/hooks/useProfile";
 import { ChatWidget } from "@/components/ChatWidget";
 import { LanguageSelector } from "@/components/LanguageSelector";
 
+const PLAN_TAGLINES: Record<string, string> = {
+  free: "Try it out",
+  starter: "Beginner & testing",
+  builder: "Best for serious growth",
+  pro: "Advanced scaling",
+  agency: "Client work & white-label",
+};
+
 const PLAN_FEATURES: Record<string, string[]> = {
   free: ["20 build credits/mo", "300 runtime credits", "Live preview", "1 user"],
   starter: ["100 build credits/mo", "2,500 runtime credits", "All templates", "Email support"],
-  builder: ["300 build credits/mo", "12,000 runtime credits", "Brand voice training", "Share preview links"],
-  pro: ["750 build credits/mo", "35,000 runtime credits", "Performance auditor", "Priority support"],
-  agency: ["Unlimited build credits", "100,000 runtime credits", "White-label mode", "Client workspaces"],
+  builder: [
+    "300 build credits/mo",
+    "12,000 runtime credits",
+    "Search Atlas SEO included",
+    "Brand voice training",
+    "Share preview links",
+  ],
+  pro: [
+    "750 build credits/mo",
+    "35,000 runtime credits",
+    "Search Atlas SEO included",
+    "Performance auditor",
+    "Priority support",
+  ],
+  agency: [
+    "Unlimited build credits",
+    "100,000 runtime credits",
+    "Search Atlas SEO included",
+    "White-label mode",
+    "Client workspaces",
+  ],
 };
 
-const PLAN_TRUST = [
-  "Credits roll over 50% monthly",
-  "GoHighLevel ready",
-  "Search Atlas SEO included",
-  "Cancel anytime",
-];
+const PLAN_TRUST: Record<string, string[]> = {
+  free: ["GoHighLevel ready", "Cancel anytime"],
+  starter: ["GoHighLevel ready", "Cancel anytime"],
+  builder: ["GoHighLevel ready", "Credits roll over 50% monthly", "Search Atlas SEO included", "Cancel anytime"],
+  pro: ["GoHighLevel ready", "Credits roll over 50% monthly", "Search Atlas SEO included", "Cancel anytime"],
+  agency: ["GoHighLevel ready", "Credits roll over 50% monthly", "Search Atlas SEO included", "Cancel anytime"],
+};
 
 const ROTATING_PROMPTS = [
   "A luxury medspa in Miami called Glow Aesthetics offering Botox, facials, and online booking…",
@@ -122,8 +149,8 @@ const WHY_CARDS = [
 
 const COMPARISON_ROWS: Array<{ feature: string; base: string | boolean; lov: string | boolean; veb: string }> = [
   { feature: "Native GHL Integration", base: false, lov: false, veb: "Native" },
-  { feature: "Search Atlas SEO", base: false, lov: false, veb: "Built In" },
-  { feature: "Credits Roll Over", base: false, lov: false, veb: "50% Monthly" },
+  { feature: "Search Atlas SEO", base: false, lov: false, veb: "Builder & up" },
+  { feature: "Credits Roll Over", base: false, lov: false, veb: "Builder & up (50%)" },
   { feature: "Buy Extra Credits", base: false, lov: false, veb: "Anytime" },
   { feature: "Multi-Language", base: false, lov: false, veb: "4 Languages" },
   { feature: "Agency Sub-Accounts", base: false, lov: false, veb: "Included" },
@@ -561,8 +588,8 @@ export default function Landing() {
           <FadeIn className="mx-auto max-w-2xl text-center">
             <h2 className="text-4xl font-bold tracking-tight md:text-5xl">Start Free. Scale When Ready.</h2>
             <p className="mt-3 text-muted-foreground">
-              Every plan includes GoHighLevel integration, Search Atlas SEO, credit rollover, and all 4 languages. No
-              hidden fees. No surprises.
+              Every plan connects to your own GoHighLevel account. Advanced SEO, credit rollover, and growth tools
+              unlock starting at <span className="font-semibold text-primary">Builder ($49)</span>.
             </p>
           </FadeIn>
           <div className="mt-12 grid gap-4 md:grid-cols-3 lg:grid-cols-5">
@@ -573,15 +600,16 @@ export default function Landing() {
                 <div
                   key={key}
                   className={`relative flex flex-col rounded-xl border bg-background p-6 ${
-                    featured ? "border-primary shadow-elevated lg:scale-105" : "shadow-card"
+                    featured ? "border-primary shadow-elevated lg:scale-105 ring-2 ring-primary/40" : "shadow-card"
                   }`}
                 >
                   {featured && (
-                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary-foreground">
-                      Most Popular
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-cta px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-cta-foreground shadow-glow-cta">
+                      ★ Most Popular
                     </span>
                   )}
                   <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">{p.label}</h3>
+                  <p className="mt-1 text-[11px] text-muted-foreground/80">{PLAN_TAGLINES[key]}</p>
                   <div className="mt-3 flex items-baseline gap-1">
                     <span className="text-4xl font-bold">${p.price}</span>
                     {p.price > 0 && <span className="text-sm text-muted-foreground">/mo</span>}
@@ -599,12 +627,19 @@ export default function Landing() {
                     className={`mt-6 w-full ${featured ? "bg-cta text-cta-foreground hover:bg-cta/90" : ""}`}
                     variant={featured ? "default" : "outline"}
                   >
-                    <Link to="/auth?mode=signup">{p.price === 0 ? "Start Free" : "Choose plan"}</Link>
+                    <Link to="/auth?mode=signup">{p.price === 0 ? "Start Free" : featured ? "Get Builder" : "Choose plan"}</Link>
                   </Button>
                   <ul className="mt-5 space-y-1.5 text-[11px] text-muted-foreground">
-                    {PLAN_TRUST.map((t) => (
-                      <li key={t} className="flex items-center gap-1.5">
-                        <Check className="h-3 w-3 text-primary" /> {t}
+                    {PLAN_TRUST[key].map((t) => (
+                      <li key={t} className="flex flex-col gap-0.5">
+                        <span className="flex items-center gap-1.5">
+                          <Check className="h-3 w-3 text-primary" /> {t}
+                        </span>
+                        {t === "GoHighLevel ready" && (
+                          <span className="ml-4 text-[10px] text-muted-foreground/70">
+                            Connect your own GoHighLevel account seamlessly.
+                          </span>
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -612,6 +647,23 @@ export default function Landing() {
               );
             })}
           </div>
+
+          {/* CRM SETUP UPSELL */}
+          <FadeIn className="mt-10">
+            <div className="mx-auto max-w-3xl rounded-xl border border-primary/30 bg-primary/5 p-5 text-center sm:flex sm:items-center sm:justify-between sm:text-left">
+              <div>
+                <p className="text-sm font-semibold">Need a CRM setup?</p>
+                <p className="text-xs text-muted-foreground">
+                  Virtual Engine can help connect and configure your GoHighLevel account.
+                </p>
+              </div>
+              <Button asChild variant="outline" size="sm" className="mt-3 sm:mt-0">
+                <a href="https://virtualengine.ai/contact" target="_blank" rel="noopener noreferrer">
+                  Talk to our team <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                </a>
+              </Button>
+            </div>
+          </FadeIn>
 
           {/* Top-up packs */}
           <FadeIn className="mt-16">
