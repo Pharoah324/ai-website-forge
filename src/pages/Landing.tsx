@@ -113,11 +113,11 @@ function RotatingPrompt() {
 }
 
 const STATS = [
-  { value: "12,400+", label: "Websites Built", icon: Globe },
-  { value: "3,200+", label: "Active Users", icon: Users },
+  { value: "50+", label: "Languages Supported", icon: Languages },
+  { value: "190+", label: "Countries Served", icon: Globe },
   { value: "60 sec", label: "Avg Build Time", icon: Timer },
   { value: "4.9★", label: "Rating", icon: Star },
-  { value: "4", label: "Languages Supported", icon: Languages },
+  { value: "8B+", label: "Potential Customers", icon: Users },
 ];
 
 const WHY_CARDS = [
