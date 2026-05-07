@@ -8,27 +8,31 @@
   :root {
     /* Marketing/light surfaces */
     --background: 0 0% 100%;
-    --foreground: 222 47% 11%;
+    --foreground: 140 30% 8%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 140 30% 8%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 140 30% 8%;
 
-    /* Electric blue brand */
-    --primary: 221 83% 53%;
+    /* Emerald brand */
+    --primary: 160 84% 39%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 217 91% 60%;
+    --primary-glow: 158 64% 52%;
 
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 222 47% 11%;
+    /* Lime CTA */
+    --cta: 84 81% 44%;
+    --cta-foreground: 140 40% 8%;
 
-    --muted: 220 14% 96%;
-    --muted-foreground: 215 16% 47%;
+    --secondary: 140 20% 96%;
+    --secondary-foreground: 140 30% 8%;
 
-    --accent: 217 91% 95%;
-    --accent-foreground: 221 83% 40%;
+    --muted: 140 20% 96%;
+    --muted-foreground: 140 10% 40%;
+
+    --accent: 152 76% 94%;
+    --accent-foreground: 160 84% 25%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
@@ -39,37 +43,41 @@
     --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 221 83% 53%;
+    --border: 140 15% 88%;
+    --input: 140 15% 88%;
+    --ring: 160 84% 39%;
 
     --radius: 0.625rem;
 
-    /* Dark sidebar (Linear-style) */
-    --sidebar-background: 222 47% 7%;
-    --sidebar-foreground: 215 20% 75%;
-    --sidebar-primary: 221 83% 60%;
+    /* Dark forest sidebar */
+    --sidebar-background: 145 45% 7%;
+    --sidebar-foreground: 150 15% 75%;
+    --sidebar-primary: 160 84% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 40% 13%;
+    --sidebar-accent: 145 40% 12%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 222 40% 13%;
-    --sidebar-ring: 221 83% 60%;
+    --sidebar-border: 145 40% 14%;
+    --sidebar-ring: 160 84% 45%;
 
-    /* Marketing dark sections (hero, etc.) */
-    --navy: 222 47% 7%;
+    /* Marketing dark sections (hero, etc.) — deep forest */
+    --navy: 138 45% 7%;
     --navy-foreground: 0 0% 100%;
-    --navy-muted: 222 40% 13%;
+    --navy-muted: 145 40% 12%;
+    /* Parent brand accent — kept navy so Virtual Engine link stands out */
+    --parent-brand: 221 83% 53%;
 
     /* Gradients */
-    --gradient-hero: radial-gradient(ellipse at top, hsl(221 83% 53% / 0.25), transparent 60%),
-                     linear-gradient(180deg, hsl(222 47% 7%), hsl(222 47% 4%));
-    --gradient-primary: linear-gradient(135deg, hsl(221 83% 53%), hsl(217 91% 60%));
-    --gradient-glow: radial-gradient(circle at 50% 0%, hsl(221 83% 60% / 0.4), transparent 70%);
+    --gradient-hero: radial-gradient(ellipse at top, hsl(160 84% 39% / 0.28), transparent 60%),
+                     linear-gradient(180deg, hsl(138 45% 7%), hsl(138 50% 4%));
+    --gradient-primary: linear-gradient(135deg, hsl(160 84% 39%), hsl(158 64% 52%));
+    --gradient-cta: linear-gradient(135deg, hsl(84 81% 44%), hsl(72 76% 50%));
+    --gradient-glow: radial-gradient(circle at 50% 0%, hsl(160 84% 50% / 0.45), transparent 70%);
 
     /* Shadows */
-    --shadow-glow: 0 0 60px hsl(221 83% 53% / 0.35);
-    --shadow-card: 0 1px 3px hsl(222 47% 11% / 0.05), 0 1px 2px hsl(222 47% 11% / 0.03);
-    --shadow-elevated: 0 10px 40px -10px hsl(221 83% 30% / 0.2);
+    --shadow-glow: 0 0 60px hsl(160 84% 39% / 0.4);
+    --shadow-glow-cta: 0 0 40px hsl(84 81% 44% / 0.45);
+    --shadow-card: 0 1px 3px hsl(140 30% 8% / 0.05), 0 1px 2px hsl(140 30% 8% / 0.03);
+    --shadow-elevated: 0 10px 40px -10px hsl(160 84% 25% / 0.25);
   }
 }
 
@@ -91,10 +99,14 @@
 @layer utilities {
   .bg-gradient-hero { background: var(--gradient-hero); }
   .bg-gradient-primary { background: var(--gradient-primary); }
+  .bg-gradient-cta { background: var(--gradient-cta); }
   .bg-gradient-glow { background: var(--gradient-glow); }
   .shadow-glow { box-shadow: var(--shadow-glow); }
+  .shadow-glow-cta { box-shadow: var(--shadow-glow-cta); }
   .shadow-card { box-shadow: var(--shadow-card); }
   .shadow-elevated { box-shadow: var(--shadow-elevated); }
+  @keyframes type-cursor { 0%,100% { opacity: 1 } 50% { opacity: 0 } }
+  .animate-type-cursor { animation: type-cursor 1s steps(1) infinite; }
   .text-gradient {
     background: var(--gradient-primary);
     -webkit-background-clip: text;
