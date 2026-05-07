@@ -1,19 +1,42 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { MessageCircle, X, Send, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/lib/i18n";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat-assistant`;
 
+const GREETINGS: Record<string, string> = {
+  en: "Hi! How can we help you today?",
+  es: "¡Hola! ¿Cómo podemos ayudarte hoy?",
+  pt: "Olá! Como podemos ajudá-lo hoje?",
+  ar: "مرحباً! كيف يمكننا مساعدتك اليوم؟",
+  zh: "您好！今天我们能为您提供什么帮助？",
+  fr: "Bonjour! Comment pouvons-nous vous aider aujourd'hui?",
+  de: "Hallo! Wie können wir Ihnen heute helfen?",
+  ja: "こんにちは！本日はどのようなご用件でしょうか？",
+  hi: "नमस्ते! आज हम आपकी कैसे मदद कर सकते हैं?",
+  ko: "안녕하세요! 오늘 어떻게 도와드릴까요?",
+  it: "Ciao! Come possiamo aiutarti oggi?",
+  ru: "Здравствуйте! Чем мы можем вам помочь сегодня?",
+  tr: "Merhaba! Bugün size nasıl yardımcı olabiliriz?",
+  vi: "Xin chào! Hôm nay chúng tôi có thể giúp gì cho bạn?",
+  th: "สวัสดี! วันนี้เราจะช่วยอะไรคุณได้บ้าง?",
+  id: "Halo! Ada yang bisa kami bantu hari ini?",
+  he: "שלום! איך נוכל לעזור לך היום?",
+  fa: "سلام! امروز چگونه می‌توانیم به شما کمک کنیم؟",
+  ur: "ہیلو! آج ہم آپ کی کیسے مدد کر سکتے ہیں؟",
+};
+
 export function ChatWidget() {
+  const { lang, rtl } = useI18n();
+  const greeting = useMemo(
+    () => GREETINGS[lang] || GREETINGS[lang.split("-")[0]] || GREETINGS.en,
+    [lang],
+  );
   const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState<Msg[]>([
-    {
-      role: "assistant",
-      content: "Hi! Ask me anything about building your website.",
-    },
-  ]);
+  const [messages, setMessages] = useState<Msg[]>([{ role: "assistant", content: greeting }]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
