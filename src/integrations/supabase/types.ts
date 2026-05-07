@@ -14,6 +14,125 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_users: {
+        Row: {
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      affiliate_payouts: {
+        Row: {
+          affiliate_id: string
+          amount: number
+          created_at: string
+          id: string
+          method: string
+          notes: string | null
+          paid_at: string | null
+          status: Database["public"]["Enums"]["payout_status"]
+        }
+        Insert: {
+          affiliate_id: string
+          amount: number
+          created_at?: string
+          id?: string
+          method?: string
+          notes?: string | null
+          paid_at?: string | null
+          status?: Database["public"]["Enums"]["payout_status"]
+        }
+        Update: {
+          affiliate_id?: string
+          amount?: number
+          created_at?: string
+          id?: string
+          method?: string
+          notes?: string | null
+          paid_at?: string | null
+          status?: Database["public"]["Enums"]["payout_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_payouts_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      affiliates: {
+        Row: {
+          active_subscribers: number
+          affiliate_code: string
+          created_at: string
+          email: string
+          expected_referrals: string | null
+          full_name: string
+          id: string
+          paid_out_total: number
+          paypal_email: string
+          pending_payout: number
+          promotion_plan: string | null
+          status: Database["public"]["Enums"]["affiliate_status"]
+          tier: Database["public"]["Enums"]["affiliate_tier"]
+          total_earnings: number
+          total_referrals: number
+          updated_at: string
+          user_id: string | null
+          website_url: string | null
+        }
+        Insert: {
+          active_subscribers?: number
+          affiliate_code: string
+          created_at?: string
+          email: string
+          expected_referrals?: string | null
+          full_name: string
+          id?: string
+          paid_out_total?: number
+          paypal_email: string
+          pending_payout?: number
+          promotion_plan?: string | null
+          status?: Database["public"]["Enums"]["affiliate_status"]
+          tier?: Database["public"]["Enums"]["affiliate_tier"]
+          total_earnings?: number
+          total_referrals?: number
+          updated_at?: string
+          user_id?: string | null
+          website_url?: string | null
+        }
+        Update: {
+          active_subscribers?: number
+          affiliate_code?: string
+          created_at?: string
+          email?: string
+          expected_referrals?: string | null
+          full_name?: string
+          id?: string
+          paid_out_total?: number
+          paypal_email?: string
+          pending_payout?: number
+          promotion_plan?: string | null
+          status?: Database["public"]["Enums"]["affiliate_status"]
+          tier?: Database["public"]["Enums"]["affiliate_tier"]
+          total_earnings?: number
+          total_referrals?: number
+          updated_at?: string
+          user_id?: string | null
+          website_url?: string | null
+        }
+        Relationships: []
+      }
       credit_ledger: {
         Row: {
           amount: number
@@ -170,6 +289,50 @@ export type Database = {
         }
         Relationships: []
       }
+      referral_conversions: {
+        Row: {
+          affiliate_id: string
+          commission_amount: number
+          commission_rate: number
+          created_at: string
+          id: string
+          monthly_value: number
+          plan_subscribed: string
+          referred_user_id: string
+          status: Database["public"]["Enums"]["conversion_status"]
+        }
+        Insert: {
+          affiliate_id: string
+          commission_amount?: number
+          commission_rate?: number
+          created_at?: string
+          id?: string
+          monthly_value?: number
+          plan_subscribed: string
+          referred_user_id: string
+          status?: Database["public"]["Enums"]["conversion_status"]
+        }
+        Update: {
+          affiliate_id?: string
+          commission_amount?: number
+          commission_rate?: number
+          created_at?: string
+          id?: string
+          monthly_value?: number
+          plan_subscribed?: string
+          referred_user_id?: string
+          status?: Database["public"]["Enums"]["conversion_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_conversions_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       site_feedback: {
         Row: {
           author_name: string
@@ -318,9 +481,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_affiliate_code: { Args: never; Returns: string }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
+      affiliate_status: "pending" | "active" | "suspended"
+      affiliate_tier: "starter" | "pro" | "elite" | "agency_partner"
+      conversion_status: "pending" | "confirmed" | "paid"
       credit_kind: "build" | "runtime"
       ledger_reason:
         | "generate"
@@ -329,6 +496,7 @@ export type Database = {
         | "rollover"
         | "plan_change"
         | "admin_adjust"
+      payout_status: "pending" | "processing" | "paid" | "failed"
       plan_tier: "free" | "starter" | "builder" | "pro" | "agency"
     }
     CompositeTypes: {
@@ -457,6 +625,9 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      affiliate_status: ["pending", "active", "suspended"],
+      affiliate_tier: ["starter", "pro", "elite", "agency_partner"],
+      conversion_status: ["pending", "confirmed", "paid"],
       credit_kind: ["build", "runtime"],
       ledger_reason: [
         "generate",
@@ -466,6 +637,7 @@ export const Constants = {
         "plan_change",
         "admin_adjust",
       ],
+      payout_status: ["pending", "processing", "paid", "failed"],
       plan_tier: ["free", "starter", "builder", "pro", "agency"],
     },
   },
