@@ -141,7 +141,7 @@ export default function Affiliates() {
       user_id: user?.id ?? null,
       affiliate_code: "VEB-PEND" + Math.random().toString(36).slice(2, 6).toUpperCase(),
       // server will replace via admin approve; placeholder code for pending row
-    });
+    }]);
     setSubmitting(false);
     if (error) return toast.error(error.message);
     toast.success(t.success);
