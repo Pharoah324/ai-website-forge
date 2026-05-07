@@ -23,6 +23,7 @@ import {
   X,
   CheckCircle2,
   Settings2,
+  DollarSign,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { PLAN_LIMITS } from "@/hooks/useProfile";
@@ -675,6 +676,23 @@ export default function Landing() {
         <div className="pointer-events-none absolute inset-x-0 top-1/2 h-[400px] -translate-y-1/2 bg-gradient-glow" />
       </section>
 
+      {/* AFFILIATE CTA */}
+      <section className="border-y border-primary/15 bg-primary/5 py-16">
+        <div className="container max-w-3xl text-center">
+          <span className="inline-flex items-center gap-2 rounded-full border border-cta/40 bg-cta/10 px-3 py-1 text-xs font-medium text-cta">
+            <DollarSign className="h-3 w-3" /> Affiliate Program
+          </span>
+          <h2 className="mt-4 text-3xl font-bold md:text-4xl">Know Someone Who Needs This?</h2>
+          <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
+            Join our affiliate program and earn 30% recurring commission for every customer you refer.
+            Influencers, agencies, and marketers welcome.
+          </p>
+          <Button asChild size="lg" className="mt-6 bg-cta text-cta-foreground hover:bg-cta/90">
+            <Link to="/affiliates">Become an Affiliate <ArrowRight className="ml-1 h-4 w-4" /></Link>
+          </Button>
+        </div>
+      </section>
+
       {/* FOOTER */}
       <footer className="border-t border-primary/20 bg-navy py-14 text-navy-foreground">
         <div className="container">
@@ -714,6 +732,7 @@ export default function Landing() {
             <div>
               <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-navy-foreground/80">Support</h4>
               <ul className="space-y-2 text-sm text-navy-foreground/70">
+                <li><Link to="/affiliates" className="hover:text-primary-glow">Affiliate Program</Link></li>
                 <li><a href="#" className="hover:text-primary-glow">Help Center</a></li>
                 <li><a href="#" className="hover:text-primary-glow">Contact</a></li>
                 <li><a href="#" className="hover:text-primary-glow">Status</a></li>

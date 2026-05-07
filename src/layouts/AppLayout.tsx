@@ -11,6 +11,7 @@ import {
   Sparkles,
   Zap,
   Plug,
+  DollarSign,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CreditBadge } from "@/components/CreditBadge";
@@ -27,6 +28,7 @@ export default function AppLayout() {
     { to: "/app", label: t("nav.dashboard"), icon: LayoutDashboard, end: true },
     { to: "/app/new", label: t("nav.newsite"), icon: Plus },
     { to: "/app/integrations", label: t("nav.integrations"), icon: Plug },
+    { to: "/app/affiliate", label: "Affiliate Program", icon: DollarSign },
     { to: "/app/billing", label: t("nav.billing"), icon: CreditCard },
     { to: "/app/settings", label: t("nav.settings"), icon: Settings },
   ];
