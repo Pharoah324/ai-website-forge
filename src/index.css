@@ -25,8 +25,6 @@
     /* Lime CTA — black text for AAA contrast */
     --cta: 84 81% 50%;
     --cta-foreground: 0 0% 0%;
-    --cta: 84 81% 44%;
-    --cta-foreground: 140 40% 8%;
 
     --secondary: 140 20% 96%;
     --secondary-foreground: 140 30% 8%;
