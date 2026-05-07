@@ -329,7 +329,7 @@ export default function Landing() {
               </a>
             </Button>
           </div>
-          <p className="mt-5 text-xs text-navy-foreground/85">
+          <p className="mt-5 text-sm text-navy-mint">
             Free to start · No credit card · No tech skills needed · GoHighLevel pipeline ready
           </p>
           <p className="mt-2 text-xs font-semibold text-primary-glow">
@@ -400,7 +400,7 @@ export default function Landing() {
                     {c.icon}
                     <h3 className="text-lg font-semibold">{c.title}</h3>
                   </div>
-                  <ul className="space-y-2 text-sm text-muted-foreground">
+                  <ul className="space-y-2 text-base text-foreground/75">
                     {c.items.map((it) => (
                       <li key={it} className="flex items-start gap-2">
                         <span className={c.tone === "good" ? "text-primary" : "text-muted-foreground/60"}>•</span>
@@ -451,7 +451,7 @@ export default function Landing() {
                     {c.emoji}
                   </div>
                   <h3 className="mb-3 text-xl font-semibold">{c.title}</h3>
-                  <p className="text-sm leading-relaxed text-muted-foreground">{c.body}</p>
+                  <p className="text-base leading-relaxed text-foreground/80">{c.body}</p>
                   <div className="mt-5 inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary">
                     <CheckCircle2 className="h-3 w-3" /> {c.badge}
                   </div>
@@ -491,7 +491,7 @@ export default function Landing() {
               <FadeIn key={f.title}>
                 <div className="h-full rounded-xl border border-primary/15 bg-card p-6 shadow-card transition-all hover:border-primary/40 hover:shadow-elevated">
                   <h3 className="text-base font-semibold">{f.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{f.body}</p>
+                  <p className="mt-2 text-base leading-relaxed text-foreground/80">{f.body}</p>
                 </div>
               </FadeIn>
             ))}
@@ -507,7 +507,7 @@ export default function Landing() {
                 <h3 className="mt-3 text-2xl font-bold tracking-tight md:text-3xl">
                   Connect it. Optimize it. Scale it.
                 </h3>
-                <p className="mt-2 text-sm text-muted-foreground md:text-base">
+                <p className="mt-2 text-base text-foreground/75 md:text-base">
                   Connect your existing website and let Virtual Engine analyze SEO performance, identify growth
                   opportunities, recommend improvements, and optimize your business systems.
                 </p>
@@ -581,10 +581,10 @@ export default function Landing() {
                     {COMPARISON_ROWS.map((r, i) => (
                       <tr key={r.feature} className={i % 2 ? "bg-navy/40" : "bg-navy-muted/30"}>
                         <td className="px-4 py-3.5 text-navy-foreground/90">{r.feature}</td>
-                        <td className="px-4 py-3.5 text-center text-navy-foreground/85">
+                        <td className="px-4 py-3.5 text-center text-navy-foreground/95">
                           <Cell value={r.base} />
                         </td>
-                        <td className="px-4 py-3.5 text-center text-navy-foreground/85">
+                        <td className="px-4 py-3.5 text-center text-navy-foreground/95">
                           <Cell value={r.lov} />
                         </td>
                         <td
@@ -628,7 +628,7 @@ export default function Landing() {
                   </div>
                   <div className="mb-4 text-3xl">{s.emoji}</div>
                   <h3 className="mb-2 text-xl font-semibold">{s.title}</h3>
-                  <p className="text-sm leading-relaxed text-muted-foreground">{s.body}</p>
+                  <p className="text-base leading-relaxed text-foreground/80">{s.body}</p>
                 </div>
               </FadeIn>
             ))}
@@ -695,7 +695,7 @@ export default function Landing() {
                 >
                   <div className="mb-3 text-2xl">{b.emoji}</div>
                   <h3 className="mb-2 text-base font-semibold">{b.title}</h3>
-                  <p className="text-sm leading-relaxed text-muted-foreground">{b.body}</p>
+                  <p className="text-base leading-relaxed text-foreground/80">{b.body}</p>
                 </div>
               </FadeIn>
             ))}
@@ -796,7 +796,7 @@ export default function Landing() {
                   <p className="mt-1 text-[11px] text-muted-foreground/80">{PLAN_TAGLINES[key]}</p>
                   <div className="mt-3 flex items-baseline gap-1">
                     <span className="text-4xl font-bold">${p.price}</span>
-                    {p.price > 0 && <span className="text-sm text-muted-foreground">/mo</span>}
+                    {p.price > 0 && <span className="text-base text-foreground/75">/mo</span>}
                   </div>
                   <ul className="mt-6 space-y-2 text-sm">
                     {PLAN_FEATURES[key].map((f) => (
@@ -853,7 +853,7 @@ export default function Landing() {
           <FadeIn className="mt-16">
             <div className="mx-auto max-w-3xl rounded-2xl border border-primary/25 p-7 text-center" style={{ background: "rgba(16,185,129,0.05)" }}>
               <h3 className="text-xl font-bold">Need more credits? Top up anytime.</h3>
-              <p className="mt-2 text-sm text-muted-foreground">
+              <p className="mt-2 text-base text-foreground/75">
                 Buy extra build credits whenever you need them. They never expire.
               </p>
               <div className="mt-6 grid gap-3 sm:grid-cols-3">
@@ -904,7 +904,7 @@ export default function Landing() {
                 </Link>
               </Button>
             </div>
-            <p className="mt-5 text-xs text-navy-foreground/85">
+            <p className="mt-5 text-sm text-navy-mint">
               Free forever plan available · No credit card required · Works in 50+ languages · 190+ countries served
             </p>
           </FadeIn>
@@ -942,7 +942,7 @@ export default function Landing() {
                   Virtual Engine <span className="text-primary-glow">Builder</span>
                 </span>
               </div>
-              <p className="text-xs text-navy-foreground/85">
+              <p className="text-sm text-navy-mint">
                 AI website builder with native GoHighLevel integration and Search Atlas SEO.
               </p>
             </div>
@@ -980,7 +980,7 @@ export default function Landing() {
           </div>
 
           <div className="mt-12 flex flex-col items-center justify-between gap-3 border-t border-primary/15 pt-6 text-sm md:flex-row">
-            <span className="text-navy-foreground/85">© {new Date().getFullYear()} Virtual Engine Builder</span>
+            <span className="text-navy-foreground/95">© {new Date().getFullYear()} Virtual Engine Builder</span>
             <div className="flex flex-col items-center gap-1 text-center md:items-end">
               <a
                 href="https://virtualengine.ai"
