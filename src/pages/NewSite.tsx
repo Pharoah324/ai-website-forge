@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { SitePreview } from "@/components/SitePreview";
 import { TopUpModal } from "@/components/TopUpModal";
+import { RefinementChat } from "@/components/RefinementChat";
 import type { SiteContent } from "@/types/site";
 import { toast } from "sonner";
 import { TEMPLATES, type Template } from "@/data/templates";
