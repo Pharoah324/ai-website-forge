@@ -29,13 +29,13 @@ export type Profile = {
 
 export const PLAN_LIMITS: Record<
   Profile["plan"],
-  { build: number; runtime: number; price: number; label: string }
+  { build: number; runtime: number; price: number; label: string; rollover: boolean }
 > = {
-  free: { build: 20, runtime: 300, price: 0, label: "Free" },
-  starter: { build: 100, runtime: 2500, price: 19, label: "Starter" },
-  builder: { build: 300, runtime: 12000, price: 49, label: "Builder" },
-  pro: { build: 750, runtime: 35000, price: 99, label: "Pro" },
-  agency: { build: -1, runtime: 100000, price: 199, label: "Agency" },
+  free: { build: 20, runtime: 300, price: 0, label: "Free", rollover: false },
+  starter: { build: 100, runtime: 2500, price: 19, label: "Starter", rollover: false },
+  builder: { build: 300, runtime: 10000, price: 49, label: "Builder", rollover: true },
+  pro: { build: 800, runtime: 30000, price: 99, label: "Pro", rollover: true },
+  agency: { build: 2000, runtime: 100000, price: 199, label: "Agency", rollover: true },
 };
 
 export const useProfile = () => {

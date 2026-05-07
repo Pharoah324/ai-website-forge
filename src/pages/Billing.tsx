@@ -120,9 +120,7 @@ export default function Billing() {
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("billing.current")}</p>
             <p className="mt-1 text-2xl font-bold">{PLAN_LIMITS[profile.plan].label}</p>
             <p className="text-sm text-muted-foreground">
-              {profile.plan === "agency"
-                ? t("billing.unlimited")
-                : t("billing.totalCredits", { n: profile.build_credits + profile.rollover_build_credits + profile.top_up_build_credits })}
+              {t("billing.totalCredits", { n: profile.build_credits + profile.rollover_build_credits + profile.top_up_build_credits })}
             </p>
             {profile.top_up_build_credits > 0 && (
               <p className="mt-1 text-xs text-muted-foreground">
@@ -180,7 +178,7 @@ export default function Billing() {
               <ul className="mt-3 space-y-1 text-sm">
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-primary" />
-                  {p.build === -1 ? "Unlimited build credits" : `${p.build} build credits/mo`}
+                  {p.build} build credits/mo
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-primary" />
