@@ -199,10 +199,10 @@ const SEO_BOXES = [
 ];
 
 const LANGUAGES = [
-  { flag: "🇺🇸", name: "English", body: "The US, Canada, and English-speaking Caribbean" },
-  { flag: "🇲🇽", name: "Español", body: "Mexico, Colombia, Argentina, Chile, and all of Latin America" },
-  { flag: "🇧🇷", name: "Português", body: "Brazil — the largest economy in South America with 215 million people" },
-  { flag: "🇫🇷", name: "Français", body: "Canada, Haiti, and French-speaking markets" },
+  { flag: "🌎", name: "Americas", body: "English, Español, Português, Français and every regional dialect — North, Central & South America" },
+  { flag: "🌍", name: "Europe & Africa", body: "Deutsch, Italiano, Polski, Русский, Kiswahili, Yorùbá, isiZulu and 20+ more" },
+  { flag: "🌏", name: "Asia & Pacific", body: "中文, 日本語, 한국어, हिन्दी, ภาษาไทย, Tiếng Việt, Bahasa Indonesia and many more" },
+  { flag: "🕌", name: "Middle East (RTL)", body: "العربية, עברית, فارسی, اردو — full right-to-left layout support" },
 ];
 
 const TESTIMONIALS = [
