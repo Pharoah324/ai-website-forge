@@ -786,18 +786,17 @@ export default function Landing() {
         <div className="container relative z-10 max-w-4xl text-center">
           <FadeIn>
             <h2 className="text-balance text-5xl font-bold leading-[1.05] tracking-tight md:text-6xl">
-              Your Next Client's Website.
+              Your website should be more than a digital brochure.
               <br />
-              <span className="text-gradient">Built in 60 Seconds.</span>
+              <span className="text-gradient">It should be your business growth engine.</span>
             </h2>
             <p className="mx-auto mt-5 max-w-2xl text-lg text-navy-foreground/75">
-              Join thousands of business owners and agencies across North and South America building with Virtual Engine
-              Builder.
+              Build, optimize, automate, and scale on one AI-powered platform.
             </p>
             <div className="mt-9 flex flex-wrap justify-center gap-3">
               <Button asChild size="lg" className="bg-cta text-cta-foreground shadow-glow-cta hover:bg-cta/90">
                 <Link to="/auth?mode=signup">
-                  ✦ Start Building Free <ArrowRight className="ml-1 h-4 w-4" />
+                  Start Building <ArrowRight className="ml-1 h-4 w-4" />
                 </Link>
               </Button>
               <Button
@@ -806,13 +805,13 @@ export default function Landing() {
                 size="lg"
                 className="border-navy-foreground/20 bg-transparent text-navy-foreground hover:bg-navy-foreground/10"
               >
-                <a href="https://marketplace.gohighlevel.com" target="_blank" rel="noopener noreferrer">
-                  Find Us in GHL Marketplace <ArrowRight className="ml-1 h-4 w-4" />
-                </a>
+                <Link to="/auth?mode=signup&intent=optimize">
+                  Optimize Existing Website <ArrowRight className="ml-1 h-4 w-4" />
+                </Link>
               </Button>
             </div>
             <p className="mt-5 text-xs text-navy-foreground/60">
-              Free plan includes 20 builds · No credit card · Available in English, Español, Português & Français
+              Free plan available · No credit card · English, Español, Português & Français
             </p>
           </FadeIn>
         </div>
