@@ -82,12 +82,12 @@ export default function AppLayout() {
           <div className="rounded-md bg-sidebar-accent/60 p-3 text-xs">
             <div className="flex items-center gap-2 text-sidebar-accent-foreground">
               <Sparkles className="h-3 w-3" />
-              <span className="font-medium">{planLabel} plan</span>
+              <span className="font-medium">{planLabel} {t("common.plan")}</span>
             </div>
             <p className="mt-1 text-sidebar-foreground">
               {profile?.plan === "agency"
-                ? "Unlimited builds"
-                : `${profile?.build_credits ?? 0} build credits left`}
+                ? t("common.unlimitedBuilds")
+                : t("common.creditsLeft", { n: profile?.build_credits ?? 0 })}
             </p>
           </div>
           <button
@@ -95,7 +95,7 @@ export default function AppLayout() {
             className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent/60"
           >
             <LogOut className="h-4 w-4" />
-            Sign out
+            {t("nav.signout")}
           </button>
         </div>
       </aside>
@@ -109,10 +109,11 @@ export default function AppLayout() {
             </Link>
           </div>
           <div className="ml-auto flex items-center gap-3">
+            <LanguageSelector />
             <CreditBadge />
             <Button asChild size="sm">
               <Link to="/app/new">
-                <Plus className="mr-1 h-4 w-4" /> New Site
+                <Plus className="mr-1 h-4 w-4" /> {t("nav.newsite")}
               </Link>
             </Button>
           </div>
