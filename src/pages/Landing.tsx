@@ -240,9 +240,9 @@ const TESTIMONIALS = [
 ];
 
 function Cell({ value }: { value: string | boolean }) {
-  if (value === true) return <Check className="mx-auto h-4 w-4 text-primary" />;
-  if (value === false) return <X className="mx-auto h-4 w-4 text-muted-foreground/50" />;
-  return <span className="text-sm">{value}</span>;
+  if (value === true) return <Check className="mx-auto h-5 w-5 text-primary-glow" />;
+  if (value === false) return <X className="mx-auto h-5 w-5 text-destructive/80" />;
+  return <span className="text-base text-navy-foreground">{value}</span>;
 }
 
 function FadeIn({ children, className = "" }: { children: React.ReactNode; className?: string }) {
