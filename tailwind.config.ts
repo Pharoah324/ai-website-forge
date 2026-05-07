@@ -60,6 +60,11 @@ export default {
           foreground: "hsl(var(--navy-foreground))",
           muted: "hsl(var(--navy-muted))",
         },
+        cta: {
+          DEFAULT: "hsl(var(--cta))",
+          foreground: "hsl(var(--cta-foreground))",
+        },
+        "parent-brand": "hsl(var(--parent-brand))",
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
