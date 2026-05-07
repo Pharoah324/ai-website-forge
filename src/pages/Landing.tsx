@@ -289,29 +289,27 @@ export default function Landing() {
       </header>
 
       {/* HERO */}
-      <section className="relative overflow-hidden bg-gradient-hero pb-24 pt-36 text-navy-foreground">
+      <section className="relative overflow-hidden bg-gradient-hero pb-20 pt-36 text-navy-foreground">
         <div className="container relative z-10 mx-auto max-w-5xl text-center">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary-glow">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
             </span>
-            ✦ Now Available in the GoHighLevel Marketplace
+            ✦ Now Live in the GoHighLevel Marketplace
           </div>
           <h1 className="text-balance text-5xl font-bold leading-[1.02] tracking-tight md:text-7xl">
-            Build. Optimize.
+            Stop Paying $3,000 For a Website.
             <br />
-            <span className="text-gradient">Automate. Scale.</span>
+            <span className="text-gradient">You Can Build It Yourself in 10 Minutes.</span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-balance text-lg text-navy-foreground/75">
-            AI-powered business infrastructure for companies that want more visibility, better systems, and smarter
-            growth. Most websites never get found — Virtual Engine helps businesses build smarter sites, optimize SEO,
-            automate lead flow, and connect the systems that drive growth.
+            Websites, funnels, and landing pages — powered by embedded AI and built to rank on Google. Live before lunch.
           </p>
           <div className="mt-10 flex flex-wrap justify-center gap-3">
             <Button asChild size="lg" className="bg-cta text-cta-foreground shadow-glow-cta hover:bg-cta/90">
               <Link to="/auth?mode=signup">
-                Build a New Website <ArrowRight className="ml-1 h-4 w-4" />
+                ✦ Build My Website Free <ArrowRight className="ml-1 h-4 w-4" />
               </Link>
             </Button>
             <Button
@@ -320,31 +318,105 @@ export default function Landing() {
               size="lg"
               className="border-navy-foreground/20 bg-transparent text-navy-foreground hover:bg-navy-foreground/10"
             >
-              <Link to="/auth?mode=signup&intent=optimize">
-                Optimize an Existing Website <ArrowRight className="ml-1 h-4 w-4" />
-              </Link>
+              <a href="#how">
+                Watch It Build in 60 Seconds <ArrowDown className="ml-1 h-4 w-4" />
+              </a>
             </Button>
           </div>
           <p className="mt-5 text-xs text-navy-foreground/60">
-            For startups, local businesses, agencies, and enterprise brands · No credit card required
+            Free to start · No credit card · No tech skills needed · GoHighLevel pipeline ready · Works in 50+ languages
           </p>
           <RotatingPrompt />
         </div>
         <div className="pointer-events-none absolute inset-x-0 top-1/2 h-[500px] -translate-y-1/2 bg-gradient-glow" />
       </section>
 
-      {/* STATS BAR */}
-      <section className="border-y border-primary/20 bg-navy py-8 text-navy-foreground">
-        <div className="container">
-          <div className="grid grid-cols-2 gap-6 md:grid-cols-5">
-            {STATS.map((s) => (
-              <div key={s.label} className="flex flex-col items-center text-center">
-                <s.icon className="mb-2 h-5 w-5 text-primary-glow" />
-                <div className="text-2xl font-bold md:text-3xl">{s.value}</div>
-                <div className="text-xs text-navy-foreground/60">{s.label}</div>
-              </div>
+      {/* PAIN AGITATION */}
+      <section className="bg-background py-20">
+        <div className="container max-w-6xl">
+          <FadeIn className="mb-12 text-center">
+            <h2 className="text-4xl font-bold tracking-tight md:text-5xl">The Old Way Is Broken.</h2>
+          </FadeIn>
+          <div className="grid gap-6 md:grid-cols-3">
+            {[
+              {
+                tone: "bad" as const,
+                icon: <X className="h-5 w-5 text-destructive" />,
+                title: "Hire a web agency",
+                items: [
+                  "Wait 6–8 weeks",
+                  "Pay $3,000 – $15,000",
+                  "Request changes, wait again",
+                  "Pay monthly maintenance fees",
+                  "Still doesn't rank on Google",
+                ],
+              },
+              {
+                tone: "warn" as const,
+                icon: <span className="text-lg">⚠️</span>,
+                title: "Use Wix or Squarespace",
+                items: [
+                  "Spend weeks learning the platform",
+                  "Generic templates everyone has seen",
+                  "No AI. No SEO. No CRM connection",
+                  "Still not live after a month",
+                ],
+              },
+              {
+                tone: "good" as const,
+                icon: <CheckCircle2 className="h-5 w-5 text-primary" />,
+                title: "Use Virtual Engine Builder",
+                items: [
+                  "Describe your business in plain English",
+                  "Live website in 10 minutes",
+                  "Built to rank on Google from day one",
+                  "Connected to GoHighLevel automatically",
+                  "Works in 50+ languages worldwide",
+                  "Start free — no credit card",
+                ],
+              },
+            ].map((c) => (
+              <FadeIn key={c.title}>
+                <div
+                  className={`h-full rounded-2xl border p-7 transition-all ${
+                    c.tone === "good"
+                      ? "border-primary/60 shadow-glow ring-2 ring-primary/30 md:scale-[1.03]"
+                      : c.tone === "warn"
+                      ? "border-yellow-500/30 bg-yellow-500/5"
+                      : "border-destructive/30 bg-destructive/5"
+                  }`}
+                  style={c.tone === "good" ? { background: "rgba(16,185,129,0.08)" } : undefined}
+                >
+                  <div className="mb-4 flex items-center gap-2">
+                    {c.icon}
+                    <h3 className="text-lg font-semibold">{c.title}</h3>
+                  </div>
+                  <ul className="space-y-2 text-sm text-muted-foreground">
+                    {c.items.map((it) => (
+                      <li key={it} className="flex items-start gap-2">
+                        <span className={c.tone === "good" ? "text-primary" : "text-muted-foreground/60"}>•</span>
+                        <span className={c.tone === "good" ? "text-foreground" : ""}>{it}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </FadeIn>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* SOCIAL PROOF BAR */}
+      <section className="border-y border-primary/30 bg-navy py-6 text-navy-foreground">
+        <div className="container">
+          <p className="text-center text-sm font-medium text-navy-foreground/90 md:text-base">
+            <span className="font-bold text-primary-glow">12,400+</span> Websites Built ·{" "}
+            <span className="font-bold text-primary-glow">3,200+</span> Active Users ·{" "}
+            <span className="font-bold text-primary-glow">10 Min</span> Avg Build Time ·{" "}
+            <span className="font-bold text-primary-glow">50+</span> Languages ·{" "}
+            <span className="font-bold text-primary-glow">190+</span> Countries ·{" "}
+            <span className="font-bold text-primary-glow">4.9★</span> Rating
+          </p>
         </div>
       </section>
 
