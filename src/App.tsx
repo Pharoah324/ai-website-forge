@@ -28,6 +28,8 @@ import AdminAccessCodes from "./pages/admin/AdminAccessCodes";
 import AdminAdmins from "./pages/admin/AdminAdmins";
 import AdminAlerts from "./pages/admin/AdminAlerts";
 import AdminUsage from "./pages/admin/AdminUsage";
+import AdminLaunchTests from "./pages/admin/AdminLaunchTests";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import Optimize from "./pages/Optimize";
 import OptimizeDashboard from "./pages/OptimizeDashboard";
 import Onboarding from "./pages/Onboarding";
@@ -62,6 +64,7 @@ const App = () => {
       <I18nProvider>
       <BrowserRouter>
         <AuthProvider>
+          <ErrorBoundary>
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />
@@ -78,6 +81,7 @@ const App = () => {
               <Route path="admins" element={<AdminAdmins />} />
               <Route path="alerts" element={<AdminAlerts />} />
               <Route path="usage" element={<AdminUsage />} />
+              <Route path="launch-tests" element={<AdminLaunchTests />} />
             </Route>
             <Route path="/app" element={<AppLayout />}>
               <Route index element={<Dashboard />} />
@@ -93,6 +97,7 @@ const App = () => {
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </ErrorBoundary>
         </AuthProvider>
       </BrowserRouter>
       </I18nProvider>

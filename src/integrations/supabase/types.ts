@@ -531,6 +531,39 @@ export type Database = {
         }
         Relationships: []
       }
+      launch_test_results: {
+        Row: {
+          created_at: string
+          details: Json | null
+          error_message: string | null
+          id: string
+          run_by_admin: string | null
+          section: string
+          status: string
+          test_key: string
+        }
+        Insert: {
+          created_at?: string
+          details?: Json | null
+          error_message?: string | null
+          id?: string
+          run_by_admin?: string | null
+          section: string
+          status: string
+          test_key: string
+        }
+        Update: {
+          created_at?: string
+          details?: Json | null
+          error_message?: string | null
+          id?: string
+          run_by_admin?: string | null
+          section?: string
+          status?: string
+          test_key?: string
+        }
+        Relationships: []
+      }
       optimization_projects: {
         Row: {
           created_at: string
