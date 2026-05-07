@@ -991,7 +991,7 @@ export default function Landing() {
               >
                 A Virtual Engine product — virtualengine.ai
               </a>
-              <span className="text-[11px] text-navy-foreground/50">
+              <span className="text-xs text-navy-foreground/80">
                 Serving businesses worldwide in 50+ languages — every country, every continent
               </span>
             </div>
