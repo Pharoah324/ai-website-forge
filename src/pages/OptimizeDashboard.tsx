@@ -91,7 +91,22 @@ export default function OptimizeDashboard() {
       const { data, error } = await supabase.functions.invoke("analyze-website", {
         body: { projectId: id },
       });
-      if (error) throw error;
+      if (error) {
+        const ctx = (error as { context?: { body?: string } }).context;
+        let payload: { error?: string; reason?: string; retry_after_seconds?: number; daily_limit?: number; plan?: string } = {};
+        try { payload = ctx?.body ? JSON.parse(ctx.body) : {}; } catch { /* noop */ }
+        const reason = payload.reason ?? payload.error;
+        if (reason === "daily_limit") {
+          const mins = Math.ceil((payload.retry_after_seconds ?? 3600) / 60);
+          throw new Error(`Daily optimization limit reached (${payload.daily_limit}/day on ${payload.plan} plan). Resets in ~${mins} min. Upgrade for more.`);
+        }
+        if (reason === "hourly_limit") {
+          const mins = Math.ceil((payload.retry_after_seconds ?? 600) / 60);
+          throw new Error(`Hourly API limit reached. Try again in ~${mins} min.`);
+        }
+        if (reason === "blocked") throw new Error("Temporarily blocked. Please contact support.");
+        throw new Error(payload.error || error.message || "Analysis failed");
+      }
       return data;
     },
     onSuccess: () => { toast.success("Analysis complete"); refetch(); },

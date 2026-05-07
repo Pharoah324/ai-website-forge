@@ -47,7 +47,6 @@ export default function Optimize() {
   const createMut = useMutation({
     mutationFn: async (websiteUrl: string) => {
       if (!user) throw new Error("Not signed in");
-      // Multi-client gate: only Agency (or admin) can manage more than one site
       if (!access.multiClient && (projects?.length ?? 0) >= 1) {
         throw new Error("Multi-site management is an Agency feature. Upgrade to add unlimited client sites.");
       }
@@ -59,7 +58,14 @@ export default function Optimize() {
         .insert({ user_id: user.id, website_url: normalized, name: host })
         .select()
         .single();
-      if (error) throw error;
+      if (error) {
+        const m = error.message || "";
+        const cap = m.match(/storage_limit:[^:]+:(\d+):(\w+)/);
+        if (cap) {
+          throw new Error(`You've reached your plan limit of ${cap[1]} site${cap[1] === "1" ? "" : "s"} on the ${cap[2]} plan. Upgrade to add more.`);
+        }
+        throw error;
+      }
       return data;
     },
     onSuccess: (p) => {

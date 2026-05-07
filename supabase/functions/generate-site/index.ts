@@ -6,6 +6,8 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
 const SYSTEM_PROMPT = `You are a website generator. Given a business description (and optionally an existing template draft), return a complete, polished site structure.
 Use the build_site tool. Generate clear, conversion-focused copy. Pick a tasteful color palette that fits the industry.
 Sections should follow this order when relevant: hero, features, about, testimonials, pricing, faq, cta, contact.
@@ -128,16 +130,35 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { data: adminRow } = await supabase
-      .from("admin_users").select("access_level").eq("user_id", user.id).maybeSingle();
-    const isAdmin = !!adminRow;
-    const isUnlimited = isAdmin || profile.plan === "agency";
-    if (!isUnlimited && profile.build_credits <= 0) {
-      return new Response(
-        JSON.stringify({ error: "Out of build credits. Top up or upgrade." }),
-        { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+    // Atomic plan + rate-limit + credit gate via DB function (service role)
+    const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const { data: gate, error: gateErr } = await admin.rpc("check_and_consume", {
+      _uid: user.id,
+      _action: "site_generation",
+      _credit_cost: 1,
+    });
+    if (gateErr) {
+      console.error("gate error", gateErr);
+      return new Response(JSON.stringify({ error: "Internal gate error" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
+    const g = gate as { ok: boolean; reason?: string; retry_after_seconds?: number; daily_limit?: number; hourly_limit?: number; plan?: string; admin_bypass?: boolean };
+    if (!g.ok) {
+      const status =
+        g.reason === "no_credits" ? 402 :
+        g.reason === "daily_limit" || g.reason === "hourly_limit" || g.reason === "blocked" ? 429 :
+        403;
+      return new Response(JSON.stringify({
+        error: g.reason ?? "blocked",
+        plan: g.plan,
+        retry_after_seconds: g.retry_after_seconds,
+        daily_limit: g.daily_limit,
+        hourly_limit: g.hourly_limit,
+      }), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const isAdmin = !!g.admin_bypass;
+    const isUnlimited = isAdmin || profile.plan === "agency";
 
     let voiceAddon = "";
     if (profile.brand_voice_active) {
@@ -324,9 +345,9 @@ async function persistSite(
   userId: string,
   prompt: string,
   siteJson: unknown,
-  profile: { build_credits: number },
-  isUnlimited: boolean,
-  isAdmin: boolean,
+  _profile: { build_credits: number },
+  _isUnlimited: boolean,
+  _isAdmin: boolean,
 ) {
   const name = (siteJson as { name?: string }).name || "Untitled Site";
   const { data: site, error: siteErr } = await supabase
@@ -334,26 +355,14 @@ async function persistSite(
     .insert({ user_id: userId, name, prompt, content: siteJson })
     .select()
     .single();
-  if (siteErr) throw new Error("Failed to save site");
-
-  if (isAdmin) {
-    await supabase.from("admin_usage_log").insert({
-      admin_user_id: userId,
-      action_type: "site_generated",
-      notes: `Generated site: ${name}`,
-    });
-  } else if (!isUnlimited) {
-    await supabase
-      .from("profiles")
-      .update({ build_credits: profile.build_credits - 1 })
-      .eq("id", userId);
-    await supabase.from("credit_ledger").insert({
-      user_id: userId,
-      kind: "build",
-      amount: -1,
-      reason: "generate",
-      description: `Generated site: ${name}`,
-    });
+  if (siteErr) {
+    // Storage cap trigger raises 'storage_limit:sites:<n>:<plan>'
+    const msg = siteErr.message || "";
+    if (msg.includes("storage_limit:sites")) {
+      const parts = msg.split(":");
+      throw new Error(`storage_limit:sites:${parts[2]}:${parts[3]}`);
+    }
+    throw new Error("Failed to save site");
   }
   return site;
 }

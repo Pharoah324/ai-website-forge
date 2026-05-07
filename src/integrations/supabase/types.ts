@@ -309,6 +309,45 @@ export type Database = {
         }
         Relationships: []
       }
+      credit_transactions: {
+        Row: {
+          amount_changed: number
+          created_at: string
+          credit_kind: string
+          credits_after: number
+          credits_before: number
+          metadata: Json | null
+          reason: string
+          transaction_id: string
+          transaction_type: Database["public"]["Enums"]["credit_txn_type"]
+          user_id: string
+        }
+        Insert: {
+          amount_changed: number
+          created_at?: string
+          credit_kind?: string
+          credits_after: number
+          credits_before: number
+          metadata?: Json | null
+          reason: string
+          transaction_id?: string
+          transaction_type: Database["public"]["Enums"]["credit_txn_type"]
+          user_id: string
+        }
+        Update: {
+          amount_changed?: number
+          created_at?: string
+          credit_kind?: string
+          credits_after?: number
+          credits_before?: number
+          metadata?: Json | null
+          reason?: string
+          transaction_id?: string
+          transaction_type?: Database["public"]["Enums"]["credit_txn_type"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       integrations: {
         Row: {
           access_token: string | null
@@ -346,6 +385,54 @@ export type Database = {
           platform?: string
           refresh_token?: string | null
           token_expires_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      job_queue: {
+        Row: {
+          attempts: number
+          completed_at: string | null
+          created_at: string
+          credit_refunded: boolean
+          error_message: string | null
+          job_id: string
+          job_type: string
+          max_attempts: number
+          next_retry_at: string | null
+          payload: Json | null
+          status: Database["public"]["Enums"]["job_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          completed_at?: string | null
+          created_at?: string
+          credit_refunded?: boolean
+          error_message?: string | null
+          job_id?: string
+          job_type: string
+          max_attempts?: number
+          next_retry_at?: string | null
+          payload?: Json | null
+          status?: Database["public"]["Enums"]["job_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          completed_at?: string | null
+          created_at?: string
+          credit_refunded?: boolean
+          error_message?: string | null
+          job_id?: string
+          job_type?: string
+          max_attempts?: number
+          next_retry_at?: string | null
+          payload?: Json | null
+          status?: Database["public"]["Enums"]["job_status"]
           updated_at?: string
           user_id?: string
         }
@@ -421,6 +508,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      plan_caps: {
+        Row: {
+          daily_optimization_runs: number
+          daily_site_generations: number
+          gsc_enabled: boolean
+          hourly_api_calls: number
+          max_optimization_reports: number
+          max_sites: number
+          max_upload_mb: number
+          plan: string
+          search_atlas_enabled: boolean
+        }
+        Insert: {
+          daily_optimization_runs: number
+          daily_site_generations: number
+          gsc_enabled?: boolean
+          hourly_api_calls: number
+          max_optimization_reports: number
+          max_sites: number
+          max_upload_mb: number
+          plan: string
+          search_atlas_enabled?: boolean
+        }
+        Update: {
+          daily_optimization_runs?: number
+          daily_site_generations?: number
+          gsc_enabled?: boolean
+          hourly_api_calls?: number
+          max_optimization_reports?: number
+          max_sites?: number
+          max_upload_mb?: number
+          plan?: string
+          search_atlas_enabled?: boolean
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -506,6 +629,45 @@ export type Database = {
           top_up_runtime_credits?: number
           updated_at?: string
           voice_rules?: Json | null
+        }
+        Relationships: []
+      }
+      rate_limits: {
+        Row: {
+          action_type: Database["public"]["Enums"]["rate_action"]
+          blocked_until: string | null
+          count_this_hour: number
+          count_today: number
+          day_window_start: string
+          hour_window_start: string
+          id: string
+          last_reset_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          action_type: Database["public"]["Enums"]["rate_action"]
+          blocked_until?: string | null
+          count_this_hour?: number
+          count_today?: number
+          day_window_start?: string
+          hour_window_start?: string
+          id?: string
+          last_reset_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          action_type?: Database["public"]["Enums"]["rate_action"]
+          blocked_until?: string | null
+          count_this_hour?: number
+          count_today?: number
+          day_window_start?: string
+          hour_window_start?: string
+          id?: string
+          last_reset_at?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -701,14 +863,32 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_and_consume: {
+        Args: {
+          _action: Database["public"]["Enums"]["rate_action"]
+          _credit_cost?: number
+          _uid: string
+        }
+        Returns: Json
+      }
       generate_affiliate_code: { Args: never; Returns: string }
       get_admin_level: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["admin_access_level"]
       }
+      get_effective_plan: { Args: { _uid: string }; Returns: string }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       redeem_access_code: { Args: { _code: string }; Returns: Json }
+      refund_credits: {
+        Args: {
+          _amount: number
+          _description?: string
+          _reason: string
+          _uid: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       admin_access_level: "super_admin" | "admin" | "support"
@@ -716,6 +896,14 @@ export type Database = {
       affiliate_tier: "starter" | "pro" | "elite" | "agency_partner"
       conversion_status: "pending" | "confirmed" | "paid"
       credit_kind: "build" | "runtime"
+      credit_txn_type:
+        | "deduction"
+        | "addition"
+        | "rollover"
+        | "topup"
+        | "reset"
+        | "refund"
+      job_status: "pending" | "processing" | "completed" | "failed" | "retrying"
       ledger_reason:
         | "generate"
         | "topup"
@@ -725,6 +913,12 @@ export type Database = {
         | "admin_adjust"
       payout_status: "pending" | "processing" | "paid" | "failed"
       plan_tier: "free" | "starter" | "builder" | "pro" | "agency"
+      rate_action:
+        | "site_generation"
+        | "optimization_run"
+        | "api_call"
+        | "ghl_sync"
+        | "search_atlas_call"
       user_role: "user" | "admin" | "agency" | "affiliate"
     }
     CompositeTypes: {
@@ -858,6 +1052,15 @@ export const Constants = {
       affiliate_tier: ["starter", "pro", "elite", "agency_partner"],
       conversion_status: ["pending", "confirmed", "paid"],
       credit_kind: ["build", "runtime"],
+      credit_txn_type: [
+        "deduction",
+        "addition",
+        "rollover",
+        "topup",
+        "reset",
+        "refund",
+      ],
+      job_status: ["pending", "processing", "completed", "failed", "retrying"],
       ledger_reason: [
         "generate",
         "topup",
@@ -868,6 +1071,13 @@ export const Constants = {
       ],
       payout_status: ["pending", "processing", "paid", "failed"],
       plan_tier: ["free", "starter", "builder", "pro", "agency"],
+      rate_action: [
+        "site_generation",
+        "optimization_run",
+        "api_call",
+        "ghl_sync",
+        "search_atlas_call",
+      ],
       user_role: ["user", "admin", "agency", "affiliate"],
     },
   },
