@@ -875,17 +875,18 @@ export default function Landing() {
         <div className="container relative z-10 max-w-4xl text-center">
           <FadeIn>
             <h2 className="text-balance text-5xl font-bold leading-[1.05] tracking-tight md:text-6xl">
-              Your website should be more than a digital brochure.
+              Your Website Should Not Cost $3,000
               <br />
-              <span className="text-gradient">It should be your business growth engine.</span>
+              <span className="text-gradient">And Take 6 Weeks To Build.</span>
             </h2>
-            <p className="mx-auto mt-5 max-w-2xl text-lg text-navy-foreground/75">
-              Build, optimize, automate, and scale on one AI-powered platform.
+            <p className="mx-auto mt-6 max-w-2xl text-lg text-navy-foreground/75">
+              It should cost nothing to start, take 10 minutes to build, rank on Google from day one, and connect to
+              your CRM automatically. That is exactly what Virtual Engine Builder does.
             </p>
             <div className="mt-9 flex flex-wrap justify-center gap-3">
               <Button asChild size="lg" className="bg-cta text-cta-foreground shadow-glow-cta hover:bg-cta/90">
                 <Link to="/auth?mode=signup">
-                  Start Building <ArrowRight className="ml-1 h-4 w-4" />
+                  ✦ Build My Free Website Now <ArrowRight className="ml-1 h-4 w-4" />
                 </Link>
               </Button>
               <Button
@@ -895,12 +896,12 @@ export default function Landing() {
                 className="border-navy-foreground/20 bg-transparent text-navy-foreground hover:bg-navy-foreground/10"
               >
                 <Link to="/auth?mode=signup&intent=optimize">
-                  Optimize Existing Website <ArrowRight className="ml-1 h-4 w-4" />
+                  Already have a website? Optimize it instead <ArrowRight className="ml-1 h-4 w-4" />
                 </Link>
               </Button>
             </div>
             <p className="mt-5 text-xs text-navy-foreground/60">
-              Free plan available · No credit card · English, Español, Português & Français
+              Free forever plan available · No credit card required · Works in 50+ languages · 190+ countries served
             </p>
           </FadeIn>
         </div>
