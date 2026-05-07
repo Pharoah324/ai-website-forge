@@ -898,7 +898,7 @@ export default function Landing() {
                 A Virtual Engine product — virtualengine.ai
               </a>
               <span className="text-[11px] text-navy-foreground/50">
-                Serving North America and South America in English, Español, Português & Français
+                Serving businesses worldwide in 50+ languages — every country, every continent
               </span>
             </div>
           </div>
