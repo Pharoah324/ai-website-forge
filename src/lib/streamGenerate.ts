@@ -70,13 +70,28 @@ export async function streamGenerateSite(
   if (!resp.ok || !resp.body) {
     let msg = "Generation failed";
     let code: StreamErrorCode = "server";
+    let payload: { error?: string; reason?: string; retry_after_seconds?: number; daily_limit?: number; hourly_limit?: number; plan?: string } = {};
     try {
-      const j = await resp.json();
-      msg = j.error || msg;
+      payload = await resp.json();
+      msg = payload.error || msg;
     } catch { /* noop */ }
-    if (resp.status === 402) { code = "no_credits"; }
-    else if (resp.status === 429) { code = "rate_limited"; }
-    else if (resp.status === 401) { code = "auth"; }
+    const reason = payload.reason ?? payload.error;
+    if (reason === "no_credits" || resp.status === 402) {
+      code = "no_credits";
+      msg = "You're out of build credits. Top up or upgrade your plan.";
+    } else if (reason === "daily_limit") {
+      code = "rate_limited";
+      const mins = Math.ceil((payload.retry_after_seconds ?? 3600) / 60);
+      msg = `Daily generation limit reached (${payload.daily_limit}/day on ${payload.plan} plan). Resets in ~${mins} min.`;
+    } else if (reason === "hourly_limit") {
+      code = "rate_limited";
+      const mins = Math.ceil((payload.retry_after_seconds ?? 600) / 60);
+      msg = `Hourly API limit reached. Try again in ~${mins} min.`;
+    } else if (resp.status === 429) {
+      code = "rate_limited";
+    } else if (resp.status === 401) {
+      code = "auth";
+    }
     signal?.removeEventListener("abort", onExternalAbort);
     cbs.onError(msg, code);
     return;
