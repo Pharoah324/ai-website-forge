@@ -546,7 +546,12 @@ export default function Landing() {
 
         <div className="container max-w-5xl">
           <FadeIn className="mb-12 text-center">
-            <h2 className="text-4xl font-bold tracking-tight md:text-5xl">We Built What They Forgot.</h2>
+            <h2 className="text-balance text-4xl font-bold tracking-tight md:text-5xl">
+              Why Smart Business Owners Are Switching to Virtual Engine Builder
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-lg text-navy-foreground/70">
+              Same price as the competition. Ten features they don't have.
+            </p>
           </FadeIn>
           <FadeIn>
             <div className="overflow-hidden rounded-2xl border border-primary/30 shadow-glow">
