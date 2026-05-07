@@ -1,5 +1,6 @@
+import type { RouteRecord } from "vite-react-ssg";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { Outlet } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -42,68 +43,85 @@ const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, refetchOnWindowFocus: false } },
 });
 
-const App = () => {
+function RootLayout() {
   useEffect(() => { captureRefFromUrl(); }, []);
-  const customerSubdomain = getCustomerSubdomain();
-  if (customerSubdomain) {
-    return (
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <LiveSite subdomain={customerSubdomain} />
-        </TooltipProvider>
-      </QueryClientProvider>
-    );
+  // Customer-subdomain branch only runs in the browser (uses window). Safe for SSG.
+  if (typeof window !== "undefined") {
+    const customerSubdomain = getCustomerSubdomain();
+    if (customerSubdomain) {
+      return (
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <LiveSite subdomain={customerSubdomain} />
+          </TooltipProvider>
+        </QueryClientProvider>
+      );
+    }
   }
   return (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <I18nProvider>
-      <BrowserRouter>
-        <AuthProvider>
-          <ErrorBoundary>
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/share/:token" element={<Share />} />
-            <Route path="/affiliates" element={<Affiliates />} />
-            <Route path="/affiliates/:lang" element={<Affiliates />} />
-            <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<AdminOverview />} />
-              <Route path="users" element={<AdminUsers />} />
-              <Route path="sites" element={<AdminSites />} />
-              <Route path="affiliates" element={<AdminAffiliates />} />
-              <Route path="announcements" element={<AdminAnnouncements />} />
-              <Route path="codes" element={<AdminAccessCodes />} />
-              <Route path="admins" element={<AdminAdmins />} />
-              <Route path="alerts" element={<AdminAlerts />} />
-              <Route path="usage" element={<AdminUsage />} />
-              <Route path="launch-tests" element={<AdminLaunchTests />} />
-            </Route>
-            <Route path="/app" element={<AppLayout />}>
-              <Route index element={<Dashboard />} />
-              <Route path="onboarding" element={<Onboarding />} />
-              <Route path="optimize" element={<Optimize />} />
-              <Route path="optimize/:id" element={<OptimizeDashboard />} />
-              <Route path="new" element={<NewSite />} />
-              <Route path="sites/:id" element={<SiteDetail />} />
-              <Route path="billing" element={<Billing />} />
-              <Route path="integrations" element={<Integrations />} />
-              <Route path="settings" element={<Settings />} />
-              <Route path="affiliate" element={<AffiliateDashboard />} />
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          </ErrorBoundary>
-        </AuthProvider>
-      </BrowserRouter>
-      </I18nProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <I18nProvider>
+          <AuthProvider>
+            <ErrorBoundary>
+              <Outlet />
+            </ErrorBoundary>
+          </AuthProvider>
+        </I18nProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
   );
-};
+}
 
-export default App;
+export const routes: RouteRecord[] = [
+  {
+    path: "/",
+    Component: RootLayout,
+    children: [
+      { index: true, Component: Landing },
+      { path: "auth", Component: Auth },
+      { path: "share/:token", Component: Share },
+      { path: "affiliates", Component: Affiliates },
+      { path: "affiliates/:lang", Component: Affiliates, getStaticPaths: () => ["affiliates/es", "affiliates/pt"] },
+      {
+        path: "admin",
+        Component: AdminLayout,
+        children: [
+          { index: true, Component: AdminOverview },
+          { path: "users", Component: AdminUsers },
+          { path: "sites", Component: AdminSites },
+          { path: "affiliates", Component: AdminAffiliates },
+          { path: "announcements", Component: AdminAnnouncements },
+          { path: "codes", Component: AdminAccessCodes },
+          { path: "admins", Component: AdminAdmins },
+          { path: "alerts", Component: AdminAlerts },
+          { path: "usage", Component: AdminUsage },
+          { path: "launch-tests", Component: AdminLaunchTests },
+        ],
+      },
+      {
+        path: "app",
+        Component: AppLayout,
+        children: [
+          { index: true, Component: Dashboard },
+          { path: "onboarding", Component: Onboarding },
+          { path: "optimize", Component: Optimize },
+          { path: "optimize/:id", Component: OptimizeDashboard },
+          { path: "new", Component: NewSite },
+          { path: "sites/:id", Component: SiteDetail },
+          { path: "billing", Component: Billing },
+          { path: "integrations", Component: Integrations },
+          { path: "settings", Component: Settings },
+          { path: "affiliate", Component: AffiliateDashboard },
+        ],
+      },
+      { path: "*", Component: NotFound },
+    ],
+  },
+];
+
+export default routes;
