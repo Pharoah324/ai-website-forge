@@ -30,20 +30,47 @@ import { PLAN_LIMITS } from "@/hooks/useProfile";
 import { ChatWidget } from "@/components/ChatWidget";
 import { LanguageSelector } from "@/components/LanguageSelector";
 
+const PLAN_TAGLINES: Record<string, string> = {
+  free: "Try it out",
+  starter: "Beginner & testing",
+  builder: "Best for serious growth",
+  pro: "Advanced scaling",
+  agency: "Client work & white-label",
+};
+
 const PLAN_FEATURES: Record<string, string[]> = {
   free: ["20 build credits/mo", "300 runtime credits", "Live preview", "1 user"],
   starter: ["100 build credits/mo", "2,500 runtime credits", "All templates", "Email support"],
-  builder: ["300 build credits/mo", "12,000 runtime credits", "Brand voice training", "Share preview links"],
-  pro: ["750 build credits/mo", "35,000 runtime credits", "Performance auditor", "Priority support"],
-  agency: ["Unlimited build credits", "100,000 runtime credits", "White-label mode", "Client workspaces"],
+  builder: [
+    "300 build credits/mo",
+    "12,000 runtime credits",
+    "Search Atlas SEO included",
+    "Brand voice training",
+    "Share preview links",
+  ],
+  pro: [
+    "750 build credits/mo",
+    "35,000 runtime credits",
+    "Search Atlas SEO included",
+    "Performance auditor",
+    "Priority support",
+  ],
+  agency: [
+    "Unlimited build credits",
+    "100,000 runtime credits",
+    "Search Atlas SEO included",
+    "White-label mode",
+    "Client workspaces",
+  ],
 };
 
-const PLAN_TRUST = [
-  "Credits roll over 50% monthly",
-  "GoHighLevel ready",
-  "Search Atlas SEO included",
-  "Cancel anytime",
-];
+const PLAN_TRUST: Record<string, string[]> = {
+  free: ["GoHighLevel ready", "Cancel anytime"],
+  starter: ["GoHighLevel ready", "Cancel anytime"],
+  builder: ["GoHighLevel ready", "Credits roll over 50% monthly", "Search Atlas SEO included", "Cancel anytime"],
+  pro: ["GoHighLevel ready", "Credits roll over 50% monthly", "Search Atlas SEO included", "Cancel anytime"],
+  agency: ["GoHighLevel ready", "Credits roll over 50% monthly", "Search Atlas SEO included", "Cancel anytime"],
+};
 
 const ROTATING_PROMPTS = [
   "A luxury medspa in Miami called Glow Aesthetics offering Botox, facials, and online booking…",
