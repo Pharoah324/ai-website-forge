@@ -8,12 +8,14 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, stripe-signature",
 };
 
-const PLAN_LIMITS: Record<string, { build: number; runtime: number }> = {
-  free: { build: 20, runtime: 300 },
-  starter: { build: 100, runtime: 2500 },
-  builder: { build: 300, runtime: 12000 },
-  pro: { build: 750, runtime: 35000 },
-  agency: { build: 2147483647, runtime: 100000 },
+// Build / runtime monthly grants per plan, and which plans get build-credit rollover.
+// Runtime credits NEVER roll over on any plan. Rollover capped at one full month.
+const PLAN_LIMITS: Record<string, { build: number; runtime: number; rollover: boolean }> = {
+  free:    { build: 20,   runtime: 300,    rollover: false },
+  starter: { build: 100,  runtime: 2500,   rollover: false },
+  builder: { build: 300,  runtime: 10000,  rollover: true },
+  pro:     { build: 800,  runtime: 30000,  rollover: true },
+  agency:  { build: 2000, runtime: 100000, rollover: true },
 };
 
 const GRACE_PERIOD_DAYS = 3;
@@ -219,16 +221,24 @@ Deno.serve(async (req) => {
         };
 
         if (invoice.billing_reason === "subscription_cycle") {
-          // Renewal — refresh credits + rollover
+          // Renewal — refresh credits.
+          // Rollover: BUILD credits only, 50% of unused, only on Builder/Pro/Agency,
+          // capped so total never exceeds 2× the monthly limit. Runtime never rolls over.
+          const planKey = (prof.plan ?? "free") as string;
+          const planCfg = PLAN_LIMITS[planKey] ?? PLAN_LIMITS.free;
           const buildUnused = Math.max(0, prof.build_credits ?? 0);
-          const runtimeUnused = Math.max(0, prof.runtime_credits ?? 0);
-          const buildRollover = Math.min(prof.monthly_build_limit, Math.floor(buildUnused / 2));
-          const runtimeRollover = Math.min(prof.monthly_runtime_limit, Math.floor(runtimeUnused / 2));
+          let buildRollover = 0;
+          if (planCfg.rollover) {
+            buildRollover = Math.min(
+              prof.monthly_build_limit,            // ≤ one full month
+              Math.floor(buildUnused / 2),         // 50% of unused
+            );
+          }
           Object.assign(baseUpdate, {
-            build_credits: prof.monthly_build_limit,
+            build_credits: prof.monthly_build_limit + buildRollover,
             runtime_credits: prof.monthly_runtime_limit,
             rollover_build_credits: buildRollover,
-            rollover_runtime_credits: runtimeRollover,
+            rollover_runtime_credits: 0,
             billing_cycle_start: new Date().toISOString(),
           });
         }

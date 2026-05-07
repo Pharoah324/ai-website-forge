@@ -3,7 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type AdminAlert = {
   id: string;
-  alert_type: "dispute" | "abuse" | "server_error" | "credit_anomaly" | "signup_abuse" | "other";
+  alert_type:
+    | "dispute" | "abuse" | "server_error" | "credit_anomaly"
+    | "signup_abuse" | "account_paused" | "grace_period_expired" | "other";
   severity: "critical" | "warning" | "info";
   affected_user_id: string | null;
   affected_user_email: string | null;
