@@ -763,10 +763,13 @@ export default function Landing() {
       <section id="pricing" className="bg-card py-24">
         <div className="container">
           <FadeIn className="mx-auto max-w-2xl text-center">
-            <h2 className="text-4xl font-bold tracking-tight md:text-5xl">Start Free. Scale When Ready.</h2>
-            <p className="mt-3 text-muted-foreground">
-              Every plan connects to your own GoHighLevel account. Advanced SEO, credit rollover, and growth tools
-              unlock starting at <span className="font-semibold text-primary">Builder ($49)</span>.
+            <h2 className="text-balance text-4xl font-bold tracking-tight md:text-5xl">
+              Less Than Your Netflix Subscription.
+              <br />
+              <span className="text-gradient">More Powerful Than a $3,000 Agency.</span>
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              Start free. Build unlimited. Scale when you are ready.
             </p>
           </FadeIn>
           <div className="mt-12 grid gap-4 md:grid-cols-3 lg:grid-cols-5">
