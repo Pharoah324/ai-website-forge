@@ -27,6 +27,7 @@ import AdminAnnouncements from "./pages/admin/AdminAnnouncements";
 import AdminAccessCodes from "./pages/admin/AdminAccessCodes";
 import AdminAdmins from "./pages/admin/AdminAdmins";
 import Optimize from "./pages/Optimize";
+import OptimizeDashboard from "./pages/OptimizeDashboard";
 import Onboarding from "./pages/Onboarding";
 import { getCustomerSubdomain } from "./lib/subdomain";
 import { I18nProvider } from "./lib/i18n";
@@ -78,6 +79,7 @@ const App = () => {
               <Route index element={<Dashboard />} />
               <Route path="onboarding" element={<Onboarding />} />
               <Route path="optimize" element={<Optimize />} />
+              <Route path="optimize/:id" element={<OptimizeDashboard />} />
               <Route path="new" element={<NewSite />} />
               <Route path="sites/:id" element={<SiteDetail />} />
               <Route path="billing" element={<Billing />} />
