@@ -16,14 +16,20 @@ import Share from "./pages/Share";
 import LiveSite from "./pages/LiveSite";
 import AppLayout from "./layouts/AppLayout";
 import NotFound from "./pages/NotFound";
+import Affiliates from "./pages/Affiliates";
+import AffiliateDashboard from "./pages/AffiliateDashboard";
+import AdminAffiliates from "./pages/AdminAffiliates";
 import { getCustomerSubdomain } from "./lib/subdomain";
 import { I18nProvider } from "./lib/i18n";
+import { captureRefFromUrl } from "./lib/affiliateTracking";
+import { useEffect } from "react";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, refetchOnWindowFocus: false } },
 });
 
 const App = () => {
+  useEffect(() => { captureRefFromUrl(); }, []);
   const customerSubdomain = getCustomerSubdomain();
   if (customerSubdomain) {
     return (
@@ -48,6 +54,9 @@ const App = () => {
             <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/share/:token" element={<Share />} />
+            <Route path="/affiliates" element={<Affiliates />} />
+            <Route path="/affiliates/:lang" element={<Affiliates />} />
+            <Route path="/admin/affiliates" element={<AdminAffiliates />} />
             <Route path="/app" element={<AppLayout />}>
               <Route index element={<Dashboard />} />
               <Route path="new" element={<NewSite />} />
@@ -55,6 +64,7 @@ const App = () => {
               <Route path="billing" element={<Billing />} />
               <Route path="integrations" element={<Integrations />} />
               <Route path="settings" element={<Settings />} />
+              <Route path="affiliate" element={<AffiliateDashboard />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
