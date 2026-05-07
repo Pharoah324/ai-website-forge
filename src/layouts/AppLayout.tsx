@@ -14,19 +14,22 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CreditBadge } from "@/components/CreditBadge";
-
-const nav = [
-  { to: "/app", label: "Dashboard", icon: LayoutDashboard, end: true },
-  { to: "/app/new", label: "New Site", icon: Plus },
-  { to: "/app/integrations", label: "Integrations", icon: Plug },
-  { to: "/app/billing", label: "Billing", icon: CreditCard },
-  { to: "/app/settings", label: "Settings", icon: Settings },
-];
+import { LanguageSelector } from "@/components/LanguageSelector";
+import { useI18n } from "@/lib/i18n";
 
 export default function AppLayout() {
   const { user, loading, signOut } = useAuth();
   const { data: profile } = useProfile();
+  const { t } = useI18n();
   const navigate = useNavigate();
+
+  const nav = [
+    { to: "/app", label: t("nav.dashboard"), icon: LayoutDashboard, end: true },
+    { to: "/app/new", label: t("nav.newsite"), icon: Plus },
+    { to: "/app/integrations", label: t("nav.integrations"), icon: Plug },
+    { to: "/app/billing", label: t("nav.billing"), icon: CreditCard },
+    { to: "/app/settings", label: t("nav.settings"), icon: Settings },
+  ];
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth", { replace: true });
