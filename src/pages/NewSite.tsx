@@ -279,11 +279,39 @@ export default function NewSite() {
     void tpl;
   };
 
-  const v = VIEWPORTS[viewport];
+  const showChat = !!siteId && !!content;
 
   return (
     <div className="grid h-[calc(100vh-3.5rem)] grid-cols-1 lg:grid-cols-[420px_1fr]">
-      <div className="flex flex-col gap-4 overflow-y-auto border-r bg-card p-6">
+      {/* Mobile tab switcher */}
+      {showChat && (
+        <div className="flex border-b bg-card lg:hidden">
+          {(["chat", "preview"] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setMobileTab(tab)}
+              className={`flex-1 py-2 text-sm font-medium capitalize transition-colors ${
+                mobileTab === tab ? "border-b-2 border-primary text-foreground" : "text-muted-foreground"
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div
+        className={`${showChat ? (mobileTab === "chat" ? "flex" : "hidden lg:flex") : "flex"} flex-col gap-4 overflow-y-auto border-r bg-card ${showChat ? "p-0" : "p-6"}`}
+      >
+        {showChat && siteId && content ? (
+          <RefinementChat
+            siteId={siteId}
+            originalPrompt={generatedPrompt}
+            onContentUpdated={setContent}
+            onTopUp={() => setTopUpOpen(true)}
+          />
+        ) : (
+          <div className="flex flex-col gap-4 p-6">
         <div>
           <div className="mb-2 flex items-center gap-2">
             <h1 className="text-xl font-bold">{t("newsite.title")}</h1>
