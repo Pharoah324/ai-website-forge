@@ -32,6 +32,7 @@ import type { SiteContent } from "@/types/site";
 import { toast } from "sonner";
 import { TEMPLATES, type Template } from "@/data/templates";
 import { streamGenerateSite } from "@/lib/streamGenerate";
+import { useI18n } from "@/lib/i18n";
 
 const VIEWPORTS = {
   desktop: { width: "100%", icon: Monitor, label: "Desktop" },
@@ -59,6 +60,7 @@ function tryParsePartial(s: string): SiteContent | null {
 }
 
 export default function NewSite() {
+  const { t, lang } = useI18n();
   const [prompt, setPrompt] = useState("");
   const [generating, setGenerating] = useState(false);
   const [content, setContent] = useState<SiteContent | null>(null);
@@ -170,7 +172,7 @@ export default function NewSite() {
     abortRef.current = ctrl;
 
     await streamGenerateSite(
-      body,
+      { ...body, language: lang },
       {
         onDelta: (chunk) => {
           accumulatedRef.current += chunk;
@@ -181,8 +183,8 @@ export default function NewSite() {
           setContent(site.content);
           qc.invalidateQueries({ queryKey: ["profile"] });
           qc.invalidateQueries({ queryKey: ["sites"] });
-          toast.success("Site generated", {
-            action: { label: "Open", onClick: () => navigate(`/app/sites/${site.id}`) },
+          toast.success(t("newsite.success"), {
+            action: { label: t("newsite.open"), onClick: () => navigate(`/app/sites/${site.id}`) },
           });
           setGenerating(false);
         },
@@ -224,10 +226,10 @@ export default function NewSite() {
   };
 
   const generate = () => {
-    if (!prompt.trim()) return toast.error("Describe your business first");
+    if (!prompt.trim()) return toast.error(t("newsite.describeFirst"));
     if (noCredits) {
-      toast.error("Out of build credits", {
-        action: { label: "Buy credits", onClick: () => setTopUpOpen(true) },
+      toast.error(t("newsite.outOfCredits"), {
+        action: { label: t("newsite.buyCredits"), onClick: () => setTopUpOpen(true) },
       });
       setTopUpOpen(true);
       return;
@@ -277,7 +279,7 @@ export default function NewSite() {
       <div className="flex flex-col gap-4 overflow-y-auto border-r bg-card p-6">
         <div>
           <div className="mb-2 flex items-center gap-2">
-            <h1 className="text-xl font-bold">Describe your site</h1>
+            <h1 className="text-xl font-bold">{t("newsite.title")}</h1>
             {profile?.brand_voice_active && (
               <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
                 BRAND VOICE ON
@@ -285,7 +287,7 @@ export default function NewSite() {
             )}
           </div>
           <p className="text-sm text-muted-foreground">
-            Plain English. The more detail, the better the site.
+            {t("newsite.hint")}
           </p>
         </div>
 
@@ -293,9 +295,9 @@ export default function NewSite() {
           <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-xs">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
             <div className="flex-1">
-              <p className="font-medium text-foreground">Out of build credits</p>
+              <p className="font-medium text-foreground">{t("newsite.outOfCredits")}</p>
               <p className="mt-0.5 text-muted-foreground">
-                Top up to keep generating, or upgrade your plan.
+                {t("newsite.topup")}
               </p>
               <Button
                 size="sm"
@@ -303,7 +305,7 @@ export default function NewSite() {
                 className="mt-2 h-7 px-2 text-xs"
                 onClick={() => setTopUpOpen(true)}
               >
-                Buy credits
+                {t("newsite.buyCredits")}
               </Button>
             </div>
           </div>
@@ -312,7 +314,7 @@ export default function NewSite() {
         <Textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder="e.g. A modern dental practice in Austin focused on cosmetic dentistry, with online booking and patient testimonials."
+          placeholder={t("newsite.placeholder")}
           className="min-h-40 resize-none"
           maxLength={4000}
           disabled={generating}
@@ -327,17 +329,17 @@ export default function NewSite() {
                     <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
                   </span>
                 )}
-                {listening ? "Recording…" : "Transcript ready"}
+                {listening ? t("newsite.recording") : t("newsite.transcriptReady")}
               </span>
               <div className="flex gap-1">
-                <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={discardTranscript} type="button">Discard</Button>
-                <Button size="sm" className="h-7 px-2 text-xs" onClick={appendTranscript} disabled={!liveFinal.trim() && !liveInterim.trim()} type="button">Append to prompt</Button>
+                <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={discardTranscript} type="button">{t("newsite.discard")}</Button>
+                <Button size="sm" className="h-7 px-2 text-xs" onClick={appendTranscript} disabled={!liveFinal.trim() && !liveInterim.trim()} type="button">{t("newsite.append")}</Button>
               </div>
             </div>
             <p className="min-h-[2.5rem] text-sm leading-relaxed">
               <span className="text-foreground">{liveFinal}</span>
               {liveInterim && (<span className="italic text-muted-foreground"> {liveInterim}</span>)}
-              {!liveFinal && !liveInterim && (<span className="italic text-muted-foreground">Listening… start speaking.</span>)}
+              {!liveFinal && !liveInterim && (<span className="italic text-muted-foreground">{t("newsite.startSpeaking")}</span>)}
             </p>
           </div>
         )}
@@ -352,13 +354,13 @@ export default function NewSite() {
           >
             {generating ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating…
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("newsite.generating")}
               </>
             ) : (
               <>
-                <Wand2 className="mr-2 h-4 w-4" /> Generate
+                <Wand2 className="mr-2 h-4 w-4" /> {t("newsite.generate")}
                 <span className="ml-2 text-xs opacity-80">
-                  {isUnlimited ? "(unlimited)" : "(1 credit)"}
+                  {isUnlimited ? t("newsite.unlimited") : t("newsite.oneCredit")}
                 </span>
               </>
             )}
@@ -393,7 +395,7 @@ export default function NewSite() {
               variant="outline"
               type="button"
             >
-              Cancel
+              {t("newsite.cancel")}
             </Button>
           )}
         </div>
