@@ -194,6 +194,10 @@ export default function NewSite() {
             action: { label: t("newsite.open"), onClick: () => navigate(`/app/sites/${site.id}`) },
           });
           setGenerating(false);
+          // Fire-and-forget SEO analysis (Search Atlas keywords + meta + score).
+          supabase.functions.invoke("seo-analyze", { body: { site_id: site.id } })
+            .then(() => qc.invalidateQueries({ queryKey: ["site-seo", site.id] }))
+            .catch((e) => console.warn("seo-analyze failed", e));
         },
         onError: (msg, code) => {
           setGenerating(false);
