@@ -1,18 +1,103 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
 
-export type Lang = "en" | "es" | "pt" | "fr";
+// Lang is now an open string — any BCP-47 language code is allowed.
+// UI dictionaries exist only for a subset; everything else falls back to English UI
+// while still driving site generation language and HTML lang/dir attributes.
+export type Lang = string;
 
-export const LANGUAGES: { code: Lang; label: string; flag: string; name: string }[] = [
-  { code: "en", label: "EN", flag: "🇺🇸", name: "English" },
-  { code: "es", label: "ES", flag: "🇪🇸", name: "Español" },
-  { code: "pt", label: "PT", flag: "🇧🇷", name: "Português" },
-  { code: "fr", label: "FR", flag: "🇫🇷", name: "Français" },
+export type LanguageEntry = {
+  code: string;
+  label: string;          // short code shown in selector chip
+  flag: string;           // emoji flag
+  name: string;           // native name
+  englishName: string;
+  region: "Americas" | "Europe" | "Middle East" | "Africa" | "Asia" | "Pacific";
+  rtl?: boolean;
+  primary?: boolean;      // shown in quick-select
+};
+
+// Curated global list. Primary = quick-select group at the top of the dropdown.
+export const LANGUAGES: LanguageEntry[] = [
+  // PRIMARY (most widely spoken worldwide)
+  { code: "en",    label: "EN",  flag: "🇺🇸", name: "English",            englishName: "English",            region: "Americas",     primary: true },
+  { code: "es",    label: "ES",  flag: "🇪🇸", name: "Español",            englishName: "Spanish",            region: "Europe",       primary: true },
+  { code: "pt",    label: "PT",  flag: "🇧🇷", name: "Português",          englishName: "Portuguese",         region: "Americas",     primary: true },
+  { code: "zh",    label: "中",  flag: "🇨🇳", name: "中文",                englishName: "Chinese (Simplified)", region: "Asia",      primary: true },
+  { code: "ja",    label: "日",  flag: "🇯🇵", name: "日本語",              englishName: "Japanese",           region: "Asia",         primary: true },
+  { code: "ar",    label: "AR",  flag: "🇸🇦", name: "العربية",            englishName: "Arabic",             region: "Middle East",  rtl: true, primary: true },
+  { code: "hi",    label: "HI",  flag: "🇮🇳", name: "हिन्दी",              englishName: "Hindi",              region: "Asia",         primary: true },
+  { code: "fr",    label: "FR",  flag: "🇫🇷", name: "Français",           englishName: "French",             region: "Europe",       primary: true },
+  { code: "de",    label: "DE",  flag: "🇩🇪", name: "Deutsch",            englishName: "German",             region: "Europe",       primary: true },
+  { code: "ko",    label: "KO",  flag: "🇰🇷", name: "한국어",              englishName: "Korean",             region: "Asia",         primary: true },
+  { code: "it",    label: "IT",  flag: "🇮🇹", name: "Italiano",           englishName: "Italian",            region: "Europe",       primary: true },
+  { code: "ru",    label: "RU",  flag: "🇷🇺", name: "Русский",            englishName: "Russian",            region: "Europe",       primary: true },
+  { code: "id",    label: "ID",  flag: "🇮🇩", name: "Bahasa Indonesia",   englishName: "Indonesian",         region: "Asia",         primary: true },
+  { code: "tr",    label: "TR",  flag: "🇹🇷", name: "Türkçe",             englishName: "Turkish",            region: "Middle East",  primary: true },
+  { code: "vi",    label: "VI",  flag: "🇻🇳", name: "Tiếng Việt",         englishName: "Vietnamese",         region: "Asia",         primary: true },
+  { code: "th",    label: "TH",  flag: "🇹🇭", name: "ภาษาไทย",            englishName: "Thai",               region: "Asia",         primary: true },
+
+  // EUROPE
+  { code: "nl",    label: "NL",  flag: "🇳🇱", name: "Nederlands",         englishName: "Dutch",              region: "Europe" },
+  { code: "pl",    label: "PL",  flag: "🇵🇱", name: "Polski",             englishName: "Polish",             region: "Europe" },
+  { code: "sv",    label: "SV",  flag: "🇸🇪", name: "Svenska",            englishName: "Swedish",            region: "Europe" },
+  { code: "no",    label: "NO",  flag: "🇳🇴", name: "Norsk",              englishName: "Norwegian",          region: "Europe" },
+  { code: "da",    label: "DA",  flag: "🇩🇰", name: "Dansk",              englishName: "Danish",             region: "Europe" },
+  { code: "fi",    label: "FI",  flag: "🇫🇮", name: "Suomi",              englishName: "Finnish",            region: "Europe" },
+  { code: "el",    label: "EL",  flag: "🇬🇷", name: "Ελληνικά",           englishName: "Greek",              region: "Europe" },
+  { code: "ro",    label: "RO",  flag: "🇷🇴", name: "Română",             englishName: "Romanian",           region: "Europe" },
+  { code: "hu",    label: "HU",  flag: "🇭🇺", name: "Magyar",             englishName: "Hungarian",          region: "Europe" },
+  { code: "cs",    label: "CS",  flag: "🇨🇿", name: "Čeština",            englishName: "Czech",              region: "Europe" },
+  { code: "sk",    label: "SK",  flag: "🇸🇰", name: "Slovenčina",         englishName: "Slovak",             region: "Europe" },
+  { code: "bg",    label: "BG",  flag: "🇧🇬", name: "Български",          englishName: "Bulgarian",          region: "Europe" },
+  { code: "hr",    label: "HR",  flag: "🇭🇷", name: "Hrvatski",           englishName: "Croatian",           region: "Europe" },
+  { code: "sr",    label: "SR",  flag: "🇷🇸", name: "Српски",             englishName: "Serbian",            region: "Europe" },
+  { code: "uk",    label: "UK",  flag: "🇺🇦", name: "Українська",         englishName: "Ukrainian",          region: "Europe" },
+
+  // MIDDLE EAST
+  { code: "he",    label: "HE",  flag: "🇮🇱", name: "עברית",              englishName: "Hebrew",             region: "Middle East", rtl: true },
+  { code: "fa",    label: "FA",  flag: "🇮🇷", name: "فارسی",              englishName: "Persian",            region: "Middle East", rtl: true },
+  { code: "ur",    label: "UR",  flag: "🇵🇰", name: "اردو",               englishName: "Urdu",               region: "Middle East", rtl: true },
+
+  // ASIA
+  { code: "zh-TW", label: "繁",  flag: "🇹🇼", name: "繁體中文",            englishName: "Chinese (Traditional)", region: "Asia" },
+  { code: "bn",    label: "BN",  flag: "🇧🇩", name: "বাংলা",              englishName: "Bengali",            region: "Asia" },
+  { code: "ms",    label: "MS",  flag: "🇲🇾", name: "Bahasa Melayu",      englishName: "Malay",              region: "Asia" },
+  { code: "tl",    label: "TL",  flag: "🇵🇭", name: "Tagalog",            englishName: "Tagalog/Filipino",   region: "Asia" },
+  { code: "ta",    label: "TA",  flag: "🇮🇳", name: "தமிழ்",              englishName: "Tamil",              region: "Asia" },
+  { code: "te",    label: "TE",  flag: "🇮🇳", name: "తెలుగు",             englishName: "Telugu",             region: "Asia" },
+  { code: "mr",    label: "MR",  flag: "🇮🇳", name: "मराठी",              englishName: "Marathi",            region: "Asia" },
+
+  // AFRICA
+  { code: "sw",    label: "SW",  flag: "🇰🇪", name: "Kiswahili",          englishName: "Swahili",            region: "Africa" },
+  { code: "am",    label: "AM",  flag: "🇪🇹", name: "አማርኛ",              englishName: "Amharic",            region: "Africa" },
+  { code: "ha",    label: "HA",  flag: "🇳🇬", name: "Hausa",              englishName: "Hausa",              region: "Africa" },
+  { code: "yo",    label: "YO",  flag: "🇳🇬", name: "Yorùbá",             englishName: "Yoruba",             region: "Africa" },
+  { code: "zu",    label: "ZU",  flag: "🇿🇦", name: "isiZulu",            englishName: "Zulu",               region: "Africa" },
+  { code: "af",    label: "AF",  flag: "🇿🇦", name: "Afrikaans",          englishName: "Afrikaans",          region: "Africa" },
+
+  // PACIFIC
+  { code: "mi",    label: "MI",  flag: "🇳🇿", name: "Te Reo Māori",       englishName: "Maori",              region: "Pacific" },
+  { code: "sm",    label: "SM",  flag: "🇼🇸", name: "Gagana Sāmoa",       englishName: "Samoan",             region: "Pacific" },
 ];
+
+export const RTL_LANGS = new Set(LANGUAGES.filter((l) => l.rtl).map((l) => l.code));
+
+export function isRTL(code: string): boolean {
+  if (RTL_LANGS.has(code)) return true;
+  // Also support raw codes the AI might return
+  return ["ar", "he", "fa", "ur", "yi", "ps", "sd"].some((c) => code.toLowerCase().startsWith(c));
+}
+
+export function getLanguageEntry(code: string): LanguageEntry | undefined {
+  return LANGUAGES.find((l) => l.code === code);
+}
 
 const STORAGE_KEY = "veb_lang";
 
 type Dict = Record<string, string>;
-const dicts: Record<Lang, Dict> = {
+
+// UI translations only exist for these — any other selected lang falls back to English UI.
+const dicts: Record<string, Dict> = {
   en: {
     "nav.signin": "Sign in",
     "nav.getstarted": "Get started",
@@ -97,69 +182,17 @@ const dicts: Record<Lang, Dict> = {
     "common.plan": "plan",
     "common.unlimitedBuilds": "Generaciones ilimitadas",
     "common.creditsLeft": "{n} créditos de generación restantes",
-
-    "hero.badge": "Generación de sitios con IA",
-    "hero.title1": "Tienes una idea.",
-    "hero.title2": "La construimos en minutos.",
-    "hero.subtitle":
-      "Escríbelo o dilo en voz alta. Virtual Engine Builder convierte tu descripción en un sitio web, embudo o landing page real — listo para recibir clientes.",
     "hero.cta": "✦ Hacer realidad mi idea",
     "hero.seePricing": "Ver precios",
-    "hero.bullet1": "Empieza gratis",
-    "hero.bullet2": "Sin conocimientos técnicos",
-    "hero.bullet3": "Listo para GoHighLevel",
-    "demo.title": "Míralo en acción",
-    "demo.subtitle": "De la descripción al sitio web en 60 segundos.",
-    "demo.describe": "Describe tu negocio",
-    "demo.generate": "Generar",
-    "demo.generating": "Generando sitio…",
-    "testimonials.title": "Amado por creadores, agencias y coaches",
-    "pricing.title": "Precios simples",
-    "pricing.subtitle":
-      "Paga por lo que construyes. Los créditos no usados se acumulan (50%, máx. un mes).",
-    "pricing.popular": "Más popular",
-    "pricing.startFree": "Empezar gratis",
-    "pricing.choose": "Elegir plan",
-    "footer.product": "Un producto de Virtual Engine — virtualengine.ai →",
-
-    "newsite.title": "Describe tu sitio",
-    "newsite.hint": "En lenguaje natural. Cuanto más detalle, mejor el sitio.",
-    "newsite.placeholder":
-      "ej. Una clínica dental moderna en Madrid enfocada en estética dental, con reservas en línea y testimonios.",
     "newsite.generate": "Generar",
     "newsite.generating": "Generando…",
-    "newsite.unlimited": "(ilimitado)",
-    "newsite.oneCredit": "(1 crédito)",
-    "newsite.cancel": "Cancelar",
-    "newsite.outOfCredits": "Sin créditos de generación",
-    "newsite.topup": "Recarga para seguir generando o mejora tu plan.",
-    "newsite.buyCredits": "Comprar créditos",
-    "newsite.describeFirst": "Describe tu negocio primero",
-    "newsite.success": "Sitio generado",
-    "newsite.open": "Abrir",
-    "newsite.recording": "Grabando…",
-    "newsite.transcriptReady": "Transcripción lista",
-    "newsite.discard": "Descartar",
-    "newsite.append": "Añadir al prompt",
-    "newsite.startSpeaking": "Escuchando… empieza a hablar.",
-
     "billing.title": "Facturación",
-    "billing.subtitle": "Gestiona tu plan y paquetes de créditos.",
-    "billing.current": "Plan actual",
-    "billing.unlimited": "Créditos ilimitados",
-    "billing.totalCredits": "{n} créditos disponibles en total",
-    "billing.buyCredits": "Comprar créditos",
     "billing.plans": "Planes",
     "billing.monthly": "Mensual",
     "billing.annual": "Anual",
-    "billing.current_chip": "ACTUAL",
-    "billing.upgrade": "Mejorar",
-    "billing.currentBtn": "Plan actual",
-    "billing.free": "Gratis",
   },
   pt: {
     "nav.signin": "Entrar",
-    "nav.getstarted": "Começar",
     "nav.dashboard": "Painel",
     "nav.newsite": "Novo site",
     "nav.integrations": "Integrações",
@@ -168,184 +201,80 @@ const dicts: Record<Lang, Dict> = {
     "nav.signout": "Sair",
     "common.plan": "plano",
     "common.unlimitedBuilds": "Gerações ilimitadas",
-    "common.creditsLeft": "{n} créditos de geração restantes",
-
-    "hero.badge": "Geração de sites com IA",
-    "hero.title1": "Você tem uma ideia.",
-    "hero.title2": "Nós a construímos em minutos.",
-    "hero.subtitle":
-      "Digite ou fale em voz alta. O Virtual Engine Builder transforma sua descrição em um site, funil ou landing page real — pronto para receber clientes.",
-    "hero.cta": "✦ Dar vida à minha ideia",
-    "hero.seePricing": "Ver preços",
-    "hero.bullet1": "Comece grátis",
-    "hero.bullet2": "Sem conhecimento técnico",
-    "hero.bullet3": "Pronto para GoHighLevel",
-    "demo.title": "Veja em ação",
-    "demo.subtitle": "Da descrição ao site em 60 segundos.",
-    "demo.describe": "Descreva seu negócio",
-    "demo.generate": "Gerar",
-    "demo.generating": "Gerando site…",
-    "testimonials.title": "Amado por criadores, agências e coaches",
-    "pricing.title": "Preços simples",
-    "pricing.subtitle":
-      "Pague pelo que construir. Créditos não usados acumulam (50%, máx. um mês).",
-    "pricing.popular": "Mais popular",
-    "pricing.startFree": "Começar grátis",
-    "pricing.choose": "Escolher plano",
-    "footer.product": "Um produto da Virtual Engine — virtualengine.ai →",
-
-    "newsite.title": "Descreva seu site",
-    "newsite.hint": "Em linguagem natural. Quanto mais detalhe, melhor o site.",
-    "newsite.placeholder":
-      "ex. Uma clínica odontológica moderna em São Paulo focada em estética, com agendamento online e depoimentos.",
     "newsite.generate": "Gerar",
-    "newsite.generating": "Gerando…",
-    "newsite.unlimited": "(ilimitado)",
-    "newsite.oneCredit": "(1 crédito)",
-    "newsite.cancel": "Cancelar",
-    "newsite.outOfCredits": "Sem créditos de geração",
-    "newsite.topup": "Recarregue para continuar ou faça upgrade do plano.",
-    "newsite.buyCredits": "Comprar créditos",
-    "newsite.describeFirst": "Descreva seu negócio primeiro",
-    "newsite.success": "Site gerado",
-    "newsite.open": "Abrir",
-    "newsite.recording": "Gravando…",
-    "newsite.transcriptReady": "Transcrição pronta",
-    "newsite.discard": "Descartar",
-    "newsite.append": "Adicionar ao prompt",
-    "newsite.startSpeaking": "Ouvindo… comece a falar.",
-
     "billing.title": "Cobrança",
-    "billing.subtitle": "Gerencie seu plano e pacotes de créditos.",
-    "billing.current": "Plano atual",
-    "billing.unlimited": "Créditos ilimitados",
-    "billing.totalCredits": "{n} créditos disponíveis no total",
-    "billing.buyCredits": "Comprar créditos",
     "billing.plans": "Planos",
     "billing.monthly": "Mensal",
     "billing.annual": "Anual",
-    "billing.current_chip": "ATUAL",
-    "billing.upgrade": "Upgrade",
-    "billing.currentBtn": "Plano atual",
-    "billing.free": "Grátis",
   },
   fr: {
-    "nav.signin": "Connexion",
-    "nav.getstarted": "Commencer",
+    "nav.signin": "Se connecter",
     "nav.dashboard": "Tableau de bord",
     "nav.newsite": "Nouveau site",
     "nav.integrations": "Intégrations",
     "nav.billing": "Facturation",
     "nav.settings": "Paramètres",
-    "nav.signout": "Déconnexion",
+    "nav.signout": "Se déconnecter",
     "common.plan": "forfait",
-    "common.unlimitedBuilds": "Générations illimitées",
-    "common.creditsLeft": "{n} crédits de génération restants",
-
-    "hero.badge": "Génération de sites par IA",
-    "hero.title1": "Vous avez une idée.",
-    "hero.title2": "Nous la construisons en minutes.",
-    "hero.subtitle":
-      "Écrivez-le ou dites-le à voix haute. Virtual Engine Builder transforme votre description en site web, tunnel ou landing page — prêt à accueillir vos clients.",
-    "hero.cta": "✦ Concrétiser mon idée",
-    "hero.seePricing": "Voir les tarifs",
-    "hero.bullet1": "Gratuit pour commencer",
-    "hero.bullet2": "Aucune compétence technique",
-    "hero.bullet3": "Compatible GoHighLevel",
-    "demo.title": "Voir en action",
-    "demo.subtitle": "De la description au site en 60 secondes.",
-    "demo.describe": "Décrivez votre entreprise",
-    "demo.generate": "Générer",
-    "demo.generating": "Génération en cours…",
-    "testimonials.title": "Adopté par créateurs, agences et coachs",
-    "pricing.title": "Tarifs simples",
-    "pricing.subtitle":
-      "Payez ce que vous construisez. Les crédits non utilisés se reportent (50%, plafonné à un mois).",
-    "pricing.popular": "Le plus populaire",
-    "pricing.startFree": "Commencer gratuitement",
-    "pricing.choose": "Choisir",
-    "footer.product": "Un produit Virtual Engine — virtualengine.ai →",
-
-    "newsite.title": "Décrivez votre site",
-    "newsite.hint": "En langage naturel. Plus de détails = meilleur site.",
-    "newsite.placeholder":
-      "ex. Un cabinet dentaire moderne à Montréal axé sur l'esthétique, avec réservation en ligne et témoignages.",
     "newsite.generate": "Générer",
-    "newsite.generating": "Génération…",
-    "newsite.unlimited": "(illimité)",
-    "newsite.oneCredit": "(1 crédit)",
-    "newsite.cancel": "Annuler",
-    "newsite.outOfCredits": "Plus de crédits",
-    "newsite.topup": "Rechargez pour continuer ou changez de forfait.",
-    "newsite.buyCredits": "Acheter des crédits",
-    "newsite.describeFirst": "Décrivez d'abord votre entreprise",
-    "newsite.success": "Site généré",
-    "newsite.open": "Ouvrir",
-    "newsite.recording": "Enregistrement…",
-    "newsite.transcriptReady": "Transcription prête",
-    "newsite.discard": "Annuler",
-    "newsite.append": "Ajouter au prompt",
-    "newsite.startSpeaking": "À l'écoute… parlez maintenant.",
-
     "billing.title": "Facturation",
-    "billing.subtitle": "Gérez votre forfait et packs de crédits.",
-    "billing.current": "Forfait actuel",
-    "billing.unlimited": "Crédits illimités",
-    "billing.totalCredits": "{n} crédits disponibles au total",
-    "billing.buyCredits": "Acheter des crédits",
     "billing.plans": "Forfaits",
     "billing.monthly": "Mensuel",
     "billing.annual": "Annuel",
-    "billing.current_chip": "ACTUEL",
-    "billing.upgrade": "Mettre à niveau",
-    "billing.currentBtn": "Forfait actuel",
-    "billing.free": "Gratuit",
   },
 };
 
-function detectLang(): Lang {
+function detectLang(): string {
   if (typeof window === "undefined") return "en";
-  const stored = localStorage.getItem(STORAGE_KEY) as Lang | null;
-  if (stored && dicts[stored]) return stored;
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (stored) return stored;
   const nav = (navigator.language || "en").toLowerCase();
-  if (nav.startsWith("es")) return "es";
-  if (nav.startsWith("pt")) return "pt";
-  if (nav.startsWith("fr")) return "fr";
+  // Match against any known LANGUAGES code (e.g. "zh-TW", "pt-BR" → "pt")
+  const exact = LANGUAGES.find((l) => l.code.toLowerCase() === nav);
+  if (exact) return exact.code;
+  const base = nav.split("-")[0];
+  const baseHit = LANGUAGES.find((l) => l.code.toLowerCase() === base);
+  if (baseHit) return baseHit.code;
   return "en";
 }
 
 type I18nCtx = {
-  lang: Lang;
-  setLang: (l: Lang) => void;
+  lang: string;
+  setLang: (l: string) => void;
   t: (key: string, vars?: Record<string, string | number>) => string;
+  rtl: boolean;
 };
 
 const Ctx = createContext<I18nCtx>({
   lang: "en",
   setLang: () => {},
   t: (k) => k,
+  rtl: false,
 });
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Lang>("en");
+  const [lang, setLangState] = useState<string>("en");
+  const rtl = isRTL(lang);
 
   useEffect(() => {
     setLangState(detectLang());
   }, []);
 
-  const setLang = useCallback((l: Lang) => {
+  const setLang = useCallback((l: string) => {
     setLangState(l);
     try { localStorage.setItem(STORAGE_KEY, l); } catch { /* noop */ }
-    if (typeof document !== "undefined") document.documentElement.lang = l;
   }, []);
 
   useEffect(() => {
-    if (typeof document !== "undefined") document.documentElement.lang = lang;
+    if (typeof document !== "undefined") {
+      document.documentElement.lang = lang;
+      document.documentElement.dir = isRTL(lang) ? "rtl" : "ltr";
+    }
   }, [lang]);
 
   const t = useCallback(
     (key: string, vars?: Record<string, string | number>) => {
-      const dict = dicts[lang] || dicts.en;
+      const dict = dicts[lang] || {};
       let s = dict[key] ?? dicts.en[key] ?? key;
       if (vars) {
         for (const [k, v] of Object.entries(vars)) {
@@ -357,11 +286,11 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     [lang],
   );
 
-  return <Ctx.Provider value={{ lang, setLang, t }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ lang, setLang, t, rtl }}>{children}</Ctx.Provider>;
 }
 
 export const useI18n = () => useContext(Ctx);
 
-export function getStoredLang(): Lang {
+export function getStoredLang(): string {
   return detectLang();
 }
