@@ -65,6 +65,9 @@ export default function NewSite() {
   const [prompt, setPrompt] = useState("");
   const [generating, setGenerating] = useState(false);
   const [content, setContent] = useState<SiteContent | null>(null);
+  const [siteId, setSiteId] = useState<string | null>(null);
+  const [generatedPrompt, setGeneratedPrompt] = useState<string>("");
+  const [mobileTab, setMobileTab] = useState<"chat" | "preview">("chat");
   const [viewport, setViewport] = useState<keyof typeof VIEWPORTS>("desktop");
   const [templateModal, setTemplateModal] = useState<Template | null>(null);
   const [topUpOpen, setTopUpOpen] = useState(false);
