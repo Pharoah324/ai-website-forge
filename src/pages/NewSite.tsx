@@ -26,7 +26,7 @@ import {
   Mic,
   MicOff,
 } from "lucide-react";
-import { SitePreview } from "@/components/SitePreview";
+import { SitePreview, computeDesignScore } from "@/components/SitePreview";
 import { TopUpModal } from "@/components/TopUpModal";
 import { RefinementChat } from "@/components/RefinementChat";
 import type { SiteContent } from "@/types/site";
@@ -41,6 +41,15 @@ const VIEWPORTS = {
   tablet: { width: "768px", icon: Tablet, label: "Tablet" },
   mobile: { width: "390px", icon: Smartphone, label: "Mobile" },
 } as const;
+
+const FUNNEL_TYPES = [
+  { id: "website", label: "Business Website", desc: "Full multi-section site" },
+  { id: "lead_capture", label: "Lead Capture", desc: "Single-page form, no nav" },
+  { id: "sales_landing", label: "Sales Landing", desc: "Long-form, urgency-driven" },
+  { id: "appointment", label: "Appointment", desc: "Booking-focused page" },
+  { id: "coming_soon", label: "Coming Soon", desc: "Email capture + countdown" },
+  { id: "link_in_bio", label: "Link in Bio", desc: "Vertical card stack" },
+] as const;
 
 const SAMPLES = [
   "A modern coffee shop in Brooklyn serving single-origin pour-overs and pastries, with online ordering and a loyalty program.",
@@ -80,6 +89,7 @@ export default function NewSite() {
   const [listening, setListening] = useState(false);
   const [liveFinal, setLiveFinal] = useState("");
   const [liveInterim, setLiveInterim] = useState("");
+  const [funnelType, setFunnelType] = useState<typeof FUNNEL_TYPES[number]["id"]>("website");
   const SpeechRecognition =
     typeof window !== "undefined"
       ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
@@ -177,7 +187,7 @@ export default function NewSite() {
     abortRef.current = ctrl;
 
     await streamGenerateSite(
-      { ...body, language: lang },
+      { ...body, language: lang, funnel_type: funnelType },
       {
         onDelta: (chunk) => {
           accumulatedRef.current += chunk;
@@ -352,6 +362,33 @@ export default function NewSite() {
           </div>
         )}
 
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            What are you building?
+          </p>
+          <div className="grid grid-cols-2 gap-1.5">
+            {FUNNEL_TYPES.map((f) => {
+              const active = funnelType === f.id;
+              return (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => setFunnelType(f.id)}
+                  disabled={generating}
+                  className={`rounded-md border p-2 text-left text-xs transition-colors ${
+                    active
+                      ? "border-primary bg-primary/10 text-foreground"
+                      : "border-border bg-background text-muted-foreground hover:border-primary/50"
+                  }`}
+                >
+                  <div className="font-semibold">{f.label}</div>
+                  <div className="mt-0.5 text-[10px] opacity-80">{f.desc}</div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         <Textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
@@ -505,10 +542,11 @@ export default function NewSite() {
             })}
           </div>
           {content && (
-            <span className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
               {generating && <Loader2 className="h-3 w-3 animate-spin" />}
-              {content.name}
-            </span>
+              <span>{content.name}</span>
+              <DesignScoreBadge content={content} />
+            </div>
           )}
         </div>
 
@@ -588,5 +626,24 @@ export default function NewSite() {
 
       <TopUpModal open={topUpOpen} onOpenChange={setTopUpOpen} />
     </div>
+  );
+}
+
+function DesignScoreBadge({ content }: { content: SiteContent }) {
+  const score = computeDesignScore(content);
+  const tone =
+    score.total >= 80
+      ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+      : score.total >= 60
+        ? "bg-yellow-500/15 text-yellow-400 border-yellow-500/30"
+        : "bg-orange-500/15 text-orange-400 border-orange-500/30";
+  const tip = score.notes.length ? score.notes.join(" • ") : "Great design";
+  return (
+    <span
+      className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${tone}`}
+      title={tip}
+    >
+      UX {score.total}/100
+    </span>
   );
 }
