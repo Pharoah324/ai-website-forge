@@ -152,7 +152,7 @@ const COMPARISON_ROWS: Array<{ feature: string; base: string | boolean; lov: str
   { feature: "Search Atlas SEO", base: false, lov: false, veb: "Builder & up" },
   { feature: "Credits Roll Over", base: false, lov: false, veb: "Builder & up (50%)" },
   { feature: "Buy Extra Credits", base: false, lov: false, veb: "Anytime" },
-  { feature: "Multi-Language", base: false, lov: false, veb: "4 Languages" },
+  { feature: "Multi-Language", base: false, lov: false, veb: "50+ Languages + RTL" },
   { feature: "Agency Sub-Accounts", base: false, lov: false, veb: "Included" },
   { feature: "White-Label Mode", base: false, lov: false, veb: "Agency Plan" },
   { feature: "Voice Prompt Input", base: false, lov: false, veb: "Built In" },
