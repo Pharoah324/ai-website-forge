@@ -80,6 +80,7 @@ const App = () => {
               <Route path="admins" element={<AdminAdmins />} />
               <Route path="alerts" element={<AdminAlerts />} />
               <Route path="usage" element={<AdminUsage />} />
+              <Route path="launch-tests" element={<AdminLaunchTests />} />
             </Route>
             <Route path="/app" element={<AppLayout />}>
               <Route index element={<Dashboard />} />
