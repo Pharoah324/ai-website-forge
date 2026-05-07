@@ -105,6 +105,7 @@ Deno.serve(async (req) => {
     const templateDraft = body.template_draft ?? null;
     const businessName: string | undefined = body.business_name;
     const businessCity: string | undefined = body.business_city;
+    const language: string | undefined = body.language;
     const stream: boolean = body.stream !== false;
 
     if (!prompt.trim() && !templateDraft) {
