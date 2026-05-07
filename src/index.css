@@ -19,7 +19,8 @@
     /* Emerald brand */
     --primary: 160 84% 39%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 158 64% 52%;
+    /* Brighter mint for accent text on dark — WCAG AA on #0A1A0F */
+    --primary-glow: 152 76% 74%;
 
     /* Lime CTA */
     --cta: 84 81% 44%;
