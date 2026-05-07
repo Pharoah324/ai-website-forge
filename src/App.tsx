@@ -75,6 +75,7 @@ const App = () => {
               <Route path="announcements" element={<AdminAnnouncements />} />
               <Route path="codes" element={<AdminAccessCodes />} />
               <Route path="admins" element={<AdminAdmins />} />
+              <Route path="alerts" element={<AdminAlerts />} />
             </Route>
             <Route path="/app" element={<AppLayout />}>
               <Route index element={<Dashboard />} />
