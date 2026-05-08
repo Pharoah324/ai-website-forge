@@ -1,9 +1,21 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Sparkles, Search, ArrowRight } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Onboarding() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const choose = async (path: string) => {
+    if (user) {
+      await supabase
+        .from("profiles")
+        .update({ onboarding_completed: true } as never)
+        .eq("id", user.id);
+    }
+    navigate(path);
+  };
   return (
     <div className="container max-w-4xl py-16">
       <div className="text-center">
@@ -15,7 +27,7 @@ export default function Onboarding() {
 
       <div className="mt-10 grid gap-5 md:grid-cols-2">
         <Card
-          onClick={() => navigate("/app/new")}
+          onClick={() => choose("/app/new")}
           className="group cursor-pointer p-7 transition-all hover:border-primary hover:shadow-elevated"
         >
           <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/15">
@@ -31,7 +43,7 @@ export default function Onboarding() {
         </Card>
 
         <Card
-          onClick={() => navigate("/app/optimize")}
+          onClick={() => choose("/app/optimize")}
           className="group cursor-pointer p-7 transition-all hover:border-primary hover:shadow-elevated"
         >
           <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/15">

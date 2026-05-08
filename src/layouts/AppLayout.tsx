@@ -1,8 +1,9 @@
-import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile, PLAN_LIMITS } from "@/hooks/useProfile";
 import { useAdmin } from "@/hooks/useAdmin";
+import { supabase } from "@/integrations/supabase/client";
 import {
   LayoutDashboard,
   Plus,
@@ -16,6 +17,7 @@ import {
   ShieldCheck,
   TrendingUp,
 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { CreditBadge } from "@/components/CreditBadge";
 import { LanguageSelector } from "@/components/LanguageSelector";
@@ -30,7 +32,30 @@ export default function AppLayout() {
   const { data: admin } = useAdmin();
   const { t } = useI18n();
   const navigate = useNavigate();
+  const location = useLocation();
   useSessionTimeout();
+
+  // Trigger welcome email + onboarding redirect once per session.
+  const welcomeFiredRef = useRef(false);
+  useEffect(() => {
+    if (!profile || welcomeFiredRef.current) return;
+    if (!profile.welcome_email_sent_at) {
+      welcomeFiredRef.current = true;
+      supabase.functions.invoke("send-welcome-email").catch(() => {});
+    }
+  }, [profile]);
+
+  useEffect(() => {
+    if (!profile) return;
+    // Route brand-new users (OAuth or email) to onboarding once.
+    if (
+      profile.onboarding_completed === false &&
+      location.pathname === "/app"
+    ) {
+      navigate("/app/onboarding", { replace: true });
+    }
+  }, [profile, location.pathname, navigate]);
+
 
   const nav = [
     { to: "/app", label: t("nav.dashboard"), icon: LayoutDashboard, end: true },
@@ -128,6 +153,23 @@ export default function AppLayout() {
                 <Plus className="mr-1 h-4 w-4" /> {t("nav.newsite")}
               </Link>
             </Button>
+            <Link
+              to="/app/settings"
+              className="flex items-center gap-2 rounded-full pl-1 pr-3 py-1 hover:bg-muted/40 transition-colors"
+              aria-label="Account"
+            >
+              <Avatar className="h-8 w-8">
+                {profile?.avatar_url ? (
+                  <AvatarImage src={profile.avatar_url} alt={profile?.display_name ?? "User"} />
+                ) : null}
+                <AvatarFallback className="bg-primary/15 text-primary text-xs font-semibold">
+                  {(profile?.display_name ?? user.email ?? "U").trim().slice(0, 1).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <span className="hidden sm:inline text-sm font-medium max-w-[140px] truncate">
+                {profile?.display_name ?? user.email}
+              </span>
+            </Link>
           </div>
         </header>
         <AnnouncementBanner />

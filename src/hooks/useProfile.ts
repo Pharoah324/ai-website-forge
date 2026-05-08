@@ -6,6 +6,9 @@ export type Profile = {
   id: string;
   email: string | null;
   display_name: string | null;
+  avatar_url: string | null;
+  onboarding_completed?: boolean;
+  welcome_email_sent_at?: string | null;
   plan: "free" | "starter" | "builder" | "pro" | "agency";
   build_credits: number;
   runtime_credits: number;
@@ -50,7 +53,7 @@ export const useProfile = () => {
         .eq("id", user!.id)
         .single();
       if (error) throw error;
-      return data as Profile;
+      return data as unknown as Profile;
     },
   });
 };
