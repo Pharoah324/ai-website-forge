@@ -522,10 +522,10 @@ async function hydrateImages(siteJson: unknown) {
     }
   }
 
-  // Cap concurrency at 8
+  // Cap concurrency at 8. Use allSettled so one failed image never blocks generation.
   const chunkSize = 8;
   for (let i = 0; i < tasks.length; i += chunkSize) {
-    await Promise.all(tasks.slice(i, i + chunkSize));
+    await Promise.allSettled(tasks.slice(i, i + chunkSize));
   }
 }
 
