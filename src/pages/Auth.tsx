@@ -64,7 +64,12 @@ export default function Auth() {
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Authentication failed";
-      toast.error(msg);
+      const isFetchFailure = /failed to fetch/i.test(msg);
+      toast.error(
+        isFetchFailure
+          ? "Preview could not reach authentication. Refresh the preview and try again, or test this on the published site."
+          : msg,
+      );
     } finally {
       setLoading(false);
     }
