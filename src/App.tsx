@@ -14,11 +14,7 @@ import Billing from "./pages/Billing";
 import Integrations from "./pages/Integrations";
 import Settings from "./pages/Settings";
 import Share from "./pages/Share";
-<<<<<<< HEAD
-import Subdomain from "./pages/Subdomain";
-=======
 import LiveSite from "./pages/LiveSite";
->>>>>>> 272cec85844805078ac557134d5c8b27244a69e3
 import AppLayout from "./layouts/AppLayout";
 import NotFound from "./pages/NotFound";
 import Affiliates from "./pages/Affiliates";
@@ -47,35 +43,6 @@ const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, refetchOnWindowFocus: false } },
 });
 
-<<<<<<< HEAD
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/s/:subdomain" element={<Subdomain />} />
-            <Route path="/share/:token" element={<Share />} />
-            <Route path="/app" element={<AppLayout />}>
-              <Route index element={<Dashboard />} />
-              <Route path="new" element={<NewSite />} />
-              <Route path="sites/:id" element={<SiteDetail />} />
-              <Route path="billing" element={<Billing />} />
-              <Route path="integrations" element={<Integrations />} />
-              <Route path="settings" element={<Settings />} />
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
-=======
 function RootLayout() {
   useEffect(() => { captureRefFromUrl(); }, []);
   // Customer-subdomain branch only runs in the browser (uses window). Safe for SSG.
@@ -109,7 +76,6 @@ function RootLayout() {
     </QueryClientProvider>
   );
 }
->>>>>>> 272cec85844805078ac557134d5c8b27244a69e3
 
 export const routes: RouteRecord[] = [
   {
