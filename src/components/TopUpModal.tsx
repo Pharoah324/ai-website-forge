@@ -13,8 +13,8 @@ import { supabase } from "@/integrations/supabase/client";
 
 const PACKS = [
   { id: "starter_boost", name: "Starter Boost", price: 9, build: 50, runtime: 1000, icon: Zap },
-  { id: "growth_pack", name: "Growth Pack", price: 24, build: 150, runtime: 5000, icon: TrendingUp, popular: true },
-  { id: "agency_burst", name: "Agency Burst", price: 69, build: 500, runtime: 20000, icon: Rocket },
+  { id: "growth_pack", name: "Growth Pack", price: 24, build: 150, runtime: 4000, icon: TrendingUp, popular: true },
+  { id: "agency_burst", name: "Agency Burst", price: 69, build: 500, runtime: 15000, icon: Rocket },
 ];
 
 export const TopUpModal = ({

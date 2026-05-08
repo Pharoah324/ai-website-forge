@@ -17,7 +17,14 @@ import {
   Github,
   ExternalLink,
   Globe,
+<<<<<<< HEAD
+=======
+  Rocket,
+  Search,
+>>>>>>> 272cec85844805078ac557134d5c8b27244a69e3
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { PUBLISH_ROOT } from "@/lib/subdomain";
 import {
   Dialog,
   DialogContent,
@@ -26,6 +33,9 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { SitePreview } from "@/components/SitePreview";
+import { RefinementChat } from "@/components/RefinementChat";
+import { SeoPanel } from "@/components/SeoPanel";
+import { TopUpModal } from "@/components/TopUpModal";
 import type { SiteContent, SiteSection } from "@/types/site";
 import { toast } from "sonner";
 
@@ -47,8 +57,17 @@ export default function SiteDetail() {
   const [pushing, setPushing] = useState(false);
   const [repoUrl, setRepoUrl] = useState<string | null>(null);
   const [publishOpen, setPublishOpen] = useState(false);
+<<<<<<< HEAD
   const [subdomainInput, setSubdomainInput] = useState("");
   const [publishing, setPublishing] = useState(false);
+=======
+  const [publishing, setPublishing] = useState(false);
+  const [subdomainInput, setSubdomainInput] = useState("");
+  const [publishError, setPublishError] = useState<string | null>(null);
+  const [topUpOpen, setTopUpOpen] = useState(false);
+  const [mobileTab, setMobileTab] = useState<"chat" | "preview" | "seo">("preview");
+  const [rightPane, setRightPane] = useState<"preview" | "seo">("preview");
+>>>>>>> 272cec85844805078ac557134d5c8b27244a69e3
   const qc = useQueryClient();
   const navigate = useNavigate();
 
@@ -158,6 +177,52 @@ export default function SiteDetail() {
   const shareUrl = site.is_shared
     ? `${window.location.origin}/share/${site.share_token}`
     : null;
+  const liveUrl =
+    site.published && site.subdomain
+      ? `https://${site.subdomain}.${PUBLISH_ROOT}`
+      : null;
+
+  const slugify = (s: string) =>
+    s.toLowerCase().trim().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 63);
+
+  const openPublish = () => {
+    setPublishError(null);
+    setSubdomainInput(site.subdomain || slugify(site.name || "my-site"));
+    setPublishOpen(true);
+  };
+
+  const submitPublish = async () => {
+    setPublishing(true);
+    setPublishError(null);
+    const { data, error } = await supabase.functions.invoke("publish-site", {
+      body: { site_id: id, subdomain: subdomainInput },
+    });
+    setPublishing(false);
+    const errMsg = error?.message || (data as any)?.error;
+    if (errMsg) {
+      setPublishError(errMsg);
+      return;
+    }
+    qc.invalidateQueries({ queryKey: ["site", id] });
+    toast.success("Site published!", {
+      description: (data as any).url,
+      action: { label: "Open", onClick: () => window.open((data as any).url, "_blank") },
+    });
+    setPublishOpen(false);
+  };
+
+  const unpublish = async () => {
+    if (!confirm("Take this site offline?")) return;
+    const { error } = await supabase.functions.invoke("publish-site", {
+      body: { site_id: id, action: "unpublish" },
+    });
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    qc.invalidateQueries({ queryKey: ["site", id] });
+    toast.success("Site unpublished");
+  };
 
   const copyShare = async () => {
     if (!shareUrl) return;
@@ -286,47 +351,108 @@ export default function SiteDetail() {
               </a>
             </Button>
           )}
+          {liveUrl ? (
+            <>
+              <Button size="sm" variant="outline" asChild>
+                <a href={liveUrl} target="_blank" rel="noreferrer">
+                  <Globe className="mr-1 h-3.5 w-3.5" /> {site.subdomain}.{PUBLISH_ROOT}
+                </a>
+              </Button>
+              <Button size="sm" variant="ghost" onClick={openPublish} title="Republish / change subdomain">
+                <Rocket className="h-3.5 w-3.5" />
+              </Button>
+            </>
+          ) : (
+            <Button size="sm" onClick={openPublish}>
+              <Rocket className="mr-1 h-3.5 w-3.5" /> Publish
+            </Button>
+          )}
           <Button size="sm" variant="ghost" onClick={() => { if (confirm("Delete this site?")) remove.mutate(); }}>
             <Trash2 className="h-4 w-4 text-destructive" />
           </Button>
         </div>
       </div>
 
-      <div className="grid flex-1 grid-cols-1 overflow-hidden lg:grid-cols-[240px_1fr]">
-        {/* Section list with rewrite buttons */}
-        <aside className="overflow-y-auto border-r bg-card p-3">
-          <p className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Sections · Rewrite is free
-          </p>
-          <ul className="space-y-1">
-            {content.sections.map((s, i) => (
-              <li key={i} className="group flex items-center justify-between rounded-md p-2 hover:bg-muted">
-                <div className="min-w-0">
-                  <p className="text-[10px] font-semibold uppercase text-muted-foreground">{s.type}</p>
-                  <p className="truncate text-xs font-medium">{s.heading}</p>
-                </div>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-7 px-2 opacity-0 transition-opacity group-hover:opacity-100"
-                  onClick={() => openRewrite(i)}
-                >
-                  <Wand2 className="h-3.5 w-3.5" />
-                </Button>
-              </li>
-            ))}
-          </ul>
+      {/* Mobile tabs */}
+      <div className="flex border-b bg-card lg:hidden">
+        {(["chat", "preview", "seo"] as const).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setMobileTab(tab)}
+            className={`flex-1 py-2 text-sm font-medium uppercase transition-colors ${
+              mobileTab === tab ? "border-b-2 border-primary text-foreground" : "text-muted-foreground"
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid flex-1 grid-cols-1 overflow-hidden lg:grid-cols-[360px_1fr]">
+        <aside className={`${mobileTab === "chat" ? "flex" : "hidden lg:flex"} flex-col overflow-hidden border-r`}>
+          <RefinementChat
+            siteId={id!}
+            originalPrompt={site.prompt}
+            onContentUpdated={() => qc.invalidateQueries({ queryKey: ["site", id] })}
+            onTopUp={() => setTopUpOpen(true)}
+          />
+          {/* Per-section rewrite (free) */}
+          <div className="border-t bg-card p-2">
+            <p className="mb-1 px-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Quick rewrite (free)
+            </p>
+            <ul className="max-h-40 space-y-0.5 overflow-y-auto">
+              {content.sections.map((s, i) => (
+                <li key={i} className="group flex items-center justify-between rounded p-1.5 text-xs hover:bg-muted">
+                  <span className="truncate">
+                    <span className="text-[9px] uppercase text-muted-foreground">{s.type}</span> · {s.heading}
+                  </span>
+                  <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => openRewrite(i)}>
+                    <Wand2 className="h-3 w-3" />
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </div>
         </aside>
 
-        <div className="flex flex-1 items-start justify-center overflow-y-auto bg-muted/30 p-6">
-          <div
-            className="overflow-hidden rounded-lg border bg-card shadow-elevated transition-all"
-            style={{ width: v.width, maxWidth: "100%" }}
-          >
-            <SitePreview content={content} />
+        <div className={`${mobileTab === "chat" ? "hidden lg:flex" : "flex"} flex-1 flex-col overflow-hidden bg-muted/30`}>
+          {/* Right-pane toggle (desktop) */}
+          <div className="hidden border-b bg-card px-3 py-1.5 lg:flex">
+            <div className="flex items-center gap-1 rounded-md border bg-background p-0.5">
+              {(["preview", "seo"] as const).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setRightPane(p)}
+                  className={`flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium uppercase transition-colors ${
+                    rightPane === p ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {p === "seo" && <Search className="h-3 w-3" />}
+                  {p}
+                </button>
+              ))}
+            </div>
           </div>
+
+          {(mobileTab === "seo" || rightPane === "seo") ? (
+            <div className="flex-1 overflow-y-auto">
+              <SeoPanel siteId={id!} />
+            </div>
+          ) : (
+            <div className="flex flex-1 items-start justify-center overflow-y-auto p-6">
+              <div
+                className="overflow-hidden rounded-lg border bg-card shadow-elevated transition-all"
+                style={{ width: v.width, maxWidth: "100%" }}
+              >
+                <SitePreview content={content} />
+              </div>
+            </div>
+          )}
         </div>
       </div>
+      <TopUpModal open={topUpOpen} onOpenChange={setTopUpOpen} />
+
 
       <Dialog open={rewriteIdx !== null} onOpenChange={(o) => !o && setRewriteIdx(null)}>
         <DialogContent className="max-w-4xl">
@@ -378,6 +504,7 @@ export default function SiteDetail() {
         </DialogContent>
       </Dialog>
 
+<<<<<<< HEAD
       <Dialog open={publishOpen} onOpenChange={setPublishOpen}>
         <DialogContent>
           <DialogHeader>
@@ -442,6 +569,56 @@ export default function SiteDetail() {
               {publishing ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Globe className="mr-1 h-4 w-4" />}
               {site.is_published ? "Update live site" : "Publish live"}
             </Button>
+=======
+      <Dialog open={publishOpen} onOpenChange={(o) => !o && setPublishOpen(false)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{liveUrl ? "Republish site" : "Publish your site"}</DialogTitle>
+            <DialogDescription>
+              Choose a subdomain. Your site will go live at{" "}
+              <code className="text-foreground">your-name.{PUBLISH_ROOT}</code>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="flex items-center overflow-hidden rounded-md border bg-background">
+              <Input
+                value={subdomainInput}
+                onChange={(e) => {
+                  setSubdomainInput(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""));
+                  setPublishError(null);
+                }}
+                placeholder="my-site"
+                className="border-0 focus-visible:ring-0"
+                maxLength={63}
+                autoFocus
+              />
+              <span className="whitespace-nowrap border-l bg-muted px-3 py-2 text-sm text-muted-foreground">
+                .{PUBLISH_ROOT}
+              </span>
+            </div>
+            {publishError && (
+              <p className="text-sm text-destructive">{publishError}</p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Lowercase letters, numbers, and hyphens. 3–63 characters.
+            </p>
+            <div className="flex justify-between gap-2 pt-2">
+              {liveUrl ? (
+                <Button variant="ghost" size="sm" onClick={unpublish}>
+                  Unpublish
+                </Button>
+              ) : <span />}
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setPublishOpen(false)} disabled={publishing}>
+                  Cancel
+                </Button>
+                <Button onClick={submitPublish} disabled={publishing || !subdomainInput}>
+                  {publishing && <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />}
+                  {liveUrl ? "Update" : "Publish"}
+                </Button>
+              </div>
+            </div>
+>>>>>>> 272cec85844805078ac557134d5c8b27244a69e3
           </div>
         </DialogContent>
       </Dialog>

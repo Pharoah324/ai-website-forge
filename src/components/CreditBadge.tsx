@@ -1,14 +1,23 @@
-import { Link } from "react-router-dom";
 import { useState } from "react";
-import { Sparkles, Zap, AlertTriangle } from "lucide-react";
+import { Sparkles, Zap, AlertTriangle, ShieldCheck } from "lucide-react";
 import { useProfile, PLAN_LIMITS } from "@/hooks/useProfile";
-import { Button } from "@/components/ui/button";
+import { useAdmin } from "@/hooks/useAdmin";
 import { TopUpModal } from "@/components/TopUpModal";
 
 export const CreditBadge = () => {
   const { data: profile } = useProfile();
+  const { data: admin } = useAdmin();
   const [open, setOpen] = useState(false);
   if (!profile) return null;
+
+  if (admin) {
+    return (
+      <span className="flex items-center gap-2 rounded-full border border-cta/30 bg-cta/10 px-3 py-1.5 text-xs font-semibold text-cta">
+        <ShieldCheck className="h-3.5 w-3.5" />
+        {admin.access_level === "super_admin" ? "Super Admin" : "Admin"} — Unlimited
+      </span>
+    );
+  }
 
   const limits = PLAN_LIMITS[profile.plan];
   const isUnlimited = profile.plan === "agency";

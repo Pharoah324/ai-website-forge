@@ -6,60 +6,151 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-const SYSTEM_PROMPT = `You are a website generator. Given a business description (and optionally an existing template draft), return a complete, polished site structure.
-Use the build_site tool. Generate clear, conversion-focused copy. Pick a tasteful color palette that fits the industry.
-Sections should follow this order when relevant: hero, features, about, testimonials, pricing, faq, cta, contact.
-Color values must be raw HSL triples like "221 83% 53%" (no hsl() wrapper, no commas).`;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const UNSPLASH_ACCESS_KEY = Deno.env.get("UNSPLASH_ACCESS_KEY") || "";
+
+const SYSTEM_PROMPT = `You are an expert UX/UI designer AND website copywriter combined, building conversion-focused sites for businesses worldwide. Use the build_site tool.
+
+CRITICAL LANGUAGE RULE:
+Detect the language of the user's input and generate the ENTIRE site (copy, headlines, button text, nav, meta) in that SAME language. Works for any major world language. For RTL languages (Arabic, Hebrew, Persian, Urdu) include "dir": "rtl".
+
+Color values must be raw HSL triples like "221 83% 53%" (no hsl() wrapper, no commas).
+
+VISUAL HIERARCHY:
+- One clear hero with a dominant headline.
+- Size contrast: headlines large, subheadlines medium, body small.
+- Most important CTA button visually dominates each section.
+- Never two equally weighted elements side by side — one dominates.
+
+LAYOUT:
+- F-pattern: most important content top-left.
+- Sections alternate light/dark backgrounds for breathing room.
+- Max 3 columns per section (2 better on mobile).
+- Every section: clear headline + supporting text + CTA.
+- Generous padding between sections.
+
+COLOR USAGE:
+- Max 3 colors total: Primary, Accent, Neutral.
+- Primary on headings + key elements only. Accent on CTAs + highlights only.
+- Mix: 60% neutral, 30% primary, 10% accent.
+- Max 2 font styles.
+
+TYPOGRAPHY:
+- Headlines: bold, large, max 8 words.
+- Subheadlines: medium weight, conversational.
+- Body: 16px+, 1.6 line height. Never all-caps for body. Always left-align body. Center-align headlines only in hero.
+
+CTA RULES:
+- Every page has at least 3 CTAs (top, middle, bottom).
+- Primary CTA above the fold.
+- Use action words: "Book Now", "Get Started Free", "See Our Work", "Talk to Us Today" — never "Click Here" / "Submit" / "Gallery" / "Contact".
+- Add urgency where appropriate: "Limited Spots", "This Week Only", "Free Consultation".
+
+TRUST SIGNALS:
+- Include star rating / review count, clients-served or years-in-business, certifications, before/after results where relevant, a guarantee, real location/contact.
+
+MOBILE-FIRST:
+- Stack columns to single column on mobile. 48px tap targets. Never <14px on mobile. No horizontal scrolling. Hero image works portrait.
+
+SECTION ORDER FOR MAX CONVERSION:
+1) hero  2) social proof / stats strip  3) problem/pain  4) solution  5) services/features w/ images  6) how it works (3 steps)  7) testimonials w/ photos  8) about w/ team photo  9) final CTA w/ urgency  10) contact/footer.
+
+INDUSTRY DESIGN:
+Medical/MedSpa: clean whites, soft tones, professional photos, trust-heavy.
+Restaurant: large food photography, warm colors, menu prominent.
+Real Estate: full-width property photos, agent headshot, map.
+Fitness/Gym: high-energy photos, bold colors, transformation results.
+Law Firm: dark professional colors, attorney photos, trust signals.
+Contractor: before/after, project gallery, reviews.
+Salon/Beauty: lifestyle photography, soft aesthetic, booking prominent.
+Coaching: large personal-brand photo, results + testimonials heavy.
+
+FUNNEL MODES (when funnel_type is provided):
+- lead_capture: single page, no nav, hero form above fold, minimal fields, trust badges + testimonials below form, NO multi-section nav links.
+- sales_landing: long-form, problem/solution/proof/offer/urgency/CTA repeated 3+ times.
+- appointment: calendar/booking prominent, what to expect, testimonials, address/parking.
+- coming_soon: single hero with email capture, countdown copy, brand promise.
+- link_in_bio: vertical stack of 4-8 link cards, photo top, single column.
+
+OUTPUT IMAGE & ICON FIELDS:
+For EACH section include:
+- image_search_query: a specific descriptive English phrase (4-9 words) that will return a perfect Unsplash photo for the section, including business type + setting (e.g. "luxury medspa treatment room miami", "cozy italian restaurant interior candlelight"). ALWAYS in English even when copy is in another language — Unsplash search is English-only.
+- image_placement: one of "background" | "side" | "card" | "avatar" | "none".
+- layout: one of "image-right" | "image-left" | "image-background" | "grid" | "stacked".
+- cta_urgency: optional short urgency line (e.g. "Limited slots this week").
+
+For EACH item inside services/features/pricing/testimonials include:
+- icon_name: a Lucide icon PascalCase name relevant to the item (e.g. "Syringe","Dumbbell","Scale","UtensilsCrossed","Home","Sparkles","Shield","Award","Star","Phone","MapPin","Clock","CalendarCheck","Users","DollarSign").
+- image_search_query: short English phrase for a matching photo (used for service cards / testimonial avatars).
+
+Use these icon mappings as a starting guide:
+Medical: Botox/Fillers→Syringe, Laser→Zap, Facial→Sparkles, Consult→MessageCircle.
+Restaurant: Dining→UtensilsCrossed, Delivery→Truck, Reservations→Calendar, Menu→BookOpen.
+Real Estate: Buying→Home, Selling→TrendingUp, Rentals→Key, Valuation→BarChart.
+Fitness: Training→Dumbbell, Classes→Users, Nutrition→Apple, Results→Trophy.
+Legal: Consultation→Scale, Contract→FileText, Court→Building, Research→Search.
+Generic: Phone, Mail, MapPin, Clock, Users, Shield, Award, Star, DollarSign, CalendarCheck.`;
 
 const TOOL = {
-  name: "build_site",
-  description: "Build a structured website definition.",
-  input_schema: {
-    type: "object",
-    properties: {
-      name: { type: "string" },
-      tagline: { type: "string" },
-      theme: {
-        type: "object",
-        properties: {
-          primary: { type: "string" },
-          background: { type: "string" },
-          foreground: { type: "string" },
-          accent: { type: "string" },
-        },
-        required: ["primary", "background", "foreground", "accent"],
-      },
-      sections: {
-        type: "array",
-        items: {
+  type: "function" as const,
+  function: {
+    name: "build_site",
+    description: "Build a structured website definition.",
+    parameters: {
+      type: "object",
+      properties: {
+        name: { type: "string" },
+        tagline: { type: "string" },
+        lang: { type: "string" },
+        dir: { type: "string", enum: ["ltr", "rtl"] },
+        theme: {
           type: "object",
           properties: {
-            type: {
-              type: "string",
-              enum: ["hero", "features", "about", "testimonials", "pricing", "faq", "cta", "contact"],
-            },
-            heading: { type: "string" },
-            subheading: { type: "string" },
-            cta: { type: "string" },
-            items: {
-              type: "array",
+            primary: { type: "string" },
+            background: { type: "string" },
+            foreground: { type: "string" },
+            accent: { type: "string" },
+          },
+          required: ["primary", "background", "foreground", "accent"],
+        },
+        sections: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              type: {
+                type: "string",
+                enum: ["hero", "features", "about", "testimonials", "pricing", "faq", "cta", "contact"],
+              },
+              heading: { type: "string" },
+              subheading: { type: "string" },
+              cta: { type: "string" },
+              cta_urgency: { type: "string" },
+              image_search_query: { type: "string", description: "English search phrase for Unsplash" },
+              image_placement: { type: "string", enum: ["background", "side", "card", "avatar", "none"] },
+              layout: { type: "string", enum: ["image-right", "image-left", "image-background", "grid", "stacked"] },
               items: {
-                type: "object",
-                properties: {
-                  title: { type: "string" },
-                  body: { type: "string" },
-                  price: { type: "string" },
-                  author: { type: "string" },
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    title: { type: "string" },
+                    body: { type: "string" },
+                    price: { type: "string" },
+                    author: { type: "string" },
+                    icon_name: { type: "string", description: "Lucide PascalCase icon name" },
+                    image_search_query: { type: "string" },
+                  },
+                  required: ["title"],
                 },
-                required: ["title"],
               },
             },
+            required: ["type", "heading"],
           },
-          required: ["type", "heading"],
         },
       },
+      required: ["name", "tagline", "theme", "sections"],
     },
-    required: ["name", "tagline", "theme", "sections"],
   },
 };
 
@@ -69,8 +160,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY not configured");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -97,10 +188,12 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const prompt: string = (body.prompt || "").toString().slice(0, 4000);
-    const templateDraft = body.template_draft ?? null; // optional starting JSON
+    const templateDraft = body.template_draft ?? null;
     const businessName: string | undefined = body.business_name;
     const businessCity: string | undefined = body.business_city;
-    const stream: boolean = body.stream !== false; // default true
+    const language: string | undefined = body.language;
+    const funnelType: string | undefined = body.funnel_type; // "website" | "lead_capture" | "sales_landing" | "appointment" | "coming_soon" | "link_in_bio"
+    const stream: boolean = body.stream !== false;
 
     if (!prompt.trim() && !templateDraft) {
       return new Response(JSON.stringify({ error: "Prompt or template required" }), {
@@ -111,7 +204,7 @@ Deno.serve(async (req) => {
 
     const { data: profile, error: profileErr } = await supabase
       .from("profiles")
-      .select("build_credits, plan, brand_voice_active, brand_voice_samples, voice_rules")
+      .select("build_credits, plan, brand_voice_active, brand_voice_samples, voice_rules, role")
       .eq("id", user.id)
       .single();
 
@@ -122,13 +215,34 @@ Deno.serve(async (req) => {
       });
     }
 
-    const isUnlimited = profile.plan === "agency";
-    if (!isUnlimited && profile.build_credits <= 0) {
-      return new Response(
-        JSON.stringify({ error: "Out of build credits. Top up or upgrade." }),
-        { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+    const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const { data: gate, error: gateErr } = await admin.rpc("check_and_consume", {
+      _uid: user.id,
+      _action: "site_generation",
+      _credit_cost: 1,
+    });
+    if (gateErr) {
+      console.error("gate error", gateErr);
+      return new Response(JSON.stringify({ error: "Internal gate error" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
+    const g = gate as { ok: boolean; reason?: string; retry_after_seconds?: number; daily_limit?: number; hourly_limit?: number; plan?: string; admin_bypass?: boolean };
+    if (!g.ok) {
+      const status =
+        g.reason === "no_credits" ? 402 :
+        g.reason === "daily_limit" || g.reason === "hourly_limit" || g.reason === "blocked" ? 429 :
+        403;
+      return new Response(JSON.stringify({
+        error: g.reason ?? "blocked",
+        plan: g.plan,
+        retry_after_seconds: g.retry_after_seconds,
+        daily_limit: g.daily_limit,
+        hourly_limit: g.hourly_limit,
+      }), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const isAdmin = !!g.admin_bypass;
+    const isUnlimited = isAdmin || profile.plan === "agency";
 
     let voiceAddon = "";
     if (profile.brand_voice_active) {
@@ -140,30 +254,51 @@ Deno.serve(async (req) => {
       }
     }
 
-    let userMessage = prompt;
+    const LANG_NAMES: Record<string, string> = {
+      en: "English", es: "Spanish", pt: "Portuguese", fr: "French", de: "German",
+      it: "Italian", nl: "Dutch", pl: "Polish", ru: "Russian", uk: "Ukrainian",
+      ar: "Arabic", he: "Hebrew", fa: "Persian", ur: "Urdu", tr: "Turkish",
+      hi: "Hindi", bn: "Bengali", zh: "Mandarin Chinese", "zh-TW": "Traditional Chinese",
+      ja: "Japanese", ko: "Korean", th: "Thai", vi: "Vietnamese",
+      id: "Indonesian", ms: "Malay", tl: "Tagalog", sw: "Swahili",
+    };
+    const RTL_CODES = new Set(["ar", "he", "fa", "ur"]);
+    const langName = language ? (LANG_NAMES[language] || language) : "";
+    const rtlNote = language && RTL_CODES.has(language)
+      ? ` This is a right-to-left language; include "dir": "rtl" in the JSON.`
+      : "";
+    const langInstruction = langName
+      ? `\n\nIMPORTANT: Write ALL copy in ${langName}. (image_search_query fields stay in English.)${rtlNote}`
+      : "";
+
+    const funnelInstruction = funnelType && funnelType !== "website"
+      ? `\n\nFUNNEL MODE: ${funnelType}. Apply the funnel rules from the system prompt strictly.`
+      : "";
+
+    let userMessage = prompt + langInstruction + funnelInstruction;
     if (templateDraft) {
       userMessage = `Personalize this template for "${businessName || "the business"}"${businessCity ? ` in ${businessCity}` : ""}.
-Replace placeholders, sharpen the copy, keep section structure. Original prompt: ${prompt || "(template start)"}.
+Replace placeholders, sharpen the copy, keep section structure. Original prompt: ${prompt || "(template start)"}.${langInstruction}${funnelInstruction}
 
 Existing template JSON:
 ${JSON.stringify(templateDraft).slice(0, 6000)}`;
     }
 
     const aiBody = {
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 4096,
-      system: SYSTEM_PROMPT + voiceAddon,
-      messages: [{ role: "user", content: userMessage }],
+      model: "google/gemini-2.5-pro",
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT + voiceAddon },
+        { role: "user", content: userMessage },
+      ],
       tools: [TOOL],
-      tool_choice: { type: "tool", name: "build_site" },
+      tool_choice: { type: "function", function: { name: "build_site" } },
       stream,
     };
 
-    const aiResp = await fetch("https://api.anthropic.com/v1/messages", {
+    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        "x-api-key": ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(aiBody),
@@ -176,8 +311,14 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
+      if (aiResp.status === 402) {
+        return new Response(
+          JSON.stringify({ error: "Lovable AI credits exhausted. Add funds in Settings → Workspace → Usage." }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
       const t = await aiResp.text();
-      console.error("Anthropic error:", aiResp.status, t);
+      console.error("Lovable AI error:", aiResp.status, t);
       return new Response(JSON.stringify({ error: "AI provider error" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -186,24 +327,30 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
 
     if (!stream) {
       const data = await aiResp.json();
-      const toolUse = (data.content || []).find(
-        (b: { type: string; name?: string }) => b.type === "tool_use" && b.name === "build_site",
-      );
-      if (!toolUse?.input) {
+      const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+      const argStr = toolCall?.function?.arguments;
+      if (!argStr) {
         return new Response(JSON.stringify({ error: "AI returned no site" }), {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      const site = await persistSite(supabase, user.id, prompt, toolUse.input, profile, isUnlimited);
+      let parsed: unknown;
+      try { parsed = JSON.parse(argStr); } catch {
+        return new Response(JSON.stringify({ error: "AI returned invalid JSON" }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      try { await hydrateImages(parsed); } catch (e) { console.warn("hydrateImages failed (continuing without images):", e); }
+      const site = await persistSite(supabase, user.id, prompt, parsed, profile, isUnlimited, isAdmin);
       return new Response(JSON.stringify({ site }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // STREAMING: parse Anthropic SSE, forward partial JSON deltas of the tool input as SSE to the client,
-    // accumulate the full JSON, then persist and emit a final "done" event with the saved site.
+    // STREAMING
     const reader = aiResp.body!.getReader();
     const decoder = new TextDecoder();
     const encoder = new TextEncoder();
@@ -225,35 +372,34 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
             leftover += decoder.decode(value, { stream: true });
             let nl: number;
             while ((nl = leftover.indexOf("\n")) !== -1) {
-              const line = leftover.slice(0, nl).replace(/\r$/, "");
+              let line = leftover.slice(0, nl);
               leftover = leftover.slice(nl + 1);
+              if (line.endsWith("\r")) line = line.slice(0, -1);
               if (!line.startsWith("data: ")) continue;
               const json = line.slice(6).trim();
-              if (!json) continue;
+              if (!json || json === "[DONE]") continue;
               try {
                 const evt = JSON.parse(json);
-                if (
-                  evt.type === "content_block_delta" &&
-                  evt.delta?.type === "input_json_delta" &&
-                  typeof evt.delta.partial_json === "string"
-                ) {
-                  accumulated += evt.delta.partial_json;
-                  send("delta", { partial_json: evt.delta.partial_json });
+                const delta = evt.choices?.[0]?.delta;
+                const argChunk = delta?.tool_calls?.[0]?.function?.arguments;
+                if (typeof argChunk === "string" && argChunk.length) {
+                  accumulated += argChunk;
+                  send("delta", { partial_json: argChunk });
                 }
-              } catch {
-                // ignore partial / non-JSON lines
-              }
+              } catch { /* ignore */ }
             }
           }
 
           let parsed: unknown = null;
           try {
             parsed = JSON.parse(accumulated);
-          } catch (e) {
+          } catch {
             send("error", { error: "Failed to parse AI output" });
             controller.close();
             return;
           }
+
+          try { await hydrateImages(parsed); } catch (e) { console.warn("hydrateImages failed (continuing without images):", e); }
 
           const site = await persistSite(
             supabase,
@@ -262,6 +408,7 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
             parsed,
             profile,
             isUnlimited,
+            isAdmin,
           );
           send("done", { site });
           controller.close();
@@ -292,14 +439,105 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
   }
 });
 
+// ----- Unsplash hydration -----
+const unsplashCache = new Map<string, { regular: string; thumb: string; alt: string; credit: string } | null>();
+
+async function unsplashSearch(query: string, orientation: "landscape" | "portrait" | "squarish" = "landscape") {
+  if (!UNSPLASH_ACCESS_KEY || !query) return null;
+  const cacheKey = `${orientation}:${query}`;
+  if (unsplashCache.has(cacheKey)) return unsplashCache.get(cacheKey)!;
+  try {
+    const url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&orientation=${orientation}&per_page=1&content_filter=high`;
+    const r = await fetch(url, {
+      headers: {
+        Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}`,
+        "Accept-Version": "v1",
+      },
+    });
+    if (!r.ok) {
+      console.warn("unsplash error", r.status, query);
+      unsplashCache.set(cacheKey, null);
+      return null;
+    }
+    const data = await r.json();
+    const photo = data?.results?.[0];
+    if (!photo) {
+      unsplashCache.set(cacheKey, null);
+      return null;
+    }
+    const result = {
+      regular: photo.urls.regular,
+      thumb: photo.urls.thumb,
+      alt: photo.alt_description || query,
+      credit: `Photo by ${photo.user?.name || "Unsplash"} on Unsplash`,
+    };
+    unsplashCache.set(cacheKey, result);
+    return result;
+  } catch (e) {
+    console.warn("unsplash exception", e);
+    unsplashCache.set(cacheKey, null);
+    return null;
+  }
+}
+
+async function hydrateImages(siteJson: unknown) {
+  if (!siteJson || typeof siteJson !== "object") return;
+  if (!UNSPLASH_ACCESS_KEY) {
+    console.log("hydrateImages: UNSPLASH_ACCESS_KEY not set, skipping image hydration");
+    return;
+  }
+  // deno-lint-ignore no-explicit-any
+  const site = siteJson as any;
+  const sections = Array.isArray(site.sections) ? site.sections : [];
+
+  // Run a bounded number of parallel queries to avoid Unsplash rate limits (50/hour demo).
+  const tasks: Array<Promise<void>> = [];
+
+  for (const sec of sections) {
+    if (sec?.image_search_query && sec?.image_placement !== "none") {
+      const orientation = sec.image_placement === "background" || sec.type === "hero" ? "landscape" : "landscape";
+      tasks.push(unsplashSearch(sec.image_search_query, orientation).then((r) => {
+        if (r) {
+          sec.image_url = r.regular;
+          sec.image_thumb = r.thumb;
+          sec.image_alt = r.alt;
+          sec.image_credit = r.credit;
+        }
+      }));
+    }
+    if (Array.isArray(sec?.items)) {
+      for (const item of sec.items) {
+        if (item?.image_search_query) {
+          const orient = sec.type === "testimonials" ? "squarish" : "landscape";
+          tasks.push(unsplashSearch(item.image_search_query, orient).then((r) => {
+            if (r) {
+              item.image_url = r.regular;
+              item.image_thumb = r.thumb;
+              item.image_alt = r.alt;
+              item.image_credit = r.credit;
+            }
+          }));
+        }
+      }
+    }
+  }
+
+  // Cap concurrency at 8. Use allSettled so one failed image never blocks generation.
+  const chunkSize = 8;
+  for (let i = 0; i < tasks.length; i += chunkSize) {
+    await Promise.allSettled(tasks.slice(i, i + chunkSize));
+  }
+}
+
 async function persistSite(
   // deno-lint-ignore no-explicit-any
   supabase: any,
   userId: string,
   prompt: string,
   siteJson: unknown,
-  profile: { build_credits: number },
-  isUnlimited: boolean,
+  _profile: { build_credits: number },
+  _isUnlimited: boolean,
+  _isAdmin: boolean,
 ) {
   const name = (siteJson as { name?: string }).name || "Untitled Site";
   const { data: site, error: siteErr } = await supabase
@@ -307,20 +545,13 @@ async function persistSite(
     .insert({ user_id: userId, name, prompt, content: siteJson })
     .select()
     .single();
-  if (siteErr) throw new Error("Failed to save site");
-
-  if (!isUnlimited) {
-    await supabase
-      .from("profiles")
-      .update({ build_credits: profile.build_credits - 1 })
-      .eq("id", userId);
-    await supabase.from("credit_ledger").insert({
-      user_id: userId,
-      kind: "build",
-      amount: -1,
-      reason: "generate",
-      description: `Generated site: ${name}`,
-    });
+  if (siteErr) {
+    const msg = siteErr.message || "";
+    if (msg.includes("storage_limit:sites")) {
+      const parts = msg.split(":");
+      throw new Error(`storage_limit:sites:${parts[2]}:${parts[3]}`);
+    }
+    throw new Error("Failed to save site");
   }
   return site;
 }

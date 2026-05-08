@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.downgrade_past_due_users() FROM PUBLIC, anon, authenticated;

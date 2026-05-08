@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useProfile } from "@/hooks/useProfile";
 import { useQueryClient } from "@tanstack/react-query";
@@ -23,18 +23,33 @@ import {
   Wand2,
   AlertTriangle,
   LayoutTemplate,
+  Mic,
+  MicOff,
 } from "lucide-react";
-import { SitePreview } from "@/components/SitePreview";
+import { SitePreview, computeDesignScore } from "@/components/SitePreview";
+import { TopUpModal } from "@/components/TopUpModal";
+import { RefinementChat } from "@/components/RefinementChat";
 import type { SiteContent } from "@/types/site";
 import { toast } from "sonner";
 import { TEMPLATES, type Template } from "@/data/templates";
 import { streamGenerateSite } from "@/lib/streamGenerate";
+import { supabase } from "@/integrations/supabase/client";
+import { useI18n } from "@/lib/i18n";
 
 const VIEWPORTS = {
   desktop: { width: "100%", icon: Monitor, label: "Desktop" },
   tablet: { width: "768px", icon: Tablet, label: "Tablet" },
   mobile: { width: "390px", icon: Smartphone, label: "Mobile" },
 } as const;
+
+const FUNNEL_TYPES = [
+  { id: "website", label: "Business Website", desc: "Full multi-section site" },
+  { id: "lead_capture", label: "Lead Capture", desc: "Single-page form, no nav" },
+  { id: "sales_landing", label: "Sales Landing", desc: "Long-form, urgency-driven" },
+  { id: "appointment", label: "Appointment", desc: "Booking-focused page" },
+  { id: "coming_soon", label: "Coming Soon", desc: "Email capture + countdown" },
+  { id: "link_in_bio", label: "Link in Bio", desc: "Vertical card stack" },
+] as const;
 
 const SAMPLES = [
   "A modern coffee shop in Brooklyn serving single-origin pour-overs and pastries, with online ordering and a loyalty program.",
@@ -56,14 +71,101 @@ function tryParsePartial(s: string): SiteContent | null {
 }
 
 export default function NewSite() {
+  const { t, lang } = useI18n();
   const [prompt, setPrompt] = useState("");
   const [generating, setGenerating] = useState(false);
   const [content, setContent] = useState<SiteContent | null>(null);
+  const [siteId, setSiteId] = useState<string | null>(null);
+  const [generatedPrompt, setGeneratedPrompt] = useState<string>("");
+  const [mobileTab, setMobileTab] = useState<"chat" | "preview">("chat");
   const [viewport, setViewport] = useState<keyof typeof VIEWPORTS>("desktop");
   const [templateModal, setTemplateModal] = useState<Template | null>(null);
+  const [topUpOpen, setTopUpOpen] = useState(false);
   const [bizName, setBizName] = useState("");
   const [bizCity, setBizCity] = useState("");
   const accumulatedRef = useRef("");
+  const abortRef = useRef<AbortController | null>(null);
+  const recognitionRef = useRef<any>(null);
+  const [listening, setListening] = useState(false);
+  const [liveFinal, setLiveFinal] = useState("");
+  const [liveInterim, setLiveInterim] = useState("");
+  const [funnelType, setFunnelType] = useState<typeof FUNNEL_TYPES[number]["id"]>("website");
+  const SpeechRecognition =
+    typeof window !== "undefined"
+      ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+      : null;
+  const speechSupported = !!SpeechRecognition;
+
+  useEffect(() => {
+    return () => {
+      try { recognitionRef.current?.stop(); } catch { /* noop */ }
+    };
+  }, []);
+
+  const toggleDictation = () => {
+    if (!speechSupported) {
+      toast.error("Voice input not supported", {
+        description: "Try Chrome or Safari on desktop.",
+      });
+      return;
+    }
+    if (listening) {
+      try { recognitionRef.current?.stop(); } catch { /* noop */ }
+      return;
+    }
+    const rec = new SpeechRecognition();
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.lang = navigator.language || "en-US";
+    setLiveFinal("");
+    setLiveInterim("");
+    rec.onstart = () => setListening(true);
+    rec.onerror = (e: any) => {
+      setListening(false);
+      if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+        toast.error("Microphone permission denied");
+      } else if (e.error !== "aborted" && e.error !== "no-speech") {
+        toast.error(`Voice input error: ${e.error}`);
+      }
+    };
+    rec.onend = () => {
+      setListening(false);
+      setLiveInterim("");
+    };
+    rec.onresult = (event: any) => {
+      let finalText = "";
+      let interimText = "";
+      for (let i = 0; i < event.results.length; i++) {
+        const r = event.results[i];
+        if (r.isFinal) finalText += r[0].transcript;
+        else interimText += r[0].transcript;
+      }
+      setLiveFinal(finalText);
+      setLiveInterim(interimText);
+    };
+    recognitionRef.current = rec;
+    try {
+      rec.start();
+    } catch {
+      setListening(false);
+    }
+  };
+
+  const appendTranscript = () => {
+    const text = (liveFinal + " " + liveInterim).trim();
+    if (!text) return;
+    setPrompt((p) => (p ? p.trimEnd() + " " : "") + text);
+    setLiveFinal("");
+    setLiveInterim("");
+    try { recognitionRef.current?.stop(); } catch { /* noop */ }
+  };
+
+  const discardTranscript = () => {
+    setLiveFinal("");
+    setLiveInterim("");
+    try { recognitionRef.current?.stop(); } catch { /* noop */ }
+  };
+
   const { data: profile } = useProfile();
   const qc = useQueryClient();
   const navigate = useNavigate();
@@ -80,32 +182,80 @@ export default function NewSite() {
     setGenerating(true);
     setContent(null);
     accumulatedRef.current = "";
+    abortRef.current?.abort();
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
 
-    await streamGenerateSite(body, {
-      onDelta: (chunk) => {
-        accumulatedRef.current += chunk;
-        const partial = tryParsePartial(accumulatedRef.current);
-        if (partial) setContent(partial);
+    await streamGenerateSite(
+      { ...body, language: lang, funnel_type: funnelType },
+      {
+        onDelta: (chunk) => {
+          accumulatedRef.current += chunk;
+          const partial = tryParsePartial(accumulatedRef.current);
+          if (partial) setContent(partial);
+        },
+        onDone: (site) => {
+          setContent(site.content);
+          setSiteId(site.id);
+          setGeneratedPrompt(body.prompt);
+          setMobileTab("preview");
+          qc.invalidateQueries({ queryKey: ["profile"] });
+          qc.invalidateQueries({ queryKey: ["sites"] });
+          toast.success(t("newsite.success"), {
+            action: { label: t("newsite.open"), onClick: () => navigate(`/app/sites/${site.id}`) },
+          });
+          setGenerating(false);
+          // Fire-and-forget SEO analysis (Search Atlas keywords + meta + score).
+          supabase.functions.invoke("seo-analyze", { body: { site_id: site.id } })
+            .then(() => qc.invalidateQueries({ queryKey: ["site-seo", site.id] }))
+            .catch((e) => console.warn("seo-analyze failed", e));
+        },
+        onError: (msg, code) => {
+          setGenerating(false);
+          if (code === "aborted") return; // user cancelled — no toast
+          if (code === "no_credits") {
+            toast.error("Out of build credits", {
+              description: "Top up to keep generating.",
+              action: { label: "Buy credits", onClick: () => setTopUpOpen(true) },
+            });
+            setTopUpOpen(true);
+            return;
+          }
+          if (code === "rate_limited") {
+            toast.error("Rate limited", {
+              description: "Too many requests. Wait a moment and try again.",
+            });
+            return;
+          }
+          if (code === "stalled") {
+            toast.error("Generation stalled", {
+              description: "The AI took too long. Retry?",
+              action: { label: "Retry", onClick: () => runGeneration(body) },
+            });
+            return;
+          }
+          toast.error(msg, {
+            action: { label: "Retry", onClick: () => runGeneration(body) },
+          });
+        },
       },
-      onDone: (site) => {
-        setContent(site.content);
-        qc.invalidateQueries({ queryKey: ["profile"] });
-        qc.invalidateQueries({ queryKey: ["sites"] });
-        toast.success("Site generated", {
-          action: { label: "Open", onClick: () => navigate(`/app/sites/${site.id}`) },
-        });
-        setGenerating(false);
-      },
-      onError: (msg) => {
-        toast.error(msg);
-        setGenerating(false);
-      },
-    });
+      ctrl.signal,
+    );
+  };
+
+  const cancelGeneration = () => {
+    abortRef.current?.abort();
   };
 
   const generate = () => {
-    if (!prompt.trim()) return toast.error("Describe your business first");
-    if (noCredits) return toast.error("Out of build credits");
+    if (!prompt.trim()) return toast.error(t("newsite.describeFirst"));
+    if (noCredits) {
+      toast.error(t("newsite.outOfCredits"), {
+        action: { label: t("newsite.buyCredits"), onClick: () => setTopUpOpen(true) },
+      });
+      setTopUpOpen(true);
+      return;
+    }
     runGeneration({ prompt });
   };
 
@@ -115,7 +265,13 @@ export default function NewSite() {
       toast.error("Business name and city required");
       return;
     }
-    if (noCredits) return toast.error("Out of build credits");
+    if (noCredits) {
+      toast.error("Out of build credits", {
+        action: { label: "Buy credits", onClick: () => setTopUpOpen(true) },
+      });
+      setTopUpOpen(true);
+      return;
+    }
 
     // Replace placeholders in the draft
     const replaced: SiteContent = JSON.parse(
@@ -139,13 +295,42 @@ export default function NewSite() {
   };
 
   const v = VIEWPORTS[viewport];
+  const showChat = !!siteId && !!content;
 
   return (
     <div className="grid h-[calc(100vh-3.5rem)] grid-cols-1 lg:grid-cols-[420px_1fr]">
-      <div className="flex flex-col gap-4 overflow-y-auto border-r bg-card p-6">
+      {/* Mobile tab switcher */}
+      {showChat && (
+        <div className="flex border-b bg-card lg:hidden">
+          {(["chat", "preview"] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setMobileTab(tab)}
+              className={`flex-1 py-2 text-sm font-medium capitalize transition-colors ${
+                mobileTab === tab ? "border-b-2 border-primary text-foreground" : "text-muted-foreground"
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div
+        className={`${showChat ? (mobileTab === "chat" ? "flex" : "hidden lg:flex") : "flex"} flex-col gap-4 overflow-y-auto border-r bg-card ${showChat ? "p-0" : "p-6"}`}
+      >
+        {showChat && siteId && content ? (
+          <RefinementChat
+            siteId={siteId}
+            originalPrompt={generatedPrompt}
+            onContentUpdated={setContent}
+            onTopUp={() => setTopUpOpen(true)}
+          />
+        ) : (
+          <div className="flex flex-col gap-4 p-6">
         <div>
           <div className="mb-2 flex items-center gap-2">
-            <h1 className="text-xl font-bold">Describe your site</h1>
+            <h1 className="text-xl font-bold">{t("newsite.title")}</h1>
             {profile?.brand_voice_active && (
               <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
                 BRAND VOICE ON
@@ -153,45 +338,145 @@ export default function NewSite() {
             )}
           </div>
           <p className="text-sm text-muted-foreground">
-            Plain English. The more detail, the better the site.
+            {t("newsite.hint")}
           </p>
         </div>
 
         {noCredits && (
           <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-xs">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
-            <span>Out of build credits. Upgrade or buy a top-up pack.</span>
+            <div className="flex-1">
+              <p className="font-medium text-foreground">{t("newsite.outOfCredits")}</p>
+              <p className="mt-0.5 text-muted-foreground">
+                {t("newsite.topup")}
+              </p>
+              <Button
+                size="sm"
+                variant="default"
+                className="mt-2 h-7 px-2 text-xs"
+                onClick={() => setTopUpOpen(true)}
+              >
+                {t("newsite.buyCredits")}
+              </Button>
+            </div>
           </div>
         )}
+
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            What are you building?
+          </p>
+          <div className="grid grid-cols-2 gap-1.5">
+            {FUNNEL_TYPES.map((f) => {
+              const active = funnelType === f.id;
+              return (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => setFunnelType(f.id)}
+                  disabled={generating}
+                  className={`rounded-md border p-2 text-left text-xs transition-colors ${
+                    active
+                      ? "border-primary bg-primary/10 text-foreground"
+                      : "border-border bg-background text-muted-foreground hover:border-primary/50"
+                  }`}
+                >
+                  <div className="font-semibold">{f.label}</div>
+                  <div className="mt-0.5 text-[10px] opacity-80">{f.desc}</div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         <Textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder="e.g. A modern dental practice in Austin focused on cosmetic dentistry, with online booking and patient testimonials."
+          placeholder={t("newsite.placeholder")}
           className="min-h-40 resize-none"
           maxLength={4000}
           disabled={generating}
         />
-
-        <Button
-          onClick={generate}
-          disabled={generating || !!noCredits || !prompt.trim()}
-          size="lg"
-          className="w-full"
-        >
-          {generating ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating…
-            </>
-          ) : (
-            <>
-              <Wand2 className="mr-2 h-4 w-4" /> Generate
-              <span className="ml-2 text-xs opacity-80">
-                {isUnlimited ? "(unlimited)" : "(1 credit)"}
+        {(listening || liveFinal || liveInterim) && (
+          <div className="rounded-md border border-primary/30 bg-primary/5 p-3">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary">
+                {listening && (
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+                  </span>
+                )}
+                {listening ? t("newsite.recording") : t("newsite.transcriptReady")}
               </span>
-            </>
+              <div className="flex gap-1">
+                <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={discardTranscript} type="button">{t("newsite.discard")}</Button>
+                <Button size="sm" className="h-7 px-2 text-xs" onClick={appendTranscript} disabled={!liveFinal.trim() && !liveInterim.trim()} type="button">{t("newsite.append")}</Button>
+              </div>
+            </div>
+            <p className="min-h-[2.5rem] text-sm leading-relaxed">
+              <span className="text-foreground">{liveFinal}</span>
+              {liveInterim && (<span className="italic text-muted-foreground"> {liveInterim}</span>)}
+              {!liveFinal && !liveInterim && (<span className="italic text-muted-foreground">{t("newsite.startSpeaking")}</span>)}
+            </p>
+          </div>
+        )}
+
+
+        <div className="flex gap-2">
+          <Button
+            onClick={generate}
+            disabled={generating || !!noCredits || !prompt.trim()}
+            size="lg"
+            className="flex-1"
+          >
+            {generating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("newsite.generating")}
+              </>
+            ) : (
+              <>
+                <Wand2 className="mr-2 h-4 w-4" /> {t("newsite.generate")}
+                <span className="ml-2 text-xs opacity-80">
+                  {isUnlimited ? t("newsite.unlimited") : t("newsite.oneCredit")}
+                </span>
+              </>
+            )}
+          </Button>
+          {!generating && (
+            <Button
+              onClick={toggleDictation}
+              size="lg"
+              variant={listening ? "destructive" : "outline"}
+              type="button"
+              title={
+                !speechSupported
+                  ? "Voice input not supported in this browser"
+                  : listening
+                    ? "Stop recording"
+                    : "Dictate prompt"
+              }
+              aria-label={listening ? "Stop voice input" : "Start voice input"}
+              aria-pressed={listening}
+            >
+              {listening ? (
+                <MicOff className="h-4 w-4 animate-pulse" />
+              ) : (
+                <Mic className="h-4 w-4" />
+              )}
+            </Button>
           )}
-        </Button>
+          {generating && (
+            <Button
+              onClick={cancelGeneration}
+              size="lg"
+              variant="outline"
+              type="button"
+            >
+              {t("newsite.cancel")}
+            </Button>
+          )}
+        </div>
 
         <div>
           <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -231,10 +516,12 @@ export default function NewSite() {
             ))}
           </div>
         </div>
+          </div>
+        )}
       </div>
 
       {/* Preview */}
-      <div className="flex min-w-0 flex-col bg-muted/30">
+      <div className={`${showChat && mobileTab === "chat" ? "hidden lg:flex" : "flex"} min-w-0 flex-col bg-muted/30`}>
         <div className="flex items-center justify-between border-b bg-card px-4 py-2">
           <div className="flex items-center gap-1 rounded-md border bg-background p-0.5">
             {(Object.keys(VIEWPORTS) as Array<keyof typeof VIEWPORTS>).map((k) => {
@@ -255,10 +542,11 @@ export default function NewSite() {
             })}
           </div>
           {content && (
-            <span className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
               {generating && <Loader2 className="h-3 w-3 animate-spin" />}
-              {content.name}
-            </span>
+              <span>{content.name}</span>
+              <DesignScoreBadge content={content} />
+            </div>
           )}
         </div>
 
@@ -335,6 +623,27 @@ export default function NewSite() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <TopUpModal open={topUpOpen} onOpenChange={setTopUpOpen} />
     </div>
+  );
+}
+
+function DesignScoreBadge({ content }: { content: SiteContent }) {
+  const score = computeDesignScore(content);
+  const tone =
+    score.total >= 80
+      ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+      : score.total >= 60
+        ? "bg-yellow-500/15 text-yellow-400 border-yellow-500/30"
+        : "bg-orange-500/15 text-orange-400 border-orange-500/30";
+  const tip = score.notes.length ? score.notes.join(" • ") : "Great design";
+  return (
+    <span
+      className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${tone}`}
+      title={tip}
+    >
+      UX {score.total}/100
+    </span>
   );
 }
