@@ -153,6 +153,23 @@ export default function AppLayout() {
                 <Plus className="mr-1 h-4 w-4" /> {t("nav.newsite")}
               </Link>
             </Button>
+            <Link
+              to="/app/settings"
+              className="flex items-center gap-2 rounded-full pl-1 pr-3 py-1 hover:bg-muted/40 transition-colors"
+              aria-label="Account"
+            >
+              <Avatar className="h-8 w-8">
+                {profile?.avatar_url ? (
+                  <AvatarImage src={profile.avatar_url} alt={profile?.display_name ?? "User"} />
+                ) : null}
+                <AvatarFallback className="bg-primary/15 text-primary text-xs font-semibold">
+                  {(profile?.display_name ?? user.email ?? "U").trim().slice(0, 1).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <span className="hidden sm:inline text-sm font-medium max-w-[140px] truncate">
+                {profile?.display_name ?? user.email}
+              </span>
+            </Link>
           </div>
         </header>
         <AnnouncementBanner />
