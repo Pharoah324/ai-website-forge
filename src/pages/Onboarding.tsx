@@ -1,9 +1,21 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Sparkles, Search, ArrowRight } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Onboarding() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const choose = async (path: string) => {
+    if (user) {
+      await supabase
+        .from("profiles")
+        .update({ onboarding_completed: true } as never)
+        .eq("id", user.id);
+    }
+    navigate(path);
+  };
   return (
     <div className="container max-w-4xl py-16">
       <div className="text-center">
