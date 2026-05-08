@@ -13,6 +13,7 @@ import Billing from "./pages/Billing";
 import Integrations from "./pages/Integrations";
 import Settings from "./pages/Settings";
 import Share from "./pages/Share";
+import Subdomain from "./pages/Subdomain";
 import AppLayout from "./layouts/AppLayout";
 import NotFound from "./pages/NotFound";
 
@@ -30,6 +31,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/s/:subdomain" element={<Subdomain />} />
             <Route path="/share/:token" element={<Share />} />
             <Route path="/app" element={<AppLayout />}>
               <Route index element={<Dashboard />} />

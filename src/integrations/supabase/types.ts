@@ -210,10 +210,12 @@ export type Database = {
           content: Json | null
           created_at: string
           id: string
+          is_published: boolean
           is_shared: boolean
           name: string
           prompt: string
           share_token: string | null
+          subdomain: string | null
           updated_at: string
           user_id: string
         }
@@ -221,10 +223,12 @@ export type Database = {
           content?: Json | null
           created_at?: string
           id?: string
+          is_published?: boolean
           is_shared?: boolean
           name?: string
           prompt: string
           share_token?: string | null
+          subdomain?: string | null
           updated_at?: string
           user_id: string
         }
@@ -232,10 +236,12 @@ export type Database = {
           content?: Json | null
           created_at?: string
           id?: string
+          is_published?: boolean
           is_shared?: boolean
           name?: string
           prompt?: string
           share_token?: string | null
+          subdomain?: string | null
           updated_at?: string
           user_id?: string
         }

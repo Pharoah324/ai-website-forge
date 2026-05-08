@@ -16,6 +16,7 @@ import {
   Loader2,
   Github,
   ExternalLink,
+  Globe,
 } from "lucide-react";
 import {
   Dialog,
@@ -45,6 +46,9 @@ export default function SiteDetail() {
   const [rewriting, setRewriting] = useState(false);
   const [pushing, setPushing] = useState(false);
   const [repoUrl, setRepoUrl] = useState<string | null>(null);
+  const [publishOpen, setPublishOpen] = useState(false);
+  const [subdomainInput, setSubdomainInput] = useState("");
+  const [publishing, setPublishing] = useState(false);
   const qc = useQueryClient();
   const navigate = useNavigate();
 
@@ -91,6 +95,50 @@ export default function SiteDetail() {
       qc.invalidateQueries({ queryKey: ["sites"] });
       navigate("/app");
       toast.success("Site deleted");
+    },
+  });
+
+  const generateSubdomain = (name: string): string => {
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 30) || "site";
+  };
+
+  const publish = useMutation({
+    mutationFn: async (subdomain: string) => {
+      // Check if subdomain is available
+      const { data: existing } = await supabase
+        .from("sites")
+        .select("id")
+        .eq("subdomain", subdomain)
+        .neq("id", id!)
+        .maybeSingle();
+
+      if (existing) {
+        throw new Error("Subdomain already taken. Try a different one.");
+      }
+
+      const { error } = await supabase
+        .from("sites")
+        .update({ subdomain, is_published: true })
+        .eq("id", id!);
+
+      if (error) throw error;
+      return subdomain;
+    },
+    onSuccess: (subdomain) => {
+      qc.invalidateQueries({ queryKey: ["site", id] });
+      setPublishOpen(false);
+      const liveUrl = `https://${subdomain}.builder.virtualengine.ai`;
+      toast.success("Site published!", {
+        description: liveUrl,
+        action: { label: "Open live site", onClick: () => window.open(liveUrl, "_blank") },
+      });
+    },
+    onError: (error: any) => {
+      toast.error(error.message);
     },
   });
 
@@ -227,6 +275,10 @@ export default function SiteDetail() {
             {pushing ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Github className="mr-1 h-3.5 w-3.5" />}
             {effectiveRepoUrl ? "Push update" : "Push to GitHub"}
           </Button>
+          <Button size="sm" onClick={() => setPublishOpen(true)}>
+            <Globe className="mr-1 h-3.5 w-3.5" />
+            {site.is_published ? "Update live site" : "Publish live"}
+          </Button>
           {effectiveRepoUrl && (
             <Button size="sm" variant="ghost" asChild>
               <a href={effectiveRepoUrl} target="_blank" rel="noreferrer" title="Open GitHub repo">
@@ -323,6 +375,74 @@ export default function SiteDetail() {
               ))}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={publishOpen} onOpenChange={setPublishOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Publish your site live</DialogTitle>
+            <DialogDescription>
+              Choose a unique subdomain for your site. It will be available at{" "}
+              <code className="rounded bg-muted px-1">yoursubdomain.builder.virtualengine.ai</code>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Subdomain</label>
+              <div className="mt-1 flex items-center gap-2">
+                <input
+                  type="text"
+                  value={subdomainInput}
+                  onChange={(e) => setSubdomainInput(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
+                  placeholder={generateSubdomain(site.name)}
+                  className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  maxLength={30}
+                />
+                <span className="text-sm text-muted-foreground">.builder.virtualengine.ai</span>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Only lowercase letters, numbers, and hyphens. 3-30 characters.
+              </p>
+            </div>
+            {site.is_published && site.subdomain && (
+              <div className="rounded-md bg-muted p-3">
+                <p className="text-sm">
+                  Currently published at:{" "}
+                  <a
+                    href={`https://${site.subdomain}.builder.virtualengine.ai`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-primary underline"
+                  >
+                    https://{site.subdomain}.builder.virtualengine.ai
+                  </a>
+                </p>
+              </div>
+            )}
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setPublishOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                const subdomain = subdomainInput.trim() || generateSubdomain(site.name);
+                if (subdomain.length < 3) {
+                  toast.error("Subdomain must be at least 3 characters");
+                  return;
+                }
+                setPublishing(true);
+                publish.mutate(subdomain, {
+                  onSettled: () => setPublishing(false),
+                });
+              }}
+              disabled={publishing}
+            >
+              {publishing ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Globe className="mr-1 h-4 w-4" />}
+              {site.is_published ? "Update live site" : "Publish live"}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

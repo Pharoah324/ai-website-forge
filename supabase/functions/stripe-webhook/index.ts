@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
         if (!userId) break;
 
         if (session.mode === "payment") {
-          // Top-up — add to top_up_* columns
+          // Top-up — add credits immediately and track top-up balances.
           const packId = session.metadata?.pack_id;
           if (packId) {
             const { data: pack } = await admin
@@ -75,20 +75,31 @@ Deno.serve(async (req) => {
             if (pack) {
               const { data: prof } = await admin
                 .from("profiles")
-                .select("top_up_build_credits, top_up_runtime_credits")
+                .select("build_credits, runtime_credits, top_up_build_credits, top_up_runtime_credits")
                 .eq("id", userId)
                 .single();
               await admin.from("profiles").update({
+                build_credits: (prof?.build_credits ?? 0) + pack.build_credits,
+                runtime_credits: (prof?.runtime_credits ?? 0) + pack.runtime_credits,
                 top_up_build_credits: (prof?.top_up_build_credits ?? 0) + pack.build_credits,
                 top_up_runtime_credits: (prof?.top_up_runtime_credits ?? 0) + pack.runtime_credits,
               }).eq("id", userId);
-              await admin.from("credit_ledger").insert({
-                user_id: userId,
-                kind: "build",
-                amount: pack.build_credits,
-                reason: "topup",
-                description: `Top-up pack: ${packId}`,
-              });
+              await admin.from("credit_ledger").insert([
+                {
+                  user_id: userId,
+                  kind: "build",
+                  amount: pack.build_credits,
+                  reason: "topup",
+                  description: `Top-up pack: ${packId}`,
+                },
+                {
+                  user_id: userId,
+                  kind: "runtime",
+                  amount: pack.runtime_credits,
+                  reason: "topup",
+                  description: `Top-up pack: ${packId}`,
+                },
+              ]);
             }
           }
         } else if (session.mode === "subscription") {
@@ -116,15 +127,43 @@ Deno.serve(async (req) => {
       case "customer.subscription.updated":
       case "customer.subscription.deleted": {
         const sub = event.data.object as Stripe.Subscription;
-        const customerId = sub.customer as string;
+        const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer?.id;
         const status = event.type === "customer.subscription.deleted" ? "canceled" : sub.status;
         const update: Record<string, any> = { subscription_status: status };
+
         if (event.type === "customer.subscription.deleted") {
           update.plan = "free";
           update.monthly_build_limit = PLAN_LIMITS.free.build;
           update.monthly_runtime_limit = PLAN_LIMITS.free.runtime;
+        } else {
+          const planTier = sub.metadata?.plan_tier as string | undefined;
+          const interval = sub.metadata?.interval as string | undefined;
+          if (planTier && PLAN_LIMITS[planTier]) {
+            update.plan = planTier;
+            update.billing_interval = interval ?? "monthly";
+            update.monthly_build_limit = PLAN_LIMITS[planTier].build;
+            update.monthly_runtime_limit = PLAN_LIMITS[planTier].runtime;
+          } else {
+            const priceId = sub.items?.data?.[0]?.price?.id;
+            if (priceId) {
+              const { data: stripeProduct } = await admin
+                .from("stripe_products")
+                .select("plan_tier, interval, kind")
+                .eq("stripe_price_id", priceId)
+                .maybeSingle();
+              if (stripeProduct?.kind === "subscription" && stripeProduct.plan_tier) {
+                update.plan = stripeProduct.plan_tier;
+                update.billing_interval = stripeProduct.interval ?? "monthly";
+                update.monthly_build_limit = PLAN_LIMITS[stripeProduct.plan_tier].build;
+                update.monthly_runtime_limit = PLAN_LIMITS[stripeProduct.plan_tier].runtime;
+              }
+            }
+          }
         }
-        await admin.from("profiles").update(update).eq("stripe_customer_id", customerId);
+
+        if (customerId) {
+          await admin.from("profiles").update(update).eq("stripe_customer_id", customerId);
+        }
         break;
       }
 

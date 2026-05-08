@@ -55,13 +55,28 @@ Deno.serve(async (req) => {
     const existing = await stripe.webhookEndpoints.list({ limit: 100 });
     const match = existing.data.find((e) => e.url === url);
     if (match) {
+      if (typeof stripe.webhookEndpoints.rotateSecret === "function") {
+        const rotated = await (stripe.webhookEndpoints as any).rotateSecret(match.id);
+        return new Response(
+          JSON.stringify({
+            alreadyExists: true,
+            webhookId: match.id,
+            url: match.url,
+            webhookSecret: rotated.secret,
+            message:
+              "A webhook for this URL already exists. The signing secret was rotated and returned so you can update STRIPE_WEBHOOK_SECRET.",
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+
       return new Response(
         JSON.stringify({
           alreadyExists: true,
           webhookId: match.id,
           url: match.url,
           message:
-            "A webhook for this URL already exists. Stripe only returns the signing secret at creation time. Delete it in the Stripe dashboard and re-run, or roll its secret to retrieve a new whsec_.",
+            "A webhook for this URL already exists. Stripe only returns the signing secret at creation time. Delete it in the Stripe dashboard and re-run, or rotate its secret to retrieve a new whsec_.",
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
