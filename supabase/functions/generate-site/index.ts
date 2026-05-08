@@ -399,7 +399,7 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
             return;
           }
 
-          await hydrateImages(parsed);
+          try { await hydrateImages(parsed); } catch (e) { console.warn("hydrateImages failed (continuing without images):", e); }
 
           const site = await persistSite(
             supabase,
