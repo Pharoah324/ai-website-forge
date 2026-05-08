@@ -27,7 +27,7 @@ export default function Onboarding() {
 
       <div className="mt-10 grid gap-5 md:grid-cols-2">
         <Card
-          onClick={() => navigate("/app/new")}
+          onClick={() => choose("/app/new")}
           className="group cursor-pointer p-7 transition-all hover:border-primary hover:shadow-elevated"
         >
           <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/15">
@@ -43,7 +43,7 @@ export default function Onboarding() {
         </Card>
 
         <Card
-          onClick={() => navigate("/app/optimize")}
+          onClick={() => choose("/app/optimize")}
           className="group cursor-pointer p-7 transition-all hover:border-primary hover:shadow-elevated"
         >
           <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/15">
