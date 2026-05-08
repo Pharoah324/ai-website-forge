@@ -342,7 +342,7 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      await hydrateImages(parsed);
+      try { await hydrateImages(parsed); } catch (e) { console.warn("hydrateImages failed (continuing without images):", e); }
       const site = await persistSite(supabase, user.id, prompt, parsed, profile, isUnlimited, isAdmin);
       return new Response(JSON.stringify({ site }), {
         status: 200,
@@ -399,7 +399,7 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
             return;
           }
 
-          await hydrateImages(parsed);
+          try { await hydrateImages(parsed); } catch (e) { console.warn("hydrateImages failed (continuing without images):", e); }
 
           const site = await persistSite(
             supabase,
@@ -482,7 +482,10 @@ async function unsplashSearch(query: string, orientation: "landscape" | "portrai
 
 async function hydrateImages(siteJson: unknown) {
   if (!siteJson || typeof siteJson !== "object") return;
-  if (!UNSPLASH_ACCESS_KEY) return;
+  if (!UNSPLASH_ACCESS_KEY) {
+    console.log("hydrateImages: UNSPLASH_ACCESS_KEY not set, skipping image hydration");
+    return;
+  }
   // deno-lint-ignore no-explicit-any
   const site = siteJson as any;
   const sections = Array.isArray(site.sections) ? site.sections : [];
@@ -519,10 +522,10 @@ async function hydrateImages(siteJson: unknown) {
     }
   }
 
-  // Cap concurrency at 8
+  // Cap concurrency at 8. Use allSettled so one failed image never blocks generation.
   const chunkSize = 8;
   for (let i = 0; i < tasks.length; i += chunkSize) {
-    await Promise.all(tasks.slice(i, i + chunkSize));
+    await Promise.allSettled(tasks.slice(i, i + chunkSize));
   }
 }
 
