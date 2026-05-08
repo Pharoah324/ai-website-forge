@@ -181,15 +181,6 @@ export default function Auth() {
         <div className="mt-6 space-y-2">
           <Button
             type="button"
-            onClick={() => signInWithProvider("google")}
-            disabled={anyLoading}
-            className="w-full bg-white text-[#1f1f1f] hover:bg-white/90 border border-black/10 shadow-sm h-11"
-          >
-            <GoogleIcon className="h-5 w-5 mr-2" />
-            {oauthLoading === "google" ? "…" : L.google}
-          </Button>
-          <Button
-            type="button"
             onClick={() => signInWithProvider("apple")}
             disabled={anyLoading}
             className="w-full bg-black text-white hover:bg-black/90 border border-white/10 h-11"
