@@ -6,6 +6,9 @@ export type Profile = {
   id: string;
   email: string | null;
   display_name: string | null;
+  avatar_url: string | null;
+  onboarding_completed: boolean;
+  welcome_email_sent_at: string | null;
   plan: "free" | "starter" | "builder" | "pro" | "agency";
   build_credits: number;
   runtime_credits: number;
