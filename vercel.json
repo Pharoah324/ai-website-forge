@@ -4,8 +4,8 @@
   "framework": "vite",
   "rewrites": [
     {
-      "source": "/~oauth/:path*",
-      "destination": "https://id-preview--673536a3-867c-4ffd-9bd1-5a6b16cd2017.lovable.app/~oauth/:path*"
+      "source": "/~oauth/initiate",
+      "destination": "https://oauth.lovable.app/initiate?project_id=673536a3-867c-4ffd-9bd1-5a6b16cd2017&project_env=prod"
     },
     {
       "source": "/(.*)",
