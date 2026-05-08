@@ -1,8 +1,9 @@
-import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile, PLAN_LIMITS } from "@/hooks/useProfile";
 import { useAdmin } from "@/hooks/useAdmin";
+import { supabase } from "@/integrations/supabase/client";
 import {
   LayoutDashboard,
   Plus,
@@ -16,6 +17,7 @@ import {
   ShieldCheck,
   TrendingUp,
 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { CreditBadge } from "@/components/CreditBadge";
 import { LanguageSelector } from "@/components/LanguageSelector";
@@ -30,7 +32,30 @@ export default function AppLayout() {
   const { data: admin } = useAdmin();
   const { t } = useI18n();
   const navigate = useNavigate();
+  const location = useLocation();
   useSessionTimeout();
+
+  // Trigger welcome email + onboarding redirect once per session.
+  const welcomeFiredRef = useRef(false);
+  useEffect(() => {
+    if (!profile || welcomeFiredRef.current) return;
+    if (!profile.welcome_email_sent_at) {
+      welcomeFiredRef.current = true;
+      supabase.functions.invoke("send-welcome-email").catch(() => {});
+    }
+  }, [profile]);
+
+  useEffect(() => {
+    if (!profile) return;
+    // Route brand-new users (OAuth or email) to onboarding once.
+    if (
+      profile.onboarding_completed === false &&
+      location.pathname === "/app"
+    ) {
+      navigate("/app/onboarding", { replace: true });
+    }
+  }, [profile, location.pathname, navigate]);
+
 
   const nav = [
     { to: "/app", label: t("nav.dashboard"), icon: LayoutDashboard, end: true },
