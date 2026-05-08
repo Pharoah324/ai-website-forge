@@ -482,7 +482,10 @@ async function unsplashSearch(query: string, orientation: "landscape" | "portrai
 
 async function hydrateImages(siteJson: unknown) {
   if (!siteJson || typeof siteJson !== "object") return;
-  if (!UNSPLASH_ACCESS_KEY) return;
+  if (!UNSPLASH_ACCESS_KEY) {
+    console.log("hydrateImages: UNSPLASH_ACCESS_KEY not set, skipping image hydration");
+    return;
+  }
   // deno-lint-ignore no-explicit-any
   const site = siteJson as any;
   const sections = Array.isArray(site.sections) ? site.sections : [];
