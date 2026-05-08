@@ -342,7 +342,7 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      await hydrateImages(parsed);
+      try { await hydrateImages(parsed); } catch (e) { console.warn("hydrateImages failed (continuing without images):", e); }
       const site = await persistSite(supabase, user.id, prompt, parsed, profile, isUnlimited, isAdmin);
       return new Response(JSON.stringify({ site }), {
         status: 200,
