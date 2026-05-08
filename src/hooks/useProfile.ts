@@ -53,7 +53,7 @@ export const useProfile = () => {
         .eq("id", user!.id)
         .single();
       if (error) throw error;
-      return data as Profile;
+      return data as unknown as Profile;
     },
   });
 };
