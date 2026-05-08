@@ -177,24 +177,8 @@ export default function Auth() {
           </div>
         )}
 
-        {/* Social sign-in */}
-        <div className="mt-6 space-y-2">
-          <Button
-            type="button"
-            onClick={() => signInWithProvider("apple")}
-            disabled={anyLoading}
-            className="w-full bg-black text-white hover:bg-black/90 border border-white/10 h-11"
-          >
-            <Apple className="h-5 w-5 mr-2 fill-current" />
-            {oauthLoading === "apple" ? "…" : L.apple}
-          </Button>
-        </div>
 
-        <div className="my-5 flex items-center gap-3 text-xs uppercase tracking-wider text-muted-foreground">
-          <div className="h-px flex-1 bg-border" />
-          <span>{L.or}</span>
-          <div className="h-px flex-1 bg-border" />
-        </div>
+
 
         <form onSubmit={submit} className="space-y-4">
           <div>
