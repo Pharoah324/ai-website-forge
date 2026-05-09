@@ -29,6 +29,7 @@ import { useEffect, useRef, useState } from "react";
 import { PLAN_LIMITS } from "@/hooks/useProfile";
 import { ChatWidget } from "@/components/ChatWidget";
 import { LanguageSelector } from "@/components/LanguageSelector";
+import { HeroPromptBox } from "@/components/HeroPromptBox";
 
 const PLAN_TAGLINES: Record<string, string> = {
   free: "Try it out",
@@ -80,38 +81,6 @@ const ROTATING_PROMPTS = [
   "東京にある和食レストラン「桜庭」。伝統的な日本料理、オンライン予約システム必須…",
 ];
 
-function RotatingPrompt() {
-  const [idx, setIdx] = useState(0);
-  const [typed, setTyped] = useState("");
-
-  useEffect(() => {
-    const full = ROTATING_PROMPTS[idx];
-    let i = 0;
-    setTyped("");
-    const tick = setInterval(() => {
-      i++;
-      setTyped(full.slice(0, i));
-      if (i >= full.length) {
-        clearInterval(tick);
-        setTimeout(() => setIdx((p) => (p + 1) % ROTATING_PROMPTS.length), 2400);
-      }
-    }, 28);
-    return () => clearInterval(tick);
-  }, [idx]);
-
-  return (
-    <div className="mx-auto mt-10 max-w-2xl rounded-xl border border-primary/25 bg-navy-muted/60 p-4 text-left shadow-glow">
-      <div className="mb-2 flex items-center gap-2 text-[11px] uppercase tracking-wider text-primary-glow">
-        <Mic className="h-3 w-3" />
-        Try a prompt
-      </div>
-      <p className="min-h-[3.5rem] text-sm leading-relaxed text-navy-foreground/90">
-        {typed}
-        <span className="animate-type-cursor ml-0.5 inline-block h-4 w-[2px] bg-primary align-middle" />
-      </p>
-    </div>
-  );
-}
 
 const STATS = [
   { value: "50+", label: "Languages Supported", icon: Languages },
@@ -335,7 +304,7 @@ export default function Landing() {
           <p className="mt-2 text-xs font-semibold text-primary-glow">
             Available in 50+ Languages · 190+ Countries · 8 Billion Potential Customers
           </p>
-          <RotatingPrompt />
+          <HeroPromptBox />
         </div>
         <div className="pointer-events-none absolute inset-x-0 top-1/2 h-[500px] -translate-y-1/2 bg-gradient-glow" />
       </section>

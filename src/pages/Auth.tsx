@@ -41,7 +41,14 @@ export default function Auth() {
   const { lang } = useI18n();
 
   const intent = params.get("intent");
-  const postAuthPath = intent === "optimize" ? "/app/optimize" : mode === "signup" ? "/app/onboarding" : "/app";
+  const postAuthPath =
+    intent === "optimize"
+      ? "/app/optimize"
+      : intent === "build"
+        ? "/app/new"
+        : mode === "signup"
+          ? "/app/onboarding"
+          : "/app";
 
   // Localized labels for the social/auth UI. Falls back to English if lang missing.
   const L = (() => {
