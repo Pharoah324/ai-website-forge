@@ -74,19 +74,19 @@ export const SitePreview = ({ content }: { content: SiteContent }) => {
     <div style={style} className="min-h-full" dir={cleanedContent.dir || "ltr"}>
       <div
         style={{
-          background: `hsl(${content.theme.background})`,
-          color: `hsl(${content.theme.foreground})`,
+          background: `hsl(${cleanedContent.theme.background})`,
+          color: `hsl(${cleanedContent.theme.foreground})`,
         }}
       >
         {/* Header */}
         <header
-          style={{ borderBottom: `1px solid hsl(${content.theme.foreground} / 0.08)` }}
+          style={{ borderBottom: `1px solid hsl(${cleanedContent.theme.foreground} / 0.08)` }}
           className="px-6 py-4"
         >
           <div className="flex items-center justify-between">
-            <span className="font-bold">{content.name}</span>
+            <span className="font-bold">{cleanedContent.name}</span>
             <button
-              style={{ background: `hsl(${content.theme.primary})`, color: "white" }}
+              style={{ background: `hsl(${cleanedContent.theme.primary})`, color: "white" }}
               className="rounded-md px-3 py-1.5 text-xs font-medium"
             >
               Get started
@@ -94,14 +94,14 @@ export const SitePreview = ({ content }: { content: SiteContent }) => {
           </div>
         </header>
 
-        {content.sections.map((s, i) => (
-          <Section key={i} section={s} theme={content.theme} index={i} />
+        {cleanedContent.sections.map((s, i) => (
+          <Section key={i} section={s} theme={cleanedContent.theme} index={i} />
         ))}
 
         <footer
           style={{
-            borderTop: `1px solid hsl(${content.theme.foreground} / 0.08)`,
-            color: `hsl(${content.theme.foreground} / 0.6)`,
+            borderTop: `1px solid hsl(${cleanedContent.theme.foreground} / 0.08)`,
+            color: `hsl(${cleanedContent.theme.foreground} / 0.6)`,
           }}
           className="px-6 py-6 text-center text-xs"
         >
