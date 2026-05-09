@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { SitePreview } from "@/components/SitePreview";
+import { SitePreview, type SiteBranding } from "@/components/SitePreview";
 import type { SiteContent } from "@/types/site";
+import { fetchSiteBranding } from "@/lib/siteBranding";
 
 type Props = { subdomain: string };
 
@@ -9,7 +10,7 @@ export default function LiveSite({ subdomain }: Props) {
   const [state, setState] = useState<
     | { kind: "loading" }
     | { kind: "notfound" }
-    | { kind: "ok"; content: SiteContent; name: string }
+    | { kind: "ok"; content: SiteContent; name: string; branding: SiteBranding | null }
   >({ kind: "loading" });
 
   useEffect(() => {
@@ -17,7 +18,7 @@ export default function LiveSite({ subdomain }: Props) {
     (async () => {
       const { data } = await supabase
         .from("sites")
-        .select("name, content, published")
+        .select("id, name, content, published")
         .ilike("subdomain", subdomain)
         .eq("published", true)
         .maybeSingle();
@@ -26,11 +27,16 @@ export default function LiveSite({ subdomain }: Props) {
         setState({ kind: "notfound" });
         return;
       }
-      document.title = data.name || subdomain;
+      const branding = await fetchSiteBranding(data.id);
+      if (cancelled) return;
+      document.title = branding?.brand_name
+        ? `${data.name} · ${branding.brand_name}`
+        : data.name || subdomain;
       setState({
         kind: "ok",
         content: data.content as unknown as SiteContent,
         name: data.name,
+        branding,
       });
     })();
     return () => { cancelled = true; };
@@ -56,5 +62,5 @@ export default function LiveSite({ subdomain }: Props) {
       </div>
     );
   }
-  return <SitePreview content={state.content} />;
+  return <SitePreview content={state.content} branding={state.branding} />;
 }
