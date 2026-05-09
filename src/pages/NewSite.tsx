@@ -427,6 +427,30 @@ export default function NewSite() {
           </div>
         </div>
 
+        {resumedFromLanding && (
+          <div className="rounded-md border border-primary/40 bg-primary/10 p-3 text-xs">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="font-semibold text-foreground">
+                  ✦ Review your prompt before we build
+                </p>
+                <p className="mt-1 text-muted-foreground">
+                  We saved what you typed on the homepage. Edit anything below,
+                  then hit <span className="font-medium text-foreground">Generate</span> when you're ready.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={dismissResumeBanner}
+                className="shrink-0 text-muted-foreground hover:text-foreground"
+                aria-label="Dismiss"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
+
         <Textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
