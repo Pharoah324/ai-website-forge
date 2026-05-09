@@ -1047,7 +1047,6 @@ export type Database = {
           content: Json | null
           created_at: string
           id: string
-          is_published: boolean
           is_shared: boolean
           name: string
           prompt: string
@@ -1062,7 +1061,6 @@ export type Database = {
           content?: Json | null
           created_at?: string
           id?: string
-          is_published?: boolean
           is_shared?: boolean
           name?: string
           prompt: string
@@ -1077,7 +1075,6 @@ export type Database = {
           content?: Json | null
           created_at?: string
           id?: string
-          is_published?: boolean
           is_shared?: boolean
           name?: string
           prompt?: string
