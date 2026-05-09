@@ -9,6 +9,51 @@ function getIcon(name?: string): IconCmp | null {
   return mod[name] || mod.Sparkles || null;
 }
 
+// Strip markdown image syntax (and stray image URLs) from text fields, and
+// promote the first found URL to image_url when missing. Older generated
+// sites stored "![](url)" inside body fields, which would otherwise render
+// as literal text.
+const MD_IMG_RE = /!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g;
+const RAW_IMG_URL_RE = /(https?:\/\/(?:images\.unsplash\.com|[^\s)]+\.(?:jpg|jpeg|png|webp|gif|avif))[^\s)]*)/gi;
+
+function cleanTextNode<T extends Record<string, unknown>>(node: T): T {
+  let firstUrl: string | null = null;
+  let firstAlt: string | null = null;
+  const out: Record<string, unknown> = { ...node };
+  for (const k of Object.keys(out)) {
+    const v = out[k];
+    if (typeof v !== "string") continue;
+    let cleaned = v.replace(MD_IMG_RE, (_m, alt: string, url: string) => {
+      if (!firstUrl) { firstUrl = url; firstAlt = alt || null; }
+      return "";
+    });
+    cleaned = cleaned.replace(RAW_IMG_URL_RE, (_m, url: string) => {
+      if (!firstUrl) firstUrl = url;
+      return "";
+    });
+    cleaned = cleaned.replace(/\n{3,}/g, "\n\n").trim();
+    out[k] = cleaned;
+  }
+  if (firstUrl && !out.image_url) {
+    out.image_url = firstUrl;
+    if (firstAlt && !out.image_alt) out.image_alt = firstAlt;
+  }
+  return out as T;
+}
+
+function sanitizeContent(content: SiteContent): SiteContent {
+  const sections = (content.sections || []).map((sec) => {
+    const cleanedSec = cleanTextNode(sec as unknown as Record<string, unknown>) as unknown as SiteSection;
+    if (Array.isArray(cleanedSec.items)) {
+      cleanedSec.items = cleanedSec.items.map((it) =>
+        cleanTextNode(it as unknown as Record<string, unknown>) as unknown as SiteSectionItem
+      );
+    }
+    return cleanedSec;
+  });
+  return { ...content, sections };
+}
+
 // Compute a quick design-quality score (0-100).
 export function computeDesignScore(content: SiteContent | null): {
   total: number;
@@ -65,23 +110,28 @@ export const SitePreview = ({ content }: { content: SiteContent }) => {
     "--site-accent": content.theme.accent,
   } as React.CSSProperties;
 
+  // Older generated sites may contain markdown image syntax inside text
+  // fields. Strip it at render time and promote the URL to image_url so we
+  // never display literal "![](...)" text.
+  const cleanedContent = sanitizeContent(content);
+
   return (
-    <div style={style} className="min-h-full" dir={content.dir || "ltr"}>
+    <div style={style} className="min-h-full" dir={cleanedContent.dir || "ltr"}>
       <div
         style={{
-          background: `hsl(${content.theme.background})`,
-          color: `hsl(${content.theme.foreground})`,
+          background: `hsl(${cleanedContent.theme.background})`,
+          color: `hsl(${cleanedContent.theme.foreground})`,
         }}
       >
         {/* Header */}
         <header
-          style={{ borderBottom: `1px solid hsl(${content.theme.foreground} / 0.08)` }}
+          style={{ borderBottom: `1px solid hsl(${cleanedContent.theme.foreground} / 0.08)` }}
           className="px-6 py-4"
         >
           <div className="flex items-center justify-between">
-            <span className="font-bold">{content.name}</span>
+            <span className="font-bold">{cleanedContent.name}</span>
             <button
-              style={{ background: `hsl(${content.theme.primary})`, color: "white" }}
+              style={{ background: `hsl(${cleanedContent.theme.primary})`, color: "white" }}
               className="rounded-md px-3 py-1.5 text-xs font-medium"
             >
               Get started
@@ -89,18 +139,18 @@ export const SitePreview = ({ content }: { content: SiteContent }) => {
           </div>
         </header>
 
-        {content.sections.map((s, i) => (
-          <Section key={i} section={s} theme={content.theme} index={i} />
+        {cleanedContent.sections.map((s, i) => (
+          <Section key={i} section={s} theme={cleanedContent.theme} index={i} />
         ))}
 
         <footer
           style={{
-            borderTop: `1px solid hsl(${content.theme.foreground} / 0.08)`,
-            color: `hsl(${content.theme.foreground} / 0.6)`,
+            borderTop: `1px solid hsl(${cleanedContent.theme.foreground} / 0.08)`,
+            color: `hsl(${cleanedContent.theme.foreground} / 0.6)`,
           }}
           className="px-6 py-6 text-center text-xs"
         >
-          © {new Date().getFullYear()} {content.name}
+          © {new Date().getFullYear()} {cleanedContent.name}
         </footer>
       </div>
     </div>

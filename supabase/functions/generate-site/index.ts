@@ -73,6 +73,8 @@ FUNNEL MODES (when funnel_type is provided):
 - link_in_bio: vertical stack of 4-8 link cards, photo top, single column.
 
 OUTPUT IMAGE & ICON FIELDS:
+CRITICAL: NEVER put markdown image syntax (e.g. "![](url)" or "![alt](url)") inside heading, subheading, body, title, or any other text field. NEVER paste raw image URLs into text. Images are added separately by the system using the image_search_query field. Text fields must contain prose only.
+
 For EACH section include:
 - image_search_query: a specific descriptive English phrase (4-9 words) that will return a perfect Unsplash photo for the section, including business type + setting (e.g. "luxury medspa treatment room miami", "cozy italian restaurant interior candlelight"). ALWAYS in English even when copy is in another language — Unsplash search is English-only.
 - image_placement: one of "background" | "side" | "card" | "avatar" | "none".
@@ -342,6 +344,7 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+      try { sanitizeMarkdownImages(parsed); } catch (e) { console.warn("sanitizeMarkdownImages failed:", e); }
       try { await hydrateImages(parsed); } catch (e) { console.warn("hydrateImages failed (continuing without images):", e); }
       const site = await persistSite(supabase, user.id, prompt, parsed, profile, isUnlimited, isAdmin);
       return new Response(JSON.stringify({ site }), {
@@ -399,7 +402,8 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
             return;
           }
 
-          try { await hydrateImages(parsed); } catch (e) { console.warn("hydrateImages failed (continuing without images):", e); }
+          try { sanitizeMarkdownImages(parsed); } catch (e) { console.warn("sanitizeMarkdownImages failed:", e); }
+      try { await hydrateImages(parsed); } catch (e) { console.warn("hydrateImages failed (continuing without images):", e); }
 
           const site = await persistSite(
             supabase,
@@ -477,6 +481,52 @@ async function unsplashSearch(query: string, orientation: "landscape" | "portrai
     console.warn("unsplash exception", e);
     unsplashCache.set(cacheKey, null);
     return null;
+  }
+}
+
+// Strip markdown image syntax from text fields. If a field contains
+// `![alt](url)` and no image_url is set on the parent, promote the URL.
+function sanitizeMarkdownImages(siteJson: unknown) {
+  if (!siteJson || typeof siteJson !== "object") return;
+  // deno-lint-ignore no-explicit-any
+  const site = siteJson as any;
+  const MD_IMG = /!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g;
+  const RAW_IMG_URL = /(https?:\/\/(?:images\.unsplash\.com|[^\s)]+\.(?:jpg|jpeg|png|webp|gif|avif))[^\s)]*)/gi;
+
+  const TEXT_FIELDS = ["heading", "subheading", "body", "title", "cta", "cta_urgency", "price", "author"];
+
+  // deno-lint-ignore no-explicit-any
+  const cleanNode = (node: any) => {
+    if (!node || typeof node !== "object") return;
+    let firstUrl: string | null = null;
+    let firstAlt: string | null = null;
+    for (const key of TEXT_FIELDS) {
+      const v = node[key];
+      if (typeof v !== "string") continue;
+      let cleaned = v.replace(MD_IMG, (_m, alt, url) => {
+        if (!firstUrl) { firstUrl = url; firstAlt = alt || null; }
+        return "";
+      });
+      // Strip stray raw image URLs left behind
+      cleaned = cleaned.replace(RAW_IMG_URL, (_m, url) => {
+        if (!firstUrl) firstUrl = url;
+        return "";
+      });
+      cleaned = cleaned.replace(/\n{3,}/g, "\n\n").trim();
+      node[key] = cleaned;
+    }
+    if (firstUrl && !node.image_url) {
+      node.image_url = firstUrl;
+      if (firstAlt && !node.image_alt) node.image_alt = firstAlt;
+    }
+  };
+
+  const sections = Array.isArray(site.sections) ? site.sections : [];
+  for (const sec of sections) {
+    cleanNode(sec);
+    if (Array.isArray(sec?.items)) {
+      for (const item of sec.items) cleanNode(item);
+    }
   }
 }
 
