@@ -6,14 +6,16 @@
 
 @layer base {
   :root {
-    /* Marketing surfaces — unified dark forest theme */
-    --background: 138 45% 6%;
+    /* Marketing surfaces — layered forest theme (3 shades) */
+    /* Darkest base #051a0f */
+    --background: 144 68% 6%;
     --foreground: 210 40% 98%;
 
-    --card: 145 40% 9%;
+    /* Mid shade #0a2e1a — cards & alternate sections */
+    --card: 142 64% 11%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 145 40% 9%;
+    --popover: 142 64% 11%;
     --popover-foreground: 210 40% 98%;
 
     /* Emerald brand */
