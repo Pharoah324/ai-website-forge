@@ -275,32 +275,27 @@ export default function NewSite() {
     runGeneration({ prompt });
   };
 
-  // Auto-resume a prompt captured on the public landing page (HeroPromptBox).
-  // Runs once after profile loads, only if no generation is in flight or done.
+  // Pre-fill a prompt captured on the public landing page (HeroPromptBox)
+  // and surface a review banner. Generation is NOT auto-triggered — the user
+  // confirms by clicking Generate so they can edit first.
+  const [resumedFromLanding, setResumedFromLanding] = useState(false);
   const autoResumedRef = useRef(false);
   useEffect(() => {
     if (autoResumedRef.current) return;
     if (!profile) return;
     if (generating || content || siteId) return;
     let pending: string | null = null;
-    try {
-      pending = localStorage.getItem("veb_pending_prompt");
-    } catch { /* ignore */ }
+    try { pending = localStorage.getItem("veb_pending_prompt"); } catch { /* ignore */ }
     if (!pending || !pending.trim()) return;
     autoResumedRef.current = true;
     try { localStorage.removeItem("veb_pending_prompt"); } catch { /* ignore */ }
     setPrompt(pending);
-    if (noCredits) {
-      toast.error(t("newsite.outOfCredits"), {
-        action: { label: t("newsite.buyCredits"), onClick: () => setTopUpOpen(true) },
-      });
-      setTopUpOpen(true);
-      return;
-    }
-    toast.success("Picking up where you left off — generating your site now.");
-    runGeneration({ prompt: pending });
+    setResumedFromLanding(true);
+    toast.success("We saved your prompt — review or edit it, then hit Generate.");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile]);
+
+  const dismissResumeBanner = () => setResumedFromLanding(false);
 
   const startTemplate = () => {
     if (!templateModal) return;
