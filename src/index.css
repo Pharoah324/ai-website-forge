@@ -62,12 +62,11 @@
     --sidebar-border: 145 40% 14%;
     --sidebar-ring: 160 84% 45%;
 
-    /* Marketing dark sections (hero, etc.) — deep forest */
-    --navy: 138 45% 6%;
-    --navy-foreground: 210 40% 98%; /* near-white #F1F5F9 for max readability */
-    --navy-muted: 145 40% 11%;
-    /* Secondary text on dark navy — bright mint for legibility */
-    --navy-mint: 152 76% 80%;
+    /* Highlighted forest section #0d3d22 — used for "navy" sections */
+    --navy: 142 65% 14%;
+    --navy-foreground: 210 40% 98%;
+    --navy-muted: 142 64% 11%;
+    --navy-mint: 152 76% 82%;
     /* Parent brand accent */
     --parent-brand: 221 83% 65%;
 
