@@ -6,15 +6,15 @@
 
 @layer base {
   :root {
-    /* Marketing/light surfaces */
-    --background: 0 0% 100%;
-    --foreground: 140 30% 8%;
+    /* Marketing surfaces — unified dark forest theme */
+    --background: 138 45% 6%;
+    --foreground: 210 40% 98%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 140 30% 8%;
+    --card: 145 40% 9%;
+    --card-foreground: 210 40% 98%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 140 30% 8%;
+    --popover: 145 40% 9%;
+    --popover-foreground: 210 40% 98%;
 
     /* Emerald brand */
     --primary: 160 84% 39%;
@@ -26,14 +26,14 @@
     --cta: 84 81% 50%;
     --cta-foreground: 0 0% 0%;
 
-    --secondary: 140 20% 96%;
-    --secondary-foreground: 140 30% 8%;
+    --secondary: 145 40% 11%;
+    --secondary-foreground: 210 40% 98%;
 
-    --muted: 140 20% 96%;
-    --muted-foreground: 140 10% 40%;
+    --muted: 145 40% 11%;
+    --muted-foreground: 150 15% 70%;
 
-    --accent: 152 76% 94%;
-    --accent-foreground: 160 84% 25%;
+    --accent: 145 40% 14%;
+    --accent-foreground: 152 76% 80%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
@@ -44,8 +44,8 @@
     --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
 
-    --border: 140 15% 88%;
-    --input: 140 15% 88%;
+    --border: 145 30% 16%;
+    --input: 145 30% 16%;
     --ring: 160 84% 39%;
 
     --radius: 0.625rem;
