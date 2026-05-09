@@ -105,7 +105,7 @@ export const SitePreview = ({ content }: { content: SiteContent }) => {
           }}
           className="px-6 py-6 text-center text-xs"
         >
-          © {new Date().getFullYear()} {content.name}
+          © {new Date().getFullYear()} {cleanedContent.name}
         </footer>
       </div>
     </div>
