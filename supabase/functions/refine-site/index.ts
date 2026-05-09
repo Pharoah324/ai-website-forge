@@ -142,7 +142,7 @@ Deno.serve(async (req) => {
       .limit(40);
 
     // Gate + consume 1 build credit (admins bypass automatically)
-    const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const admin = adminEarly;
     const { data: gate, error: gErr } = await admin.rpc("check_and_consume", {
       _uid: user.id, _action: "site_generation", _credit_cost: 1,
     });
@@ -156,7 +156,7 @@ Deno.serve(async (req) => {
     }
 
     const messages: Array<{ role: string; content: string }> = [
-      { role: "system", content: SYSTEM_PROMPT },
+      { role: "system", content: SYSTEM_PROMPT + voiceAddon },
       {
         role: "system",
         content: `Current site JSON:\n${JSON.stringify(site.content).slice(0, 12000)}`,
