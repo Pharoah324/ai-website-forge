@@ -29,6 +29,7 @@ import { useEffect, useRef, useState } from "react";
 import { PLAN_LIMITS } from "@/hooks/useProfile";
 import { ChatWidget } from "@/components/ChatWidget";
 import { LanguageSelector } from "@/components/LanguageSelector";
+import { HeroPromptBox } from "@/components/HeroPromptBox";
 
 const PLAN_TAGLINES: Record<string, string> = {
   free: "Try it out",
@@ -335,7 +336,7 @@ export default function Landing() {
           <p className="mt-2 text-xs font-semibold text-primary-glow">
             Available in 50+ Languages · 190+ Countries · 8 Billion Potential Customers
           </p>
-          <RotatingPrompt />
+          <HeroPromptBox />
         </div>
         <div className="pointer-events-none absolute inset-x-0 top-1/2 h-[500px] -translate-y-1/2 bg-gradient-glow" />
       </section>
