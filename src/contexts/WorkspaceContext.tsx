@@ -71,13 +71,23 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
 
   const workspaces = data ?? [];
 
-  // Clear active if it no longer exists
+  // Clear active if it no longer belongs to the current user (handles
+  // account switches and users with zero workspaces).
   useEffect(() => {
-    if (activeWorkspaceId && workspaces.length > 0 && !workspaces.find((w) => w.id === activeWorkspaceId)) {
+    if (isLoading || !user) return;
+    if (activeWorkspaceId && !workspaces.find((w) => w.id === activeWorkspaceId)) {
       setActive(null);
       localStorage.removeItem(STORAGE_KEY);
     }
-  }, [workspaces, activeWorkspaceId]);
+  }, [workspaces, activeWorkspaceId, isLoading, user]);
+
+  // Reset when user logs out
+  useEffect(() => {
+    if (!user) {
+      setActive(null);
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  }, [user]);
 
   const setActiveWorkspaceId = useCallback((id: string | null) => {
     setActive(id);
