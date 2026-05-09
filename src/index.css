@@ -6,14 +6,16 @@
 
 @layer base {
   :root {
-    /* Marketing surfaces — unified dark forest theme */
-    --background: 138 45% 6%;
+    /* Marketing surfaces — layered forest theme (3 shades) */
+    /* Darkest base #051a0f */
+    --background: 144 68% 6%;
     --foreground: 210 40% 98%;
 
-    --card: 145 40% 9%;
+    /* Mid shade #0a2e1a — cards & alternate sections */
+    --card: 142 64% 11%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 145 40% 9%;
+    --popover: 142 64% 11%;
     --popover-foreground: 210 40% 98%;
 
     /* Emerald brand */
@@ -26,14 +28,14 @@
     --cta: 84 81% 50%;
     --cta-foreground: 0 0% 0%;
 
-    --secondary: 145 40% 11%;
+    --secondary: 142 64% 11%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 145 40% 11%;
-    --muted-foreground: 150 15% 70%;
+    --muted: 142 64% 11%;
+    --muted-foreground: 150 25% 78%;
 
-    --accent: 145 40% 14%;
-    --accent-foreground: 152 76% 80%;
+    --accent: 142 65% 15%;
+    --accent-foreground: 152 76% 85%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
@@ -44,8 +46,8 @@
     --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
 
-    --border: 145 30% 16%;
-    --input: 145 30% 16%;
+    --border: 142 50% 20%;
+    --input: 142 50% 20%;
     --ring: 160 84% 39%;
 
     --radius: 0.625rem;
@@ -60,12 +62,11 @@
     --sidebar-border: 145 40% 14%;
     --sidebar-ring: 160 84% 45%;
 
-    /* Marketing dark sections (hero, etc.) — deep forest */
-    --navy: 138 45% 6%;
-    --navy-foreground: 210 40% 98%; /* near-white #F1F5F9 for max readability */
-    --navy-muted: 145 40% 11%;
-    /* Secondary text on dark navy — bright mint for legibility */
-    --navy-mint: 152 76% 80%;
+    /* Highlighted forest section #0d3d22 — used for "navy" sections */
+    --navy: 142 65% 14%;
+    --navy-foreground: 210 40% 98%;
+    --navy-muted: 142 64% 11%;
+    --navy-mint: 152 76% 82%;
     /* Parent brand accent */
     --parent-brand: 221 83% 65%;
 
