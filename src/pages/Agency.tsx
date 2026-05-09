@@ -25,8 +25,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Briefcase, Plus, Mail, Trash2, Pencil, Copy, Users, Palette } from "lucide-react";
+import { Briefcase, Plus, Mail, Trash2, Pencil, Copy, Users, Palette, Sparkles } from "lucide-react";
 import { WhiteLabelDialog } from "@/components/WhiteLabelDialog";
+import { WorkspaceVoiceDialog } from "@/components/WorkspaceVoiceDialog";
 import { toast } from "sonner";
 import { Navigate } from "react-router-dom";
 
@@ -50,6 +51,7 @@ export default function Agency() {
   const [inviteTarget, setInviteTarget] = useState<AgencyWorkspace | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<AgencyWorkspace | null>(null);
   const [brandTarget, setBrandTarget] = useState<AgencyWorkspace | null>(null);
+  const [voiceTarget, setVoiceTarget] = useState<AgencyWorkspace | null>(null);
 
   const { data: siteCounts } = useQuery({
     queryKey: ["workspace-site-counts", user?.id],
@@ -196,6 +198,15 @@ export default function Agency() {
                         <Button
                           size="sm"
                           variant="ghost"
+                          onClick={() => setVoiceTarget(w)}
+                          title="Brand voice training"
+                          className={w.brand_voice_active ? "text-primary" : ""}
+                        >
+                          <Sparkles className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
                           onClick={() => setBrandTarget(w)}
                           title="White-label branding"
                           className={w.wl_enabled ? "text-primary" : ""}
@@ -278,6 +289,11 @@ export default function Agency() {
       <WhiteLabelDialog
         workspace={brandTarget}
         onClose={() => setBrandTarget(null)}
+        onSaved={refreshAll}
+      />
+      <WorkspaceVoiceDialog
+        workspace={voiceTarget}
+        onClose={() => setVoiceTarget(null)}
         onSaved={refreshAll}
       />
     </div>
