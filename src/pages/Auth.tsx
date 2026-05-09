@@ -157,11 +157,12 @@ export default function Auth() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-hero p-6">
       <div className="w-full max-w-md rounded-xl border border-navy-muted bg-card p-8 shadow-elevated">
-        <Link to="/" className="mb-6 flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-gradient-primary">
-            <Zap className="h-4 w-4 text-primary-foreground" />
-          </div>
-          <span className="font-semibold">VirtualEngine</span>
+        <Link to="/" className="mb-6 flex items-center justify-center">
+          <img
+            src="/VEB_Logo_AllGreen_Tight.png"
+            alt="Virtual Engine Builder"
+            className="h-12 w-auto"
+          />
         </Link>
         <h1 className="text-2xl font-bold">
           {mode === "signup" ? "Create your account" : "Welcome back"}
