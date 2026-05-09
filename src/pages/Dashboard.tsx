@@ -12,16 +12,17 @@ export default function Dashboard() {
   const { user } = useAuth();
   const { data: profile } = useProfile();
   const { activeWorkspaceId, activeWorkspace } = useWorkspace();
+  const workspaceFilterId = activeWorkspace ? activeWorkspaceId : null;
 
   const { data: sites } = useQuery({
-    queryKey: ["sites", user?.id, activeWorkspaceId ?? "personal"],
+    queryKey: ["sites", user?.id, workspaceFilterId ?? "personal"],
     enabled: !!user,
     queryFn: async () => {
       let q = supabase
         .from("sites")
         .select("id, name, prompt, created_at, workspace_id")
         .order("created_at", { ascending: false });
-      if (activeWorkspaceId) q = q.eq("workspace_id", activeWorkspaceId);
+      if (workspaceFilterId) q = q.eq("workspace_id", workspaceFilterId);
       else q = q.is("workspace_id", null).eq("user_id", user!.id);
       const { data, error } = await q;
       if (error) throw error;
