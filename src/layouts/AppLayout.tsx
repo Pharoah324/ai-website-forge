@@ -89,13 +89,12 @@ export default function AppLayout() {
     <div className="flex min-h-screen w-full bg-background">
       {/* Sidebar */}
       <aside className="hidden w-64 flex-col bg-sidebar text-sidebar-foreground md:flex">
-        <Link to="/" className="flex items-center gap-2 px-6 py-5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-gradient-primary">
-            <Zap className="h-4 w-4 text-primary-foreground" />
-          </div>
-          <span className="font-semibold text-sidebar-accent-foreground">
-            Virtual Engine <span className="text-sidebar-primary">Builder</span>
-          </span>
+        <Link to="/" className="flex items-center px-6 py-5">
+          <img
+            src="/VEB_Navbar_Logo.png"
+            alt="Virtual Engine Builder"
+            className="h-8 w-auto"
+          />
         </Link>
 
         <nav className="flex-1 space-y-1 px-3">
