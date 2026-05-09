@@ -14,7 +14,7 @@ export default function SubdomainPage() {
         .from("sites")
         .select("*")
         .eq("subdomain", subdomain!)
-        .eq("is_published", true)
+        .eq("published", true)
         .maybeSingle();
       if (error) throw error;
       return data;
