@@ -101,7 +101,7 @@ export default function Auth() {
       const isFetchFailure = /failed to fetch/i.test(msg);
       toast.error(
         isFetchFailure
-          ? "Preview could not reach authentication. Refresh the preview and try again, or test this on the published site."
+          ? "Couldn't reach the authentication server. Check your internet connection — if this persists on the live site, the Supabase environment variables may be missing in your hosting provider."
           : msg,
       );
     } finally {
@@ -144,7 +144,7 @@ export default function Auth() {
       const isFetchFailure = /failed to fetch/i.test(msg);
       toast.error(
         isFetchFailure
-          ? "Preview could not reach authentication. Refresh the preview and try again, or test this on the published site."
+          ? "Couldn't reach the authentication server. Check your internet connection — if this persists on the live site, the Supabase environment variables may be missing in your hosting provider."
           : msg,
       );
     } finally {
