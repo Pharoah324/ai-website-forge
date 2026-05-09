@@ -342,6 +342,87 @@ export type Database = {
         }
         Relationships: []
       }
+      agency_workspaces: {
+        Row: {
+          agency_user_id: string
+          brand_voice_active: boolean
+          brand_voice_samples: string | null
+          client_email: string | null
+          client_invited_at: string | null
+          client_user_id: string | null
+          created_at: string
+          cycle_start: string
+          id: string
+          monthly_build_allocation: number
+          monthly_runtime_allocation: number
+          name: string
+          updated_at: string
+          used_build_this_cycle: number
+          used_runtime_this_cycle: number
+          voice_rules: Json | null
+          wl_accent_color: string | null
+          wl_brand_name: string | null
+          wl_enabled: boolean
+          wl_footer_text: string | null
+          wl_hide_branding: boolean
+          wl_logo_url: string | null
+          wl_primary_color: string | null
+          wl_support_email: string | null
+        }
+        Insert: {
+          agency_user_id: string
+          brand_voice_active?: boolean
+          brand_voice_samples?: string | null
+          client_email?: string | null
+          client_invited_at?: string | null
+          client_user_id?: string | null
+          created_at?: string
+          cycle_start?: string
+          id?: string
+          monthly_build_allocation?: number
+          monthly_runtime_allocation?: number
+          name: string
+          updated_at?: string
+          used_build_this_cycle?: number
+          used_runtime_this_cycle?: number
+          voice_rules?: Json | null
+          wl_accent_color?: string | null
+          wl_brand_name?: string | null
+          wl_enabled?: boolean
+          wl_footer_text?: string | null
+          wl_hide_branding?: boolean
+          wl_logo_url?: string | null
+          wl_primary_color?: string | null
+          wl_support_email?: string | null
+        }
+        Update: {
+          agency_user_id?: string
+          brand_voice_active?: boolean
+          brand_voice_samples?: string | null
+          client_email?: string | null
+          client_invited_at?: string | null
+          client_user_id?: string | null
+          created_at?: string
+          cycle_start?: string
+          id?: string
+          monthly_build_allocation?: number
+          monthly_runtime_allocation?: number
+          name?: string
+          updated_at?: string
+          used_build_this_cycle?: number
+          used_runtime_this_cycle?: number
+          voice_rules?: Json | null
+          wl_accent_color?: string | null
+          wl_brand_name?: string | null
+          wl_enabled?: boolean
+          wl_footer_text?: string | null
+          wl_hide_branding?: boolean
+          wl_logo_url?: string | null
+          wl_primary_color?: string | null
+          wl_support_email?: string | null
+        }
+        Relationships: []
+      }
       announcements: {
         Row: {
           active: boolean
@@ -723,6 +804,12 @@ export type Database = {
           top_up_runtime_credits: number
           updated_at: string
           voice_rules: Json | null
+          wl_accent_color: string | null
+          wl_brand_name: string | null
+          wl_enabled: boolean
+          wl_hide_branding: boolean
+          wl_logo_url: string | null
+          wl_primary_color: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -757,6 +844,12 @@ export type Database = {
           top_up_runtime_credits?: number
           updated_at?: string
           voice_rules?: Json | null
+          wl_accent_color?: string | null
+          wl_brand_name?: string | null
+          wl_enabled?: boolean
+          wl_hide_branding?: boolean
+          wl_logo_url?: string | null
+          wl_primary_color?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -791,6 +884,12 @@ export type Database = {
           top_up_runtime_credits?: number
           updated_at?: string
           voice_rules?: Json | null
+          wl_accent_color?: string | null
+          wl_brand_name?: string | null
+          wl_enabled?: boolean
+          wl_hide_branding?: boolean
+          wl_logo_url?: string | null
+          wl_primary_color?: string | null
         }
         Relationships: []
       }
@@ -1047,7 +1146,6 @@ export type Database = {
           content: Json | null
           created_at: string
           id: string
-          is_published: boolean
           is_shared: boolean
           name: string
           prompt: string
@@ -1057,12 +1155,12 @@ export type Database = {
           subdomain: string | null
           updated_at: string
           user_id: string
+          workspace_id: string | null
         }
         Insert: {
           content?: Json | null
           created_at?: string
           id?: string
-          is_published?: boolean
           is_shared?: boolean
           name?: string
           prompt: string
@@ -1072,12 +1170,12 @@ export type Database = {
           subdomain?: string | null
           updated_at?: string
           user_id: string
+          workspace_id?: string | null
         }
         Update: {
           content?: Json | null
           created_at?: string
           id?: string
-          is_published?: boolean
           is_shared?: boolean
           name?: string
           prompt?: string
@@ -1087,8 +1185,17 @@ export type Database = {
           subdomain?: string | null
           updated_at?: string
           user_id?: string
+          workspace_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "sites_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "agency_workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stripe_events: {
         Row: {
@@ -1153,17 +1260,60 @@ export type Database = {
         }
         Relationships: []
       }
+      workspace_invites: {
+        Row: {
+          accepted_at: string | null
+          email: string
+          id: string
+          invited_at: string
+          status: string
+          token: string
+          workspace_id: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          email: string
+          id?: string
+          invited_at?: string
+          status?: string
+          token?: string
+          workspace_id: string
+        }
+        Update: {
+          accepted_at?: string | null
+          email?: string
+          id?: string
+          invited_at?: string
+          status?: string
+          token?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_invites_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "agency_workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      accept_workspace_invite: { Args: { _token: string }; Returns: Json }
       check_and_consume: {
         Args: {
           _action: Database["public"]["Enums"]["rate_action"]
           _credit_cost?: number
           _uid: string
         }
+        Returns: Json
+      }
+      consume_workspace_credits: {
+        Args: { _amount: number; _kind: string; _workspace_id: string }
         Returns: Json
       }
       detect_abuse_and_pause: { Args: never; Returns: Json }
@@ -1174,6 +1324,7 @@ export type Database = {
         Returns: Database["public"]["Enums"]["admin_access_level"]
       }
       get_effective_plan: { Args: { _uid: string }; Returns: string }
+      get_site_branding: { Args: { p_site_id: string }; Returns: Json }
       is_account_paused: { Args: { _uid: string }; Returns: boolean }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }

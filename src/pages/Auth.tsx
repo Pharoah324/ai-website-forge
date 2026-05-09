@@ -101,7 +101,7 @@ export default function Auth() {
       const isFetchFailure = /failed to fetch/i.test(msg);
       toast.error(
         isFetchFailure
-          ? "Preview could not reach authentication. Refresh the preview and try again, or test this on the published site."
+          ? "Couldn't reach the authentication server. Check your internet connection — if this persists on the live site, the Supabase environment variables may be missing in your hosting provider."
           : msg,
       );
     } finally {
@@ -144,7 +144,7 @@ export default function Auth() {
       const isFetchFailure = /failed to fetch/i.test(msg);
       toast.error(
         isFetchFailure
-          ? "Preview could not reach authentication. Refresh the preview and try again, or test this on the published site."
+          ? "Couldn't reach the authentication server. Check your internet connection — if this persists on the live site, the Supabase environment variables may be missing in your hosting provider."
           : msg,
       );
     } finally {
@@ -157,11 +157,12 @@ export default function Auth() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-hero p-6">
       <div className="w-full max-w-md rounded-xl border border-navy-muted bg-card p-8 shadow-elevated">
-        <Link to="/" className="mb-6 flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-gradient-primary">
-            <Zap className="h-4 w-4 text-primary-foreground" />
-          </div>
-          <span className="font-semibold">VirtualEngine</span>
+        <Link to="/" className="mb-6 flex items-center justify-center">
+          <img
+            src="/VEB_Logo_AllGreen_Tight.png"
+            alt="Virtual Engine Builder"
+            className="h-12 w-auto"
+          />
         </Link>
         <h1 className="text-2xl font-bold">
           {mode === "signup" ? "Create your account" : "Welcome back"}
@@ -177,31 +178,32 @@ export default function Auth() {
           </div>
         )}
 
-        {/* Social sign-in */}
         <div className="mt-6 space-y-2">
           <Button
             type="button"
-            onClick={() => signInWithProvider("google")}
+            variant="outline"
+            className="w-full"
             disabled={anyLoading}
-            className="w-full bg-white text-[#1f1f1f] hover:bg-white/90 border border-black/10 shadow-sm h-11"
+            onClick={() => signInWithProvider("google")}
           >
-            <GoogleIcon className="h-5 w-5 mr-2" />
-            {oauthLoading === "google" ? "…" : L.google}
+            <GoogleIcon className="mr-2 h-4 w-4" />
+            {oauthLoading === "google" ? "Please wait…" : L.google}
           </Button>
           <Button
             type="button"
-            onClick={() => signInWithProvider("apple")}
+            variant="outline"
+            className="w-full"
             disabled={anyLoading}
-            className="w-full bg-black text-white hover:bg-black/90 border border-white/10 h-11"
+            onClick={() => signInWithProvider("apple")}
           >
-            <Apple className="h-5 w-5 mr-2 fill-current" />
-            {oauthLoading === "apple" ? "…" : L.apple}
+            <Apple className="mr-2 h-4 w-4" />
+            {oauthLoading === "apple" ? "Please wait…" : L.apple}
           </Button>
         </div>
 
-        <div className="my-5 flex items-center gap-3 text-xs uppercase tracking-wider text-muted-foreground">
+        <div className="my-4 flex items-center gap-3">
           <div className="h-px flex-1 bg-border" />
-          <span>{L.or}</span>
+          <span className="text-xs text-muted-foreground">{L.or}</span>
           <div className="h-px flex-1 bg-border" />
         </div>
 

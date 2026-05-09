@@ -16,11 +16,13 @@ import {
   DollarSign,
   ShieldCheck,
   TrendingUp,
+  Briefcase,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { CreditBadge } from "@/components/CreditBadge";
 import { LanguageSelector } from "@/components/LanguageSelector";
+import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { BillingStatusBanner } from "@/components/BillingStatusBanner";
 import { useI18n } from "@/lib/i18n";
@@ -62,6 +64,7 @@ export default function AppLayout() {
     { to: "/app/new", label: t("nav.newsite"), icon: Plus },
     { to: "/app/optimize", label: "Optimize Site", icon: TrendingUp },
     { to: "/app/integrations", label: t("nav.integrations"), icon: Plug },
+    ...(profile?.plan === "agency" ? [{ to: "/app/agency", label: "Client Workspaces", icon: Briefcase }] : []),
     { to: "/app/affiliate", label: "Affiliate Program", icon: DollarSign },
     { to: "/app/billing", label: t("nav.billing"), icon: CreditCard },
     { to: "/app/settings", label: t("nav.settings"), icon: Settings },
@@ -86,13 +89,12 @@ export default function AppLayout() {
     <div className="flex min-h-screen w-full bg-background">
       {/* Sidebar */}
       <aside className="hidden w-64 flex-col bg-sidebar text-sidebar-foreground md:flex">
-        <Link to="/" className="flex items-center gap-2 px-6 py-5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-gradient-primary">
-            <Zap className="h-4 w-4 text-primary-foreground" />
-          </div>
-          <span className="font-semibold text-sidebar-accent-foreground">
-            Virtual Engine <span className="text-sidebar-primary">Builder</span>
-          </span>
+        <Link to="/" className="flex items-center px-6 py-5">
+          <img
+            src="/VEB_Navbar_Logo.png"
+            alt="Virtual Engine Builder"
+            className="h-8 w-auto"
+          />
         </Link>
 
         <nav className="flex-1 space-y-1 px-3">
@@ -146,6 +148,7 @@ export default function AppLayout() {
             </Link>
           </div>
           <div className="ml-auto flex items-center gap-3">
+            <WorkspaceSwitcher />
             <LanguageSelector />
             <CreditBadge />
             <Button asChild size="sm">

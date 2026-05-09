@@ -35,6 +35,7 @@ import { TEMPLATES, type Template } from "@/data/templates";
 import { streamGenerateSite } from "@/lib/streamGenerate";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
 
 const VIEWPORTS = {
   desktop: { width: "100%", icon: Monitor, label: "Desktop" },
@@ -167,6 +168,7 @@ export default function NewSite() {
   };
 
   const { data: profile } = useProfile();
+  const { activeWorkspaceId, workspaces, refresh: refreshWorkspaces } = useWorkspace();
   const qc = useQueryClient();
   const navigate = useNavigate();
 
@@ -187,7 +189,7 @@ export default function NewSite() {
     abortRef.current = ctrl;
 
     await streamGenerateSite(
-      { ...body, language: lang, funnel_type: funnelType },
+      { ...body, language: lang, funnel_type: funnelType, workspace_id: activeWorkspaceId },
       {
         onDelta: (chunk) => {
           accumulatedRef.current += chunk;
@@ -199,6 +201,20 @@ export default function NewSite() {
           setSiteId(site.id);
           setGeneratedPrompt(body.prompt);
           setMobileTab("preview");
+          // If user is in an agency workspace, tag the site and bump the workspace counter.
+          if (activeWorkspaceId) {
+            void (async () => {
+              await supabase
+                .from("sites")
+                .update({ workspace_id: activeWorkspaceId } as never)
+                .eq("id", site.id);
+              await supabase.rpc(
+                "consume_workspace_credits" as never,
+                { _workspace_id: activeWorkspaceId, _kind: "build", _amount: 1 } as never,
+              );
+              refreshWorkspaces();
+            })();
+          }
           qc.invalidateQueries({ queryKey: ["profile"] });
           qc.invalidateQueries({ queryKey: ["sites"] });
           toast.success(t("newsite.success"), {
@@ -331,7 +347,7 @@ export default function NewSite() {
         <div>
           <div className="mb-2 flex items-center gap-2">
             <h1 className="text-xl font-bold">{t("newsite.title")}</h1>
-            {profile?.brand_voice_active && (
+            {(profile?.brand_voice_active || (activeWorkspaceId && workspaces.find(w => w.id === activeWorkspaceId)?.brand_voice_active)) && (
               <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
                 BRAND VOICE ON
               </span>
