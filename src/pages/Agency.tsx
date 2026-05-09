@@ -25,7 +25,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Briefcase, Plus, Mail, Trash2, Pencil, Copy, Users } from "lucide-react";
+import { Briefcase, Plus, Mail, Trash2, Pencil, Copy, Users, Palette } from "lucide-react";
+import { WhiteLabelDialog } from "@/components/WhiteLabelDialog";
 import { toast } from "sonner";
 import { Navigate } from "react-router-dom";
 
@@ -48,6 +49,7 @@ export default function Agency() {
   const [editTarget, setEditTarget] = useState<AgencyWorkspace | null>(null);
   const [inviteTarget, setInviteTarget] = useState<AgencyWorkspace | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<AgencyWorkspace | null>(null);
+  const [brandTarget, setBrandTarget] = useState<AgencyWorkspace | null>(null);
 
   const { data: siteCounts } = useQuery({
     queryKey: ["workspace-site-counts", user?.id],
@@ -194,6 +196,15 @@ export default function Agency() {
                         <Button
                           size="sm"
                           variant="ghost"
+                          onClick={() => setBrandTarget(w)}
+                          title="White-label branding"
+                          className={w.wl_enabled ? "text-primary" : ""}
+                        >
+                          <Palette className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
                           onClick={() => setEditTarget(w)}
                           title="Edit allocation"
                         >
@@ -263,6 +274,11 @@ export default function Agency() {
         workspace={deleteTarget}
         onClose={() => setDeleteTarget(null)}
         onDeleted={refreshAll}
+      />
+      <WhiteLabelDialog
+        workspace={brandTarget}
+        onClose={() => setBrandTarget(null)}
+        onSaved={refreshAll}
       />
     </div>
   );
