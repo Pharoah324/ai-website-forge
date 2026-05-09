@@ -275,32 +275,27 @@ export default function NewSite() {
     runGeneration({ prompt });
   };
 
-  // Auto-resume a prompt captured on the public landing page (HeroPromptBox).
-  // Runs once after profile loads, only if no generation is in flight or done.
+  // Pre-fill a prompt captured on the public landing page (HeroPromptBox)
+  // and surface a review banner. Generation is NOT auto-triggered — the user
+  // confirms by clicking Generate so they can edit first.
+  const [resumedFromLanding, setResumedFromLanding] = useState(false);
   const autoResumedRef = useRef(false);
   useEffect(() => {
     if (autoResumedRef.current) return;
     if (!profile) return;
     if (generating || content || siteId) return;
     let pending: string | null = null;
-    try {
-      pending = localStorage.getItem("veb_pending_prompt");
-    } catch { /* ignore */ }
+    try { pending = localStorage.getItem("veb_pending_prompt"); } catch { /* ignore */ }
     if (!pending || !pending.trim()) return;
     autoResumedRef.current = true;
     try { localStorage.removeItem("veb_pending_prompt"); } catch { /* ignore */ }
     setPrompt(pending);
-    if (noCredits) {
-      toast.error(t("newsite.outOfCredits"), {
-        action: { label: t("newsite.buyCredits"), onClick: () => setTopUpOpen(true) },
-      });
-      setTopUpOpen(true);
-      return;
-    }
-    toast.success("Picking up where you left off — generating your site now.");
-    runGeneration({ prompt: pending });
+    setResumedFromLanding(true);
+    toast.success("We saved your prompt — review or edit it, then hit Generate.");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile]);
+
+  const dismissResumeBanner = () => setResumedFromLanding(false);
 
   const startTemplate = () => {
     if (!templateModal) return;
@@ -431,6 +426,30 @@ export default function NewSite() {
             })}
           </div>
         </div>
+
+        {resumedFromLanding && (
+          <div className="rounded-md border border-primary/40 bg-primary/10 p-3 text-xs">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="font-semibold text-foreground">
+                  ✦ Review your prompt before we build
+                </p>
+                <p className="mt-1 text-muted-foreground">
+                  We saved what you typed on the homepage. Edit anything below,
+                  then hit <span className="font-medium text-foreground">Generate</span> when you're ready.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={dismissResumeBanner}
+                className="shrink-0 text-muted-foreground hover:text-foreground"
+                aria-label="Dismiss"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
 
         <Textarea
           value={prompt}
