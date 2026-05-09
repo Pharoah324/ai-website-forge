@@ -482,6 +482,52 @@ async function unsplashSearch(query: string, orientation: "landscape" | "portrai
   }
 }
 
+// Strip markdown image syntax from text fields. If a field contains
+// `![alt](url)` and no image_url is set on the parent, promote the URL.
+function sanitizeMarkdownImages(siteJson: unknown) {
+  if (!siteJson || typeof siteJson !== "object") return;
+  // deno-lint-ignore no-explicit-any
+  const site = siteJson as any;
+  const MD_IMG = /!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g;
+  const RAW_IMG_URL = /(https?:\/\/(?:images\.unsplash\.com|[^\s)]+\.(?:jpg|jpeg|png|webp|gif|avif))[^\s)]*)/gi;
+
+  const TEXT_FIELDS = ["heading", "subheading", "body", "title", "cta", "cta_urgency", "price", "author"];
+
+  // deno-lint-ignore no-explicit-any
+  const cleanNode = (node: any) => {
+    if (!node || typeof node !== "object") return;
+    let firstUrl: string | null = null;
+    let firstAlt: string | null = null;
+    for (const key of TEXT_FIELDS) {
+      const v = node[key];
+      if (typeof v !== "string") continue;
+      let cleaned = v.replace(MD_IMG, (_m, alt, url) => {
+        if (!firstUrl) { firstUrl = url; firstAlt = alt || null; }
+        return "";
+      });
+      // Strip stray raw image URLs left behind
+      cleaned = cleaned.replace(RAW_IMG_URL, (_m, url) => {
+        if (!firstUrl) firstUrl = url;
+        return "";
+      });
+      cleaned = cleaned.replace(/\n{3,}/g, "\n\n").trim();
+      node[key] = cleaned;
+    }
+    if (firstUrl && !node.image_url) {
+      node.image_url = firstUrl;
+      if (firstAlt && !node.image_alt) node.image_alt = firstAlt;
+    }
+  };
+
+  const sections = Array.isArray(site.sections) ? site.sections : [];
+  for (const sec of sections) {
+    cleanNode(sec);
+    if (Array.isArray(sec?.items)) {
+      for (const item of sec.items) cleanNode(item);
+    }
+  }
+}
+
 async function hydrateImages(siteJson: unknown) {
   if (!siteJson || typeof siteJson !== "object") return;
   if (!UNSPLASH_ACCESS_KEY) {
