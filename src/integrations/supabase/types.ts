@@ -804,6 +804,12 @@ export type Database = {
           top_up_runtime_credits: number
           updated_at: string
           voice_rules: Json | null
+          wl_accent_color: string | null
+          wl_brand_name: string | null
+          wl_enabled: boolean
+          wl_hide_branding: boolean
+          wl_logo_url: string | null
+          wl_primary_color: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -838,6 +844,12 @@ export type Database = {
           top_up_runtime_credits?: number
           updated_at?: string
           voice_rules?: Json | null
+          wl_accent_color?: string | null
+          wl_brand_name?: string | null
+          wl_enabled?: boolean
+          wl_hide_branding?: boolean
+          wl_logo_url?: string | null
+          wl_primary_color?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -872,6 +884,12 @@ export type Database = {
           top_up_runtime_credits?: number
           updated_at?: string
           voice_rules?: Json | null
+          wl_accent_color?: string | null
+          wl_brand_name?: string | null
+          wl_enabled?: boolean
+          wl_hide_branding?: boolean
+          wl_logo_url?: string | null
+          wl_primary_color?: string | null
         }
         Relationships: []
       }
