@@ -65,8 +65,13 @@ export const SitePreview = ({ content }: { content: SiteContent }) => {
     "--site-accent": content.theme.accent,
   } as React.CSSProperties;
 
+  // Older generated sites may contain markdown image syntax inside text
+  // fields. Strip it at render time and promote the URL to image_url so we
+  // never display literal "![](...)" text.
+  const cleanedContent = sanitizeContent(content);
+
   return (
-    <div style={style} className="min-h-full" dir={content.dir || "ltr"}>
+    <div style={style} className="min-h-full" dir={cleanedContent.dir || "ltr"}>
       <div
         style={{
           background: `hsl(${content.theme.background})`,
