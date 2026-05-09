@@ -133,7 +133,7 @@ export default function SiteDetail() {
 
       const { error } = await supabase
         .from("sites")
-        .update({ subdomain, is_published: true })
+        .update({ subdomain, published: true })
         .eq("id", id!);
 
       if (error) throw error;
@@ -334,7 +334,7 @@ export default function SiteDetail() {
           </Button>
           <Button size="sm" onClick={() => setPublishOpen(true)}>
             <Globe className="mr-1 h-3.5 w-3.5" />
-            {site.is_published ? "Update live site" : "Publish live"}
+            {site.published ? "Update live site" : "Publish live"}
           </Button>
           {effectiveRepoUrl && (
             <Button size="sm" variant="ghost" asChild>
