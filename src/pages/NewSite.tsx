@@ -35,6 +35,7 @@ import { TEMPLATES, type Template } from "@/data/templates";
 import { streamGenerateSite } from "@/lib/streamGenerate";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
 
 const VIEWPORTS = {
   desktop: { width: "100%", icon: Monitor, label: "Desktop" },
@@ -167,6 +168,7 @@ export default function NewSite() {
   };
 
   const { data: profile } = useProfile();
+  const { activeWorkspaceId, refresh: refreshWorkspaces } = useWorkspace();
   const qc = useQueryClient();
   const navigate = useNavigate();
 
@@ -199,6 +201,20 @@ export default function NewSite() {
           setSiteId(site.id);
           setGeneratedPrompt(body.prompt);
           setMobileTab("preview");
+          // If user is in an agency workspace, tag the site and bump the workspace counter.
+          if (activeWorkspaceId) {
+            void (async () => {
+              await supabase
+                .from("sites")
+                .update({ workspace_id: activeWorkspaceId } as never)
+                .eq("id", site.id);
+              await supabase.rpc(
+                "consume_workspace_credits" as never,
+                { _workspace_id: activeWorkspaceId, _kind: "build", _amount: 1 } as never,
+              );
+              refreshWorkspaces();
+            })();
+          }
           qc.invalidateQueries({ queryKey: ["profile"] });
           qc.invalidateQueries({ queryKey: ["sites"] });
           toast.success(t("newsite.success"), {
