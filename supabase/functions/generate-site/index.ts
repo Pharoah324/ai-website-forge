@@ -195,6 +195,7 @@ Deno.serve(async (req) => {
     const businessCity: string | undefined = body.business_city;
     const language: string | undefined = body.language;
     const funnelType: string | undefined = body.funnel_type; // "website" | "lead_capture" | "sales_landing" | "appointment" | "coming_soon" | "link_in_bio"
+    const workspaceId: string | undefined = body.workspace_id;
     const stream: boolean = body.stream !== false;
 
     if (!prompt.trim() && !templateDraft) {
@@ -246,13 +247,29 @@ Deno.serve(async (req) => {
     const isAdmin = !!g.admin_bypass;
     const isUnlimited = isAdmin || profile.plan === "agency";
 
+    // Workspace voice (if any) overrides personal voice for this generation.
+    let voiceSource: { active: boolean; voice_rules: unknown; brand_voice_samples: string | null } = {
+      active: profile.brand_voice_active,
+      voice_rules: profile.voice_rules,
+      brand_voice_samples: profile.brand_voice_samples,
+    };
+    if (workspaceId) {
+      const { data: ws } = await admin
+        .from("agency_workspaces")
+        .select("brand_voice_active, voice_rules, brand_voice_samples")
+        .eq("id", workspaceId)
+        .maybeSingle();
+      if (ws?.brand_voice_active) {
+        voiceSource = { active: true, voice_rules: ws.voice_rules, brand_voice_samples: ws.brand_voice_samples };
+      }
+    }
     let voiceAddon = "";
-    if (profile.brand_voice_active) {
-      const rules = Array.isArray(profile.voice_rules) ? profile.voice_rules : null;
+    if (voiceSource.active) {
+      const rules = Array.isArray(voiceSource.voice_rules) ? voiceSource.voice_rules : null;
       if (rules && rules.length) {
         voiceAddon = `\n\nWrite all copy following this brand voice. Rules:\n- ${rules.join("\n- ")}`;
-      } else if (profile.brand_voice_samples) {
-        voiceAddon = `\n\nWrite all copy mirroring the tone of these samples:\n${String(profile.brand_voice_samples).slice(0, 2000)}`;
+      } else if (voiceSource.brand_voice_samples) {
+        voiceAddon = `\n\nWrite all copy mirroring the tone of these samples:\n${String(voiceSource.brand_voice_samples).slice(0, 2000)}`;
       }
     }
 
