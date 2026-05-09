@@ -189,7 +189,7 @@ export default function NewSite() {
     abortRef.current = ctrl;
 
     await streamGenerateSite(
-      { ...body, language: lang, funnel_type: funnelType },
+      { ...body, language: lang, funnel_type: funnelType, workspace_id: activeWorkspaceId },
       {
         onDelta: (chunk) => {
           accumulatedRef.current += chunk;
