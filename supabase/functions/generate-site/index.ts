@@ -253,12 +253,15 @@ Deno.serve(async (req) => {
       voice_rules: profile.voice_rules,
       brand_voice_samples: profile.brand_voice_samples,
     };
+    let effectiveWorkspaceId: string | null = null;
     if (workspaceId) {
       const { data: ws } = await admin
         .from("agency_workspaces")
         .select("brand_voice_active, voice_rules, brand_voice_samples")
         .eq("id", workspaceId)
+        .eq("agency_user_id", user.id)
         .maybeSingle();
+      if (ws) effectiveWorkspaceId = workspaceId;
       if (ws?.brand_voice_active) {
         voiceSource = { active: true, voice_rules: ws.voice_rules, brand_voice_samples: ws.brand_voice_samples };
       }
@@ -363,7 +366,7 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
       }
       try { sanitizeMarkdownImages(parsed); } catch (e) { console.warn("sanitizeMarkdownImages failed:", e); }
       try { await hydrateImages(parsed); } catch (e) { console.warn("hydrateImages failed (continuing without images):", e); }
-      const site = await persistSite(supabase, user.id, prompt, parsed, profile, isUnlimited, isAdmin, workspaceId);
+      const site = await persistSite(supabase, user.id, prompt, parsed, profile, isUnlimited, isAdmin, effectiveWorkspaceId);
       return new Response(JSON.stringify({ site }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -430,7 +433,7 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
             profile,
             isUnlimited,
             isAdmin,
-            workspaceId,
+            effectiveWorkspaceId,
           );
           send("done", { site });
           controller.close();
