@@ -34,6 +34,9 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import Optimize from "./pages/Optimize";
 import OptimizeDashboard from "./pages/OptimizeDashboard";
 import Onboarding from "./pages/Onboarding";
+import Agency from "./pages/Agency";
+import InviteAccept from "./pages/InviteAccept";
+import { WorkspaceProvider } from "./contexts/WorkspaceContext";
 import { getCustomerSubdomain } from "./lib/subdomain";
 import { I18nProvider } from "./lib/i18n";
 import { captureRefFromUrl } from "./lib/affiliateTracking";
@@ -67,9 +70,11 @@ function RootLayout() {
         <Sonner />
         <I18nProvider>
           <AuthProvider>
-            <ErrorBoundary>
-              <Outlet />
-            </ErrorBoundary>
+            <WorkspaceProvider>
+              <ErrorBoundary>
+                <Outlet />
+              </ErrorBoundary>
+            </WorkspaceProvider>
           </AuthProvider>
         </I18nProvider>
       </TooltipProvider>
@@ -84,6 +89,7 @@ export const routes: RouteRecord[] = [
     children: [
       { index: true, Component: Landing },
       { path: "auth", Component: Auth },
+      { path: "invite/:token", Component: InviteAccept },
       { path: "share/:token", Component: Share },
       { path: "affiliates", Component: Affiliates },
       { path: "affiliates/:lang", Component: Affiliates, getStaticPaths: () => ["affiliates/es", "affiliates/pt"] },
@@ -117,6 +123,7 @@ export const routes: RouteRecord[] = [
           { path: "integrations", Component: Integrations },
           { path: "settings", Component: Settings },
           { path: "affiliate", Component: AffiliateDashboard },
+          { path: "agency", Component: Agency },
         ],
       },
       { path: "*", Component: NotFound },

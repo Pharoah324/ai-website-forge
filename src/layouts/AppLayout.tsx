@@ -16,11 +16,13 @@ import {
   DollarSign,
   ShieldCheck,
   TrendingUp,
+  Briefcase,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { CreditBadge } from "@/components/CreditBadge";
 import { LanguageSelector } from "@/components/LanguageSelector";
+import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { BillingStatusBanner } from "@/components/BillingStatusBanner";
 import { useI18n } from "@/lib/i18n";
@@ -62,6 +64,7 @@ export default function AppLayout() {
     { to: "/app/new", label: t("nav.newsite"), icon: Plus },
     { to: "/app/optimize", label: "Optimize Site", icon: TrendingUp },
     { to: "/app/integrations", label: t("nav.integrations"), icon: Plug },
+    ...(profile?.plan === "agency" ? [{ to: "/app/agency", label: "Client Workspaces", icon: Briefcase }] : []),
     { to: "/app/affiliate", label: "Affiliate Program", icon: DollarSign },
     { to: "/app/billing", label: t("nav.billing"), icon: CreditCard },
     { to: "/app/settings", label: t("nav.settings"), icon: Settings },
@@ -146,6 +149,7 @@ export default function AppLayout() {
             </Link>
           </div>
           <div className="ml-auto flex items-center gap-3">
+            <WorkspaceSwitcher />
             <LanguageSelector />
             <CreditBadge />
             <Button asChild size="sm">

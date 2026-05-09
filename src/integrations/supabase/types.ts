@@ -342,6 +342,54 @@ export type Database = {
         }
         Relationships: []
       }
+      agency_workspaces: {
+        Row: {
+          agency_user_id: string
+          client_email: string | null
+          client_invited_at: string | null
+          client_user_id: string | null
+          created_at: string
+          cycle_start: string
+          id: string
+          monthly_build_allocation: number
+          monthly_runtime_allocation: number
+          name: string
+          updated_at: string
+          used_build_this_cycle: number
+          used_runtime_this_cycle: number
+        }
+        Insert: {
+          agency_user_id: string
+          client_email?: string | null
+          client_invited_at?: string | null
+          client_user_id?: string | null
+          created_at?: string
+          cycle_start?: string
+          id?: string
+          monthly_build_allocation?: number
+          monthly_runtime_allocation?: number
+          name: string
+          updated_at?: string
+          used_build_this_cycle?: number
+          used_runtime_this_cycle?: number
+        }
+        Update: {
+          agency_user_id?: string
+          client_email?: string | null
+          client_invited_at?: string | null
+          client_user_id?: string | null
+          created_at?: string
+          cycle_start?: string
+          id?: string
+          monthly_build_allocation?: number
+          monthly_runtime_allocation?: number
+          name?: string
+          updated_at?: string
+          used_build_this_cycle?: number
+          used_runtime_this_cycle?: number
+        }
+        Relationships: []
+      }
       announcements: {
         Row: {
           active: boolean
@@ -1056,6 +1104,7 @@ export type Database = {
           subdomain: string | null
           updated_at: string
           user_id: string
+          workspace_id: string | null
         }
         Insert: {
           content?: Json | null
@@ -1070,6 +1119,7 @@ export type Database = {
           subdomain?: string | null
           updated_at?: string
           user_id: string
+          workspace_id?: string | null
         }
         Update: {
           content?: Json | null
@@ -1084,8 +1134,17 @@ export type Database = {
           subdomain?: string | null
           updated_at?: string
           user_id?: string
+          workspace_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "sites_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "agency_workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stripe_events: {
         Row: {
@@ -1150,17 +1209,60 @@ export type Database = {
         }
         Relationships: []
       }
+      workspace_invites: {
+        Row: {
+          accepted_at: string | null
+          email: string
+          id: string
+          invited_at: string
+          status: string
+          token: string
+          workspace_id: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          email: string
+          id?: string
+          invited_at?: string
+          status?: string
+          token?: string
+          workspace_id: string
+        }
+        Update: {
+          accepted_at?: string | null
+          email?: string
+          id?: string
+          invited_at?: string
+          status?: string
+          token?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_invites_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "agency_workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      accept_workspace_invite: { Args: { _token: string }; Returns: Json }
       check_and_consume: {
         Args: {
           _action: Database["public"]["Enums"]["rate_action"]
           _credit_cost?: number
           _uid: string
         }
+        Returns: Json
+      }
+      consume_workspace_credits: {
+        Args: { _amount: number; _kind: string; _workspace_id: string }
         Returns: Json
       }
       detect_abuse_and_pause: { Args: never; Returns: Json }
