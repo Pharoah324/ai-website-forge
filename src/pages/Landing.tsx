@@ -243,13 +243,8 @@ export default function Landing() {
       {/* Nav */}
       <header className="absolute z-20 w-full">
         <div className="container flex h-16 items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-gradient-primary">
-              <Zap className="h-4 w-4 text-primary-foreground" />
-            </div>
-            <span className="font-semibold text-navy-foreground">
-              Virtual Engine <span className="text-primary-glow">Builder</span>
-            </span>
+          <Link to="/" className="flex items-center">
+            <img src="/VEB_Navbar_Logo.png" alt="Virtual Engine Builder" className="h-9 w-auto" />
           </Link>
           <div className="flex items-center gap-3">
             <LanguageSelector />
