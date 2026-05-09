@@ -73,6 +73,8 @@ FUNNEL MODES (when funnel_type is provided):
 - link_in_bio: vertical stack of 4-8 link cards, photo top, single column.
 
 OUTPUT IMAGE & ICON FIELDS:
+CRITICAL: NEVER put markdown image syntax (e.g. "![](url)" or "![alt](url)") inside heading, subheading, body, title, or any other text field. NEVER paste raw image URLs into text. Images are added separately by the system using the image_search_query field. Text fields must contain prose only.
+
 For EACH section include:
 - image_search_query: a specific descriptive English phrase (4-9 words) that will return a perfect Unsplash photo for the section, including business type + setting (e.g. "luxury medspa treatment room miami", "cozy italian restaurant interior candlelight"). ALWAYS in English even when copy is in another language — Unsplash search is English-only.
 - image_placement: one of "background" | "side" | "card" | "avatar" | "none".
