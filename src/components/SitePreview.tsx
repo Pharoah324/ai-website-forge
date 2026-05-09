@@ -102,36 +102,76 @@ export function computeDesignScore(content: SiteContent | null): {
   return { total, hierarchy, mobile, cta, images, notes };
 }
 
-export const SitePreview = ({ content }: { content: SiteContent }) => {
-  const style = {
-    "--site-primary": content.theme.primary,
-    "--site-bg": content.theme.background,
-    "--site-fg": content.theme.foreground,
-    "--site-accent": content.theme.accent,
-  } as React.CSSProperties;
+export type SiteBranding = {
+  brand_name?: string | null;
+  logo_url?: string | null;
+  primary_color?: string | null; // HSL "h s% l%"
+  accent_color?: string | null;
+  hide_branding?: boolean | null;
+  footer_text?: string | null;
+  support_email?: string | null;
+};
 
-  // Older generated sites may contain markdown image syntax inside text
-  // fields. Strip it at render time and promote the URL to image_url so we
-  // never display literal "![](...)" text.
+export const SitePreview = ({
+  content,
+  branding,
+}: {
+  content: SiteContent;
+  branding?: SiteBranding | null;
+}) => {
   const cleanedContent = sanitizeContent(content);
 
+  // Apply white-label theme overrides
+  const themedContent: SiteContent = branding
+    ? {
+        ...cleanedContent,
+        name: branding.brand_name || cleanedContent.name,
+        theme: {
+          ...cleanedContent.theme,
+          primary: branding.primary_color || cleanedContent.theme.primary,
+          accent: branding.accent_color || cleanedContent.theme.accent,
+        },
+      }
+    : cleanedContent;
+
+  const style = {
+    "--site-primary": themedContent.theme.primary,
+    "--site-bg": themedContent.theme.background,
+    "--site-fg": themedContent.theme.foreground,
+    "--site-accent": themedContent.theme.accent,
+  } as React.CSSProperties;
+
+  const headerName = branding?.brand_name || themedContent.name;
+  const footerLine =
+    branding?.footer_text ||
+    `© ${new Date().getFullYear()} ${headerName}`;
+
   return (
-    <div style={style} className="min-h-full" dir={cleanedContent.dir || "ltr"}>
+    <div style={style} className="min-h-full" dir={themedContent.dir || "ltr"}>
       <div
         style={{
-          background: `hsl(${cleanedContent.theme.background})`,
-          color: `hsl(${cleanedContent.theme.foreground})`,
+          background: `hsl(${themedContent.theme.background})`,
+          color: `hsl(${themedContent.theme.foreground})`,
         }}
       >
         {/* Header */}
         <header
-          style={{ borderBottom: `1px solid hsl(${cleanedContent.theme.foreground} / 0.08)` }}
+          style={{ borderBottom: `1px solid hsl(${themedContent.theme.foreground} / 0.08)` }}
           className="px-6 py-4"
         >
           <div className="flex items-center justify-between">
-            <span className="font-bold">{cleanedContent.name}</span>
+            <div className="flex items-center gap-2">
+              {branding?.logo_url && (
+                <img
+                  src={branding.logo_url}
+                  alt={headerName}
+                  className="h-7 w-auto object-contain"
+                />
+              )}
+              <span className="font-bold">{headerName}</span>
+            </div>
             <button
-              style={{ background: `hsl(${cleanedContent.theme.primary})`, color: "white" }}
+              style={{ background: `hsl(${themedContent.theme.primary})`, color: "white" }}
               className="rounded-md px-3 py-1.5 text-xs font-medium"
             >
               Get started
@@ -139,18 +179,26 @@ export const SitePreview = ({ content }: { content: SiteContent }) => {
           </div>
         </header>
 
-        {cleanedContent.sections.map((s, i) => (
-          <Section key={i} section={s} theme={cleanedContent.theme} index={i} />
+        {themedContent.sections.map((s, i) => (
+          <Section key={i} section={s} theme={themedContent.theme} index={i} />
         ))}
 
         <footer
           style={{
-            borderTop: `1px solid hsl(${cleanedContent.theme.foreground} / 0.08)`,
-            color: `hsl(${cleanedContent.theme.foreground} / 0.6)`,
+            borderTop: `1px solid hsl(${themedContent.theme.foreground} / 0.08)`,
+            color: `hsl(${themedContent.theme.foreground} / 0.6)`,
           }}
           className="px-6 py-6 text-center text-xs"
         >
-          © {new Date().getFullYear()} {cleanedContent.name}
+          <div>{footerLine}</div>
+          {branding?.support_email && (
+            <div className="mt-1 opacity-80">
+              Support:{" "}
+              <a href={`mailto:${branding.support_email}`} className="underline">
+                {branding.support_email}
+              </a>
+            </div>
+          )}
         </footer>
       </div>
     </div>

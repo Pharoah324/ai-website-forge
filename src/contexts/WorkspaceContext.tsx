@@ -15,6 +15,14 @@ export type AgencyWorkspace = {
   used_runtime_this_cycle: number;
   cycle_start: string;
   client_invited_at: string | null;
+  wl_enabled?: boolean;
+  wl_brand_name?: string | null;
+  wl_logo_url?: string | null;
+  wl_primary_color?: string | null;
+  wl_accent_color?: string | null;
+  wl_hide_branding?: boolean;
+  wl_footer_text?: string | null;
+  wl_support_email?: string | null;
 };
 
 type WorkspaceCtx = {

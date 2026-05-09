@@ -357,6 +357,14 @@ export type Database = {
           updated_at: string
           used_build_this_cycle: number
           used_runtime_this_cycle: number
+          wl_accent_color: string | null
+          wl_brand_name: string | null
+          wl_enabled: boolean
+          wl_footer_text: string | null
+          wl_hide_branding: boolean
+          wl_logo_url: string | null
+          wl_primary_color: string | null
+          wl_support_email: string | null
         }
         Insert: {
           agency_user_id: string
@@ -372,6 +380,14 @@ export type Database = {
           updated_at?: string
           used_build_this_cycle?: number
           used_runtime_this_cycle?: number
+          wl_accent_color?: string | null
+          wl_brand_name?: string | null
+          wl_enabled?: boolean
+          wl_footer_text?: string | null
+          wl_hide_branding?: boolean
+          wl_logo_url?: string | null
+          wl_primary_color?: string | null
+          wl_support_email?: string | null
         }
         Update: {
           agency_user_id?: string
@@ -387,6 +403,14 @@ export type Database = {
           updated_at?: string
           used_build_this_cycle?: number
           used_runtime_this_cycle?: number
+          wl_accent_color?: string | null
+          wl_brand_name?: string | null
+          wl_enabled?: boolean
+          wl_footer_text?: string | null
+          wl_hide_branding?: boolean
+          wl_logo_url?: string | null
+          wl_primary_color?: string | null
+          wl_support_email?: string | null
         }
         Relationships: []
       }
@@ -1273,6 +1297,7 @@ export type Database = {
         Returns: Database["public"]["Enums"]["admin_access_level"]
       }
       get_effective_plan: { Args: { _uid: string }; Returns: string }
+      get_site_branding: { Args: { p_site_id: string }; Returns: Json }
       is_account_paused: { Args: { _uid: string }; Returns: boolean }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
