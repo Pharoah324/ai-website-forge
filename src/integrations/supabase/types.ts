@@ -345,6 +345,8 @@ export type Database = {
       agency_workspaces: {
         Row: {
           agency_user_id: string
+          brand_voice_active: boolean
+          brand_voice_samples: string | null
           client_email: string | null
           client_invited_at: string | null
           client_user_id: string | null
@@ -357,6 +359,7 @@ export type Database = {
           updated_at: string
           used_build_this_cycle: number
           used_runtime_this_cycle: number
+          voice_rules: Json | null
           wl_accent_color: string | null
           wl_brand_name: string | null
           wl_enabled: boolean
@@ -368,6 +371,8 @@ export type Database = {
         }
         Insert: {
           agency_user_id: string
+          brand_voice_active?: boolean
+          brand_voice_samples?: string | null
           client_email?: string | null
           client_invited_at?: string | null
           client_user_id?: string | null
@@ -380,6 +385,7 @@ export type Database = {
           updated_at?: string
           used_build_this_cycle?: number
           used_runtime_this_cycle?: number
+          voice_rules?: Json | null
           wl_accent_color?: string | null
           wl_brand_name?: string | null
           wl_enabled?: boolean
@@ -391,6 +397,8 @@ export type Database = {
         }
         Update: {
           agency_user_id?: string
+          brand_voice_active?: boolean
+          brand_voice_samples?: string | null
           client_email?: string | null
           client_invited_at?: string | null
           client_user_id?: string | null
@@ -403,6 +411,7 @@ export type Database = {
           updated_at?: string
           used_build_this_cycle?: number
           used_runtime_this_cycle?: number
+          voice_rules?: Json | null
           wl_accent_color?: string | null
           wl_brand_name?: string | null
           wl_enabled?: boolean

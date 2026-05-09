@@ -100,8 +100,38 @@ Deno.serve(async (req) => {
 
     // Load site (RLS enforces ownership)
     const { data: site, error: sErr } = await supabase
-      .from("sites").select("id,user_id,content,name").eq("id", siteId).single();
+      .from("sites").select("id,user_id,content,name,workspace_id").eq("id", siteId).single();
     if (sErr || !site) return json({ error: "Site not found" }, 404);
+
+    // Resolve brand voice: workspace voice (if active) overrides personal voice.
+    const adminEarly = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const { data: prof } = await adminEarly
+      .from("profiles")
+      .select("brand_voice_active, voice_rules, brand_voice_samples")
+      .eq("id", user.id)
+      .maybeSingle();
+    let vActive = !!prof?.brand_voice_active;
+    let vRules: unknown = prof?.voice_rules;
+    let vSamples: string | null = prof?.brand_voice_samples ?? null;
+    if (site.workspace_id) {
+      const { data: ws } = await adminEarly
+        .from("agency_workspaces")
+        .select("brand_voice_active, voice_rules, brand_voice_samples")
+        .eq("id", site.workspace_id)
+        .maybeSingle();
+      if (ws?.brand_voice_active) {
+        vActive = true; vRules = ws.voice_rules; vSamples = ws.brand_voice_samples;
+      }
+    }
+    let voiceAddon = "";
+    if (vActive) {
+      const rules = Array.isArray(vRules) ? vRules : null;
+      if (rules && rules.length) {
+        voiceAddon = `\n\nFollow this brand voice. Rules:\n- ${rules.join("\n- ")}`;
+      } else if (vSamples) {
+        voiceAddon = `\n\nMirror the tone of these samples:\n${String(vSamples).slice(0, 1500)}`;
+      }
+    }
 
     // Load chat history
     const { data: history } = await supabase
@@ -112,7 +142,7 @@ Deno.serve(async (req) => {
       .limit(40);
 
     // Gate + consume 1 build credit (admins bypass automatically)
-    const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const admin = adminEarly;
     const { data: gate, error: gErr } = await admin.rpc("check_and_consume", {
       _uid: user.id, _action: "site_generation", _credit_cost: 1,
     });
@@ -126,7 +156,7 @@ Deno.serve(async (req) => {
     }
 
     const messages: Array<{ role: string; content: string }> = [
-      { role: "system", content: SYSTEM_PROMPT },
+      { role: "system", content: SYSTEM_PROMPT + voiceAddon },
       {
         role: "system",
         content: `Current site JSON:\n${JSON.stringify(site.content).slice(0, 12000)}`,

@@ -168,7 +168,7 @@ export default function NewSite() {
   };
 
   const { data: profile } = useProfile();
-  const { activeWorkspaceId, refresh: refreshWorkspaces } = useWorkspace();
+  const { activeWorkspaceId, workspaces, refresh: refreshWorkspaces } = useWorkspace();
   const qc = useQueryClient();
   const navigate = useNavigate();
 
@@ -189,7 +189,7 @@ export default function NewSite() {
     abortRef.current = ctrl;
 
     await streamGenerateSite(
-      { ...body, language: lang, funnel_type: funnelType },
+      { ...body, language: lang, funnel_type: funnelType, workspace_id: activeWorkspaceId },
       {
         onDelta: (chunk) => {
           accumulatedRef.current += chunk;
@@ -347,7 +347,7 @@ export default function NewSite() {
         <div>
           <div className="mb-2 flex items-center gap-2">
             <h1 className="text-xl font-bold">{t("newsite.title")}</h1>
-            {profile?.brand_voice_active && (
+            {(profile?.brand_voice_active || (activeWorkspaceId && workspaces.find(w => w.id === activeWorkspaceId)?.brand_voice_active)) && (
               <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
                 BRAND VOICE ON
               </span>

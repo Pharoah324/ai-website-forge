@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
     hits.push(now);
     RL.set(uid, hits);
 
-    const { section, business_context } = await req.json();
+    const { section, business_context, site_id } = await req.json();
     if (!section || typeof section !== "object") {
       return new Response(JSON.stringify({ error: "section required" }), {
         status: 400,
@@ -103,13 +103,30 @@ Deno.serve(async (req) => {
       .eq("id", uid)
       .single();
 
+    let vActive = !!profile?.brand_voice_active;
+    let vRules: unknown = profile?.voice_rules;
+    let vSamples: string | null = profile?.brand_voice_samples ?? null;
+    if (site_id) {
+      const { data: siteRow } = await supabase
+        .from("sites").select("workspace_id").eq("id", site_id).maybeSingle();
+      if (siteRow?.workspace_id) {
+        const { data: ws } = await supabase
+          .from("agency_workspaces")
+          .select("brand_voice_active, voice_rules, brand_voice_samples")
+          .eq("id", siteRow.workspace_id)
+          .maybeSingle();
+        if (ws?.brand_voice_active) {
+          vActive = true; vRules = ws.voice_rules; vSamples = ws.brand_voice_samples;
+        }
+      }
+    }
     let voiceAddon = "";
-    if (profile?.brand_voice_active) {
-      const rules = Array.isArray(profile.voice_rules) ? profile.voice_rules : [];
+    if (vActive) {
+      const rules = Array.isArray(vRules) ? vRules : [];
       if (rules.length) {
         voiceAddon = `\n\nFollow these brand voice rules:\n- ${rules.join("\n- ")}`;
-      } else if (profile.brand_voice_samples) {
-        voiceAddon = `\n\nMirror the tone of these samples:\n${String(profile.brand_voice_samples).slice(0, 1500)}`;
+      } else if (vSamples) {
+        voiceAddon = `\n\nMirror the tone of these samples:\n${String(vSamples).slice(0, 1500)}`;
       }
     }
 

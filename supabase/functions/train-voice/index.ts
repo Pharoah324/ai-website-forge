@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { samples } = await req.json();
+    const { samples, workspace_id } = await req.json();
     const text = String(samples || "").slice(0, 8000);
     if (!text.trim()) {
       return new Response(JSON.stringify({ error: "Provide writing samples" }), {
@@ -109,14 +109,32 @@ Deno.serve(async (req) => {
       });
     }
 
-    await supabase
-      .from("profiles")
-      .update({
-        voice_rules: rules,
-        brand_voice_samples: text,
-        brand_voice_active: true,
-      })
-      .eq("id", userData.user.id);
+    if (workspace_id) {
+      // RLS ensures only the agency owner can update this row.
+      const { error: wsErr } = await supabase
+        .from("agency_workspaces")
+        .update({
+          voice_rules: rules,
+          brand_voice_samples: text,
+          brand_voice_active: true,
+        })
+        .eq("id", workspace_id);
+      if (wsErr) {
+        return new Response(JSON.stringify({ error: wsErr.message }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    } else {
+      await supabase
+        .from("profiles")
+        .update({
+          voice_rules: rules,
+          brand_voice_samples: text,
+          brand_voice_active: true,
+        })
+        .eq("id", userData.user.id);
+    }
 
     return new Response(JSON.stringify({ voice_rules: rules }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

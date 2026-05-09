@@ -24,6 +24,7 @@ type GenerateBody = {
   business_city?: string;
   language?: string;
   funnel_type?: string;
+  workspace_id?: string | null;
 };
 
 const STALL_MS = 45_000; // no data for 45s = stalled

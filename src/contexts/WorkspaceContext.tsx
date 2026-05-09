@@ -23,6 +23,9 @@ export type AgencyWorkspace = {
   wl_hide_branding?: boolean;
   wl_footer_text?: string | null;
   wl_support_email?: string | null;
+  brand_voice_samples?: string | null;
+  brand_voice_active?: boolean;
+  voice_rules?: string[] | null;
 };
 
 type WorkspaceCtx = {
