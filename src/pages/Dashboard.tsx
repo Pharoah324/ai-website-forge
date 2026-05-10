@@ -20,10 +20,10 @@ export default function Dashboard() {
     queryFn: async () => {
       let q = supabase
         .from("sites")
-        .select("id, name, prompt, created_at, workspace_id")
+        .select("id, name, prompt, created_at, workspace_id, site_data")
         .order("created_at", { ascending: false });
       if (workspaceFilterId) q = q.eq("workspace_id", workspaceFilterId);
-      else q = q.is("workspace_id", null).eq("user_id", user!.id);
+      else q = q.eq("user_id", user!.id);
       const { data, error } = await q;
       if (error) throw error;
       return data;

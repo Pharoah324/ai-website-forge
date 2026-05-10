@@ -614,7 +614,14 @@ async function persistSite(
   const name = (siteJson as { name?: string }).name || "Untitled Site";
   const { data: site, error: siteErr } = await supabase
     .from("sites")
-    .insert({ user_id: userId, name, prompt, content: siteJson, workspace_id: workspaceId || null })
+    .insert({
+      user_id: userId,
+      name,
+      prompt,
+      site_data: siteJson,
+      content: siteJson,
+      workspace_id: workspaceId || null,
+    })
     .select()
     .single();
   if (siteErr) {

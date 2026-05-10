@@ -120,7 +120,7 @@ Deno.serve(async (req) => {
     const { data: site, error: siteErr } = await supabase.from("sites").select("*").eq("id", siteId).maybeSingle();
     if (siteErr || !site) return new Response(JSON.stringify({ error: "Site not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    const content = (site.content || {}) as any;
+    const content = (site.site_data || site.content || {}) as any;
     const allText = JSON.stringify(content);
 
     // First pass: ask AI to extract industry+location from prompt+content.

@@ -197,7 +197,13 @@ export default function NewSite() {
           if (partial) setContent(partial);
         },
         onDone: (site) => {
-          setContent(site.content);
+          const savedContent = site.site_data ?? site.content;
+          if (!savedContent) {
+            toast.error("Site saved without content. Please retry.");
+            setGenerating(false);
+            return;
+          }
+          setContent(savedContent);
           setSiteId(site.id);
           setGeneratedPrompt(body.prompt);
           setMobileTab("preview");

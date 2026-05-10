@@ -164,7 +164,7 @@ export default function SiteDetail() {
     return <div className="container py-10"><p>Site not found.</p></div>;
   }
 
-  const content = site.content as unknown as SiteContent;
+  const content = (site.site_data ?? site.content) as unknown as SiteContent;
   const v = VIEWPORTS[viewport];
   const shareUrl = site.is_shared
     ? `${window.location.origin}/share/${site.share_token}`
@@ -274,7 +274,7 @@ export default function SiteDetail() {
     const next: SiteContent = JSON.parse(JSON.stringify(content));
     next.sections[rewriteIdx] = { ...next.sections[rewriteIdx], ...variation };
     const { error } = await supabase
-      .from("sites").update({ content: next }).eq("id", id!);
+      .from("sites").update({ site_data: next, content: next }).eq("id", id!);
     if (error) {
       toast.error(error.message);
       return;

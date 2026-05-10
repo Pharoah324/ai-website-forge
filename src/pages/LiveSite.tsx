@@ -18,12 +18,13 @@ export default function LiveSite({ subdomain }: Props) {
     (async () => {
       const { data } = await supabase
         .from("sites")
-        .select("id, name, content, published")
+        .select("id, name, site_data, content, published")
         .ilike("subdomain", subdomain)
         .eq("published", true)
         .maybeSingle();
       if (cancelled) return;
-      if (!data || !data.content) {
+      const content = data ? data.site_data ?? data.content : null;
+      if (!data || !content) {
         setState({ kind: "notfound" });
         return;
       }
@@ -34,7 +35,7 @@ export default function LiveSite({ subdomain }: Props) {
         : data.name || subdomain;
       setState({
         kind: "ok",
-        content: data.content as unknown as SiteContent,
+        content: content as unknown as SiteContent,
         name: data.name,
         branding,
       });

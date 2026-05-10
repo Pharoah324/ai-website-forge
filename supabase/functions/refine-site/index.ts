@@ -100,8 +100,9 @@ Deno.serve(async (req) => {
 
     // Load site (RLS enforces ownership)
     const { data: site, error: sErr } = await supabase
-      .from("sites").select("id,user_id,content,name,workspace_id").eq("id", siteId).single();
+      .from("sites").select("id,user_id,site_data,content,name,workspace_id").eq("id", siteId).single();
     if (sErr || !site) return json({ error: "Site not found" }, 404);
+    const currentContent = site.site_data ?? site.content;
 
     // Resolve brand voice: workspace voice (if active) overrides personal voice.
     const adminEarly = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -159,7 +160,7 @@ Deno.serve(async (req) => {
       { role: "system", content: SYSTEM_PROMPT + voiceAddon },
       {
         role: "system",
-        content: `Current site JSON:\n${JSON.stringify(site.content).slice(0, 12000)}`,
+        content: `Current site JSON:\n${JSON.stringify(currentContent).slice(0, 12000)}`,
       },
       ...(history || []).map((m) => ({
         role: m.role === "assistant" ? "assistant" : "user",
@@ -213,7 +214,7 @@ Deno.serve(async (req) => {
     }).select("id").single();
 
     // Update site
-    await supabase.from("sites").update({ content: updatedContent }).eq("id", siteId);
+    await supabase.from("sites").update({ site_data: updatedContent, content: updatedContent }).eq("id", siteId);
 
     // Persist assistant message
     await supabase.from("site_chat_messages").insert({
