@@ -39,7 +39,7 @@ export default function SharePage() {
       </div>
     );
   }
-  const content = data.site.content as unknown as SiteContent;
+  const content = (data.site.site_data ?? data.site.content) as unknown as SiteContent;
   const branding = data.branding;
   const brandLabel = branding?.brand_name || "VirtualEngine";
   const hideBadge = !!branding?.hide_branding;
