@@ -1151,7 +1151,9 @@ export type Database = {
           prompt: string
           published: boolean
           published_at: string | null
+          published_url: string | null
           share_token: string | null
+          site_data: Json
           subdomain: string | null
           updated_at: string
           user_id: string
@@ -1166,7 +1168,9 @@ export type Database = {
           prompt: string
           published?: boolean
           published_at?: string | null
+          published_url?: string | null
           share_token?: string | null
+          site_data?: Json
           subdomain?: string | null
           updated_at?: string
           user_id: string
@@ -1181,7 +1185,9 @@ export type Database = {
           prompt?: string
           published?: boolean
           published_at?: string | null
+          published_url?: string | null
           share_token?: string | null
+          site_data?: Json
           subdomain?: string | null
           updated_at?: string
           user_id?: string
