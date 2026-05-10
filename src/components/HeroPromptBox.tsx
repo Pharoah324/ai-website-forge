@@ -162,9 +162,33 @@ export function HeroPromptBox() {
           className="min-h-[110px] resize-none border-0 bg-transparent px-2 text-sm leading-relaxed text-navy-foreground placeholder:text-navy-foreground/55 focus-visible:ring-0"
         />
         <div className="flex flex-wrap items-center justify-between gap-2 px-2 pb-1 pt-2">
-          <span className="flex items-center gap-1.5 text-[11px] text-navy-foreground/55">
-            <Mic className="h-3 w-3" /> Voice input available after signup
-          </span>
+          <button
+            type="button"
+            onClick={startListening}
+            disabled={teasing || !speechSupported}
+            title={
+              !speechSupported
+                ? "Voice input not supported in this browser"
+                : listening
+                  ? "Stop voice input"
+                  : "Speak your description"
+            }
+            className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] transition ${
+              listening
+                ? "border-cta/60 bg-cta/15 text-cta"
+                : "border-primary/30 bg-primary/5 text-navy-foreground/75 hover:border-primary/60 hover:text-primary-glow"
+            } disabled:opacity-50`}
+          >
+            {listening ? (
+              <>
+                <MicOff className="h-3 w-3 animate-pulse" /> Listening… tap to stop
+              </>
+            ) : (
+              <>
+                <Mic className="h-3 w-3" /> Speak it instead
+              </>
+            )}
+          </button>
           <Button
             onClick={submit}
             disabled={teasing || (!value.trim() && !typed.trim())}
