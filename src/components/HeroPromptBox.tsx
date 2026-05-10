@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowRight, Loader2, Mic, Sparkles } from "lucide-react";
+import { ArrowRight, Loader2, Mic, MicOff, Sparkles } from "lucide-react";
+import { toast } from "sonner";
 
 const ROTATING_PROMPTS = [
   "A medspa in Miami called Glow Aesthetics. Botox, fillers, laser treatments. Luxury feel, online booking required…",
@@ -28,7 +29,69 @@ export function HeroPromptBox() {
   const [typed, setTyped] = useState("");
   const [teasing, setTeasing] = useState(false);
   const [stepIdx, setStepIdx] = useState(0);
+  const [listening, setListening] = useState(false);
   const userTouched = useRef(false);
+  const recognitionRef = useRef<any>(null);
+
+  const SpeechRecognition =
+    typeof window !== "undefined"
+      ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+      : undefined;
+  const speechSupported = !!SpeechRecognition;
+
+  useEffect(() => {
+    return () => {
+      try { recognitionRef.current?.stop(); } catch { /* noop */ }
+    };
+  }, []);
+
+  const startListening = () => {
+    if (!speechSupported) {
+      toast.error("Voice input not supported", {
+        description: "Try Chrome, Edge, or Safari on desktop.",
+      });
+      return;
+    }
+    if (listening) {
+      try { recognitionRef.current?.stop(); } catch { /* noop */ }
+      return;
+    }
+    const rec = new SpeechRecognition();
+    rec.lang = navigator.language || "en-US";
+    rec.continuous = true;
+    rec.interimResults = true;
+    let baseText = value;
+    rec.onresult = (event: any) => {
+      let interim = "";
+      let final = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) final += transcript;
+        else interim += transcript;
+      }
+      if (final) {
+        baseText = (baseText + " " + final).trim();
+      }
+      userTouched.current = true;
+      setValue((baseText + " " + interim).trim());
+    };
+    rec.onerror = (e: any) => {
+      if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+        toast.error("Microphone permission denied");
+      } else if (e.error !== "aborted" && e.error !== "no-speech") {
+        toast.error(`Voice input error: ${e.error}`);
+      }
+      setListening(false);
+    };
+    rec.onend = () => setListening(false);
+    recognitionRef.current = rec;
+    try {
+      rec.start();
+      setListening(true);
+    } catch {
+      setListening(false);
+    }
+  };
 
   // Rotating placeholder typewriter — pauses once user starts typing.
   useEffect(() => {
@@ -99,9 +162,33 @@ export function HeroPromptBox() {
           className="min-h-[110px] resize-none border-0 bg-transparent px-2 text-sm leading-relaxed text-navy-foreground placeholder:text-navy-foreground/55 focus-visible:ring-0"
         />
         <div className="flex flex-wrap items-center justify-between gap-2 px-2 pb-1 pt-2">
-          <span className="flex items-center gap-1.5 text-[11px] text-navy-foreground/55">
-            <Mic className="h-3 w-3" /> Voice input available after signup
-          </span>
+          <button
+            type="button"
+            onClick={startListening}
+            disabled={teasing || !speechSupported}
+            title={
+              !speechSupported
+                ? "Voice input not supported in this browser"
+                : listening
+                  ? "Stop voice input"
+                  : "Speak your description"
+            }
+            className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] transition ${
+              listening
+                ? "border-cta/60 bg-cta/15 text-cta"
+                : "border-primary/30 bg-primary/5 text-navy-foreground/75 hover:border-primary/60 hover:text-primary-glow"
+            } disabled:opacity-50`}
+          >
+            {listening ? (
+              <>
+                <MicOff className="h-3 w-3 animate-pulse" /> Listening… tap to stop
+              </>
+            ) : (
+              <>
+                <Mic className="h-3 w-3" /> Speak it instead
+              </>
+            )}
+          </button>
           <Button
             onClick={submit}
             disabled={teasing || (!value.trim() && !typed.trim())}
