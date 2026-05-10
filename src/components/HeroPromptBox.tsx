@@ -2,7 +2,18 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowRight, Loader2, Mic, MicOff, Sparkles } from "lucide-react";
+import {
+  ArrowRight,
+  Coins,
+  Image as ImageIcon,
+  Layout,
+  Loader2,
+  Mic,
+  MicOff,
+  Search,
+  Sparkles,
+  Type,
+} from "lucide-react";
 import { toast } from "sonner";
 
 const ROTATING_PROMPTS = [
