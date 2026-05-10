@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
     // Load the site (RLS scopes to owner)
     const { data: site, error: siteErr } = await supabase
       .from("sites")
-      .select("id, user_id, content, subdomain, published")
+      .select("id, user_id, site_data, content, subdomain, published")
       .eq("id", site_id)
       .single();
 
@@ -96,7 +96,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (!site.content) {
+    if (!(site.site_data ?? site.content)) {
       return new Response(JSON.stringify({ error: "Generate site content before publishing." }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -122,6 +122,7 @@ Deno.serve(async (req) => {
       .update({
         subdomain: v.value,
         published: true,
+        published_url: `https://${v.value}.${ROOT}`,
         published_at: new Date().toISOString(),
       })
       .eq("id", site_id);
