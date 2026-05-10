@@ -173,7 +173,10 @@ export function RefinementChat({
   };
 
   const restoreVersion = async (v: VersionRow) => {
-    const { error } = await supabase.from("sites").update({ content: v.content }).eq("id", siteId);
+    const { error } = await supabase
+      .from("sites")
+      .update({ site_data: v.content, content: v.content })
+      .eq("id", siteId);
     if (error) return toast.error(error.message);
     onContentUpdated(v.content);
     qc.invalidateQueries({ queryKey: ["site", siteId] });
