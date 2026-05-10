@@ -29,7 +29,69 @@ export function HeroPromptBox() {
   const [typed, setTyped] = useState("");
   const [teasing, setTeasing] = useState(false);
   const [stepIdx, setStepIdx] = useState(0);
+  const [listening, setListening] = useState(false);
   const userTouched = useRef(false);
+  const recognitionRef = useRef<any>(null);
+
+  const SpeechRecognition =
+    typeof window !== "undefined"
+      ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+      : undefined;
+  const speechSupported = !!SpeechRecognition;
+
+  useEffect(() => {
+    return () => {
+      try { recognitionRef.current?.stop(); } catch { /* noop */ }
+    };
+  }, []);
+
+  const startListening = () => {
+    if (!speechSupported) {
+      toast.error("Voice input not supported", {
+        description: "Try Chrome, Edge, or Safari on desktop.",
+      });
+      return;
+    }
+    if (listening) {
+      try { recognitionRef.current?.stop(); } catch { /* noop */ }
+      return;
+    }
+    const rec = new SpeechRecognition();
+    rec.lang = navigator.language || "en-US";
+    rec.continuous = true;
+    rec.interimResults = true;
+    let baseText = value;
+    rec.onresult = (event: any) => {
+      let interim = "";
+      let final = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) final += transcript;
+        else interim += transcript;
+      }
+      if (final) {
+        baseText = (baseText + " " + final).trim();
+      }
+      userTouched.current = true;
+      setValue((baseText + " " + interim).trim());
+    };
+    rec.onerror = (e: any) => {
+      if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+        toast.error("Microphone permission denied");
+      } else if (e.error !== "aborted" && e.error !== "no-speech") {
+        toast.error(`Voice input error: ${e.error}`);
+      }
+      setListening(false);
+    };
+    rec.onend = () => setListening(false);
+    recognitionRef.current = rec;
+    try {
+      rec.start();
+      setListening(true);
+    } catch {
+      setListening(false);
+    }
+  };
 
   // Rotating placeholder typewriter — pauses once user starts typing.
   useEffect(() => {
