@@ -252,10 +252,11 @@ Deno.serve(async (req) => {
     const repoInfo = await octokit.repos.get({ owner, repo: repoName });
     const branch = repoInfo.data.default_branch || "main";
 
-    const indexHtml = buildHtml(site.content);
-    const stylesCss = buildCss(site.content);
-    const siteJson = JSON.stringify(site.content, null, 2);
-    const readme = buildReadme(site.name, (site.content as any)?.tagline || "");
+    const siteContent = site.site_data ?? site.content;
+    const indexHtml = buildHtml(siteContent);
+    const stylesCss = buildCss(siteContent);
+    const siteJson = JSON.stringify(siteContent, null, 2);
+    const readme = buildReadme(site.name, (siteContent as any)?.tagline || "");
 
     const commitMsg = `Site update from ${PLATFORM_NAME}`;
 
