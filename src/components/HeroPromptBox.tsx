@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowRight, Loader2, Mic, Sparkles } from "lucide-react";
+import { ArrowRight, Loader2, Mic, MicOff, Sparkles } from "lucide-react";
+import { toast } from "sonner";
 
 const ROTATING_PROMPTS = [
   "A medspa in Miami called Glow Aesthetics. Botox, fillers, laser treatments. Luxury feel, online booking required…",
