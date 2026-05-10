@@ -2,18 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  ArrowRight,
-  Coins,
-  Image as ImageIcon,
-  Layout,
-  Loader2,
-  Mic,
-  MicOff,
-  Search,
-  Sparkles,
-  Type,
-} from "lucide-react";
+import { ArrowRight, Loader2, Mic, MicOff, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 const ROTATING_PROMPTS = [
@@ -219,45 +208,6 @@ export function HeroPromptBox() {
           </Button>
         </div>
       </div>
-
-      {!teasing && (
-        <div className="mt-4 rounded-xl border border-primary/25 bg-navy-muted/40 p-3 backdrop-blur-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-cta/15 text-cta">
-                <Coins className="h-4 w-4" />
-              </span>
-              <div className="leading-tight">
-                <div className="text-sm font-semibold text-navy-foreground">
-                  20 free build credits on signup
-                </div>
-                <div className="text-[11px] text-navy-foreground/65">
-                  Free plan · 1 site · 3 generations/day · no credit card
-                </div>
-              </div>
-            </div>
-            <span className="rounded-full border border-primary/40 bg-primary/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary-glow">
-              Enough for ~3 sites
-            </span>
-          </div>
-          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-            {[
-              { icon: Layout, label: "Full landing page" },
-              { icon: Type, label: "Brand copy & CTAs" },
-              { icon: ImageIcon, label: "Hero imagery" },
-              { icon: Search, label: "SEO meta + schema" },
-            ].map(({ icon: Icon, label }) => (
-              <div
-                key={label}
-                className="flex items-center gap-1.5 rounded-lg border border-primary/15 bg-navy/40 px-2 py-1.5 text-[11px] text-navy-foreground/80"
-              >
-                <Icon className="h-3.5 w-3.5 text-primary-glow" />
-                <span className="truncate">{label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {teasing && (
         <div className="mt-4 overflow-hidden rounded-xl border border-primary/30 bg-navy-muted/80 p-4 shadow-glow">
