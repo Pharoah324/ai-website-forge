@@ -13,7 +13,7 @@ export type StreamErrorCode =
 
 export type StreamCallbacks = {
   onDelta?: (partial: string) => void;
-  onDone: (site: { id: string; content: SiteContent; name: string }) => void;
+  onDone: (site: { id: string; site_data?: SiteContent; content?: SiteContent; name: string }) => void;
   onError: (msg: string, code: StreamErrorCode) => void;
 };
 
