@@ -528,9 +528,9 @@ export default function Landing() {
             </p>
           </FadeIn>
           <FadeIn>
-            <div className="overflow-hidden rounded-2xl border border-primary/30 shadow-glow">
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse text-sm">
+            <div className="rounded-2xl border border-primary/30 shadow-glow">
+              <div className="overflow-x-auto rounded-2xl">
+                <table className="w-full min-w-[640px] border-collapse text-sm">
                   <thead>
                     <tr className="bg-navy-muted text-navy-foreground">
                       <th className="px-5 py-5 text-left text-base font-semibold">Feature</th>
