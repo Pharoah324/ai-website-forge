@@ -601,7 +601,14 @@ const Section = ({
   );
 };
 
-const FeatureCard = ({ item, theme }: { item: SiteSectionItem; theme: SiteContent["theme"] }) => {
+const FeatureCard = ({
+  item, theme, section, index,
+}: {
+  item: SiteSectionItem;
+  theme: SiteContent["theme"];
+  section: SiteSection;
+  index: number;
+}) => {
   const Icon = getIcon(item.icon_name);
   const muted = `hsl(${theme.foreground} / 0.75)`;
   const primary = `hsl(${theme.primary})`;
@@ -614,12 +621,13 @@ const FeatureCard = ({ item, theme }: { item: SiteSectionItem; theme: SiteConten
       }}
     >
       {item.image_url && (
-        <img
-          src={item.image_url}
+        <ValidatedImg
+          initial={item.image_url}
+          query={buildItemQuery(item, section)}
+          orientation="landscape"
+          fallbackIndex={index}
           alt={item.image_alt || item.title}
-          loading="lazy"
           className="aspect-video w-full object-cover"
-          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
         />
       )}
       <div className="p-5">
