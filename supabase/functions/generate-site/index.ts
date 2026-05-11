@@ -626,6 +626,18 @@ async function hydrateImages(siteJson: unknown, prompt = "") {
   const fallbackForSection = (sec: { type?: string; heading?: string }) => {
     const h = (sec.heading || "").replace(/[^\p{L}\p{N}\s]/gu, " ").trim().split(/\s+/).slice(0, 4).join(" ");
     const base = bizContext || h;
+    if (category === "fashion") {
+      switch (sec.type) {
+        case "hero": return `luxury bespoke suit man portrait editorial`;
+        case "about": return `savile row tailor atelier craftsmanship`;
+        case "features": return `bespoke tailoring fabric detail luxury menswear`;
+        case "pricing": return `luxury suit jacket detail elegant`;
+        case "testimonials": return `well dressed gentleman portrait suit`;
+        case "cta": return `mens formal wear elegant editorial`;
+        case "contact": return `tailor shop interior luxury menswear boutique`;
+        default: return `luxury menswear bespoke ${h}`.trim();
+      }
+    }
     switch (sec.type) {
       case "hero": return `${base} professional`;
       case "about": return `${base} team office`;
@@ -638,11 +650,16 @@ async function hydrateImages(siteJson: unknown, prompt = "") {
     }
   };
 
+  // Treat AI-supplied image URLs as untrusted unless they're real Unsplash CDN URLs.
+  // Models routinely hallucinate placeholder URLs, which then render as broken images / alt text.
+  const isTrustedImageUrl = (u?: string) =>
+    !!u && /^https:\/\/images\.unsplash\.com\//i.test(u);
+
   const applyPhoto = (
     target: { image_url?: string; image_thumb?: string; image_alt?: string; image_credit?: string },
     photo: UnsplashPhoto,
   ) => {
-    if (target.image_url) return;
+    if (isTrustedImageUrl(target.image_url)) return;
     target.image_url = photo.regular;
     target.image_thumb = photo.thumb;
     target.image_alt = photo.alt;
