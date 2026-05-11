@@ -61,6 +61,40 @@ const ValidatedImg = ({
   );
 };
 
+// Hero / CTA background images can't use <img onError>, so we preload-validate
+// the URL and swap to a healed src once it's verified.
+const ValidatedBgSection = ({
+  initial, query, orientation = "landscape", fallbackIndex,
+  overlay, sectionClassName, sectionStyle, children,
+}: {
+  initial?: string;
+  query: string;
+  orientation?: ImageOrientation;
+  fallbackIndex?: number;
+  overlay: string; // e.g. "linear-gradient(rgba(0,0,0,.55),rgba(0,0,0,.55))"
+  sectionClassName?: string;
+  sectionStyle?: React.CSSProperties;
+  children: React.ReactNode;
+}) => {
+  const { src } = useValidatedImage({
+    initial, query, orientation, fallbackIndex, preload: true,
+  });
+  const url = src || initial;
+  return (
+    <section
+      className={sectionClassName}
+      style={{
+        ...sectionStyle,
+        backgroundImage: url ? `${overlay}, url(${url})` : overlay,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
+      {children}
+    </section>
+  );
+};
+
 
 
 type IconCmp = React.ComponentType<{ className?: string; size?: number; strokeWidth?: number; style?: React.CSSProperties }>;
