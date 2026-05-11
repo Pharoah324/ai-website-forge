@@ -380,12 +380,13 @@ const Section = ({
                 </div>
               )}
             </div>
-            <img
-              src={section.image_url}
+            <ValidatedImg
+              initial={section.image_url}
+              query={sectionQuery}
+              orientation="landscape"
+              fallbackIndex={index}
               alt={section.image_alt || section.heading}
-              loading="lazy"
               className="aspect-[4/3] w-full rounded-lg object-cover shadow-xl"
-              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
             />
           </div>
         </section>
