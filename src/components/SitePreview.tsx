@@ -2,6 +2,45 @@ import * as LucideIcons from "lucide-react";
 import type { SiteContent, SiteSection, SiteSectionItem } from "@/types/site";
 import { useValidatedImage, type ImageOrientation } from "@/hooks/useValidatedImage";
 
+// ---- Menswear / luxury-tailoring vocabulary mapping ------------------------
+// When a brand reads as a men's haberdashery / bespoke house we force every
+// Unsplash query into a curated menswear vocabulary so we never get women,
+// generic stock, or off-brand imagery.
+const MENSWEAR_BRAND_RE =
+  /\b(kings?\s*(?:&|and)?\s*collars?|sartorial|haberdash|bespoke|savile|tailor|gentleman|gentlemen|menswear|men's wear|suit\s*house|atelier)\b/i;
+
+function isMenswearContext(brand?: string, extra?: string): boolean {
+  const blob = `${brand || ""} ${extra || ""}`;
+  return MENSWEAR_BRAND_RE.test(blob);
+}
+
+// Map any heading / item title to a precise menswear Unsplash search term.
+// Falls back to a generic "well dressed man" so we never search arms, women,
+// or unrelated stock when the title is abstract ("The Boardroom Collection").
+function menswearQueryFor(text: string): string {
+  const t = (text || "").toLowerCase();
+  if (/cufflink|cuff link/.test(t)) return "mens cufflinks luxury";
+  if (/bow\s*tie|bowtie/.test(t)) return "mens bowtie";
+  if (/pocket\s*square|handkerchief/.test(t)) return "pocket square mens suit";
+  if (/tie\b|necktie|cravat/.test(t)) return "mens silk tie";
+  if (/shoe|oxford|loafer|brogue|footwear/.test(t)) return "oxford dress shoes mens";
+  if (/fabric|cloth|textile|wool|cashmere|swatch|material/.test(t)) return "mens suit fabric";
+  if (/shirt|collar/.test(t)) return "mens dress shirt tailored";
+  if (/watch|timepiece/.test(t)) return "mens luxury watch";
+  if (/belt|leather goods|wallet/.test(t)) return "mens leather belt luxury";
+  if (/board\s*room|business|executive|office|corporate/.test(t)) return "mens luxury suit boardroom";
+  if (/wedding|formal|black\s*tie|tuxedo|evening/.test(t)) return "mens tuxedo black tie";
+  if (/casual|weekend|smart\s*casual/.test(t)) return "well dressed man smart casual";
+  if (/atelier|workshop|craft|hand\s*made|stitch|sewing|measure|fitting|tape/.test(t))
+    return "bespoke tailoring atelier";
+  if (/accessor/.test(t)) return "mens accessories cufflinks bowtie";
+  if (/hero|collection|signature|flagship|masters?|kings?/.test(t)) return "mens luxury suit bespoke";
+  if (/about|story|heritage|legacy|founder/.test(t)) return "savile row tailor portrait";
+  if (/testimonial|client|review/.test(t)) return "well dressed man portrait";
+  if (/contact|visit|appointment|store|showroom/.test(t)) return "luxury menswear showroom interior";
+  return "well dressed man bespoke suit";
+}
+
 // Build a useful Unsplash query for self-healing when a generated image
 // 404s. Falls back to the section heading + business context if the
 // generator didn't ship an explicit search query.
@@ -9,6 +48,10 @@ function buildSectionQuery(
   section: { type?: string; heading?: string; image_search_query?: string },
   brand?: string,
 ): string {
+  const menswear = isMenswearContext(brand, section.heading);
+  if (menswear) {
+    return menswearQueryFor(`${section.heading || ""} ${section.type || ""}`);
+  }
   if (section.image_search_query) return section.image_search_query;
   const h = (section.heading || "").trim();
   const b = (brand || "").trim();
@@ -26,7 +69,12 @@ function buildSectionQuery(
 function buildItemQuery(
   item: { title?: string; image_search_query?: string },
   section: { type?: string; heading?: string },
+  brand?: string,
 ): string {
+  const menswear = isMenswearContext(brand, `${section.heading || ""} ${item.title || ""}`);
+  if (menswear) {
+    return menswearQueryFor(`${item.title || ""} ${section.heading || ""}`);
+  }
   if (item.image_search_query) return item.image_search_query;
   return `${section.heading || ""} ${item.title || ""}`.trim() || "detail photography";
 }
@@ -424,7 +472,7 @@ const Section = ({
           {section.items && section.items.length > 0 && (
             <div className="mt-10 grid gap-6 md:grid-cols-3">
               {section.items.map((it, i) => (
-                <FeatureCard key={i} item={it} theme={theme} section={section} index={i} />
+                <FeatureCard key={i} item={it} theme={theme} section={section} index={i} brand={brand} />
               ))}
             </div>
           )}
@@ -486,7 +534,7 @@ const Section = ({
                     {it.image_thumb || it.image_url ? (
                       <ValidatedImg
                         initial={it.image_thumb || it.image_url}
-                        query={buildItemQuery(it, section)}
+                        query={buildItemQuery(it, section, brand)}
                         orientation="squarish"
                         fallbackIndex={i}
                         alt={it.author || "Testimonial"}
@@ -603,12 +651,13 @@ const Section = ({
 };
 
 const FeatureCard = ({
-  item, theme, section, index,
+  item, theme, section, index, brand,
 }: {
   item: SiteSectionItem;
   theme: SiteContent["theme"];
   section: SiteSection;
   index: number;
+  brand?: string;
 }) => {
   const Icon = getIcon(item.icon_name);
   const muted = `hsl(${theme.foreground} / 0.75)`;
@@ -624,7 +673,7 @@ const FeatureCard = ({
       {(item.image_url || item.image_search_query || section.type === "features" || section.type === "about") && (
         <ValidatedImg
           initial={item.image_url}
-          query={buildItemQuery(item, section)}
+          query={buildItemQuery(item, section, brand)}
           orientation="landscape"
           fallbackIndex={index}
           alt={item.image_alt || item.title}

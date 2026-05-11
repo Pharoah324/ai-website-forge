@@ -27,8 +27,49 @@ const LAST_RESORT: Record<ImageOrientation, string[]> = {
   ],
 };
 
-function lastResortUrl(orientation: ImageOrientation, idx: number): string {
-  const ids = LAST_RESORT[orientation] || LAST_RESORT.landscape;
+// Menswear-specific curated bank: bespoke suits, cufflinks, oxford shoes,
+// pocket squares, ties, well-dressed men. Used whenever the query reads
+// as a men's haberdashery / luxury tailoring context so the fallback
+// never lands on women, beaches, or generic stock.
+const LAST_RESORT_MENSWEAR: Record<ImageOrientation, string[]> = {
+  landscape: [
+    "1593030761757-71fae45fa0e7", // mens suit fabric / tailoring
+    "1507679799987-c73779587ccf", // bespoke suit man
+    "1617137968427-85924c800a22", // oxford dress shoes
+    "1551488831-00ddcb6c6bd3", // tailor measuring suit
+    "1594938298603-c8148c4dae35", // mens accessories flat lay
+    "1521572267360-ee0c2909d518", // mens watch & cufflinks
+    "1564859228273-274232fdb516", // suit fabric swatches
+  ],
+  portrait: [
+    "1507003211169-0a1dd7228f2d", // well dressed man portrait
+    "1520975916090-3105956dac38", // sharp suit portrait
+    "1583394838336-acd977736f90", // bespoke suit standing
+    "1593030103066-0093718efeb9", // gentleman bowtie
+    "1488161628813-04466f872be2", // tailored suit man
+  ],
+  squarish: [
+    "1521572267360-ee0c2909d518", // cufflinks watch
+    "1594938298603-c8148c4dae35", // mens accessories
+    "1593030761757-71fae45fa0e7", // suit fabric
+    "1507679799987-c73779587ccf", // bespoke suit
+  ],
+};
+
+const MENSWEAR_QUERY_RE =
+  /\b(men|mens|men's|gentleman|gentlemen|bespoke|tailor|tailoring|suit|tuxedo|cufflink|bowtie|bow tie|pocket square|necktie|oxford|brogue|loafer|haberdash|savile|menswear|boardroom)\b/i;
+
+function isMenswearQuery(q?: string): boolean {
+  return !!q && MENSWEAR_QUERY_RE.test(q);
+}
+
+function lastResortUrl(
+  orientation: ImageOrientation,
+  idx: number,
+  query?: string,
+): string {
+  const bank = isMenswearQuery(query) ? LAST_RESORT_MENSWEAR : LAST_RESORT;
+  const ids = bank[orientation] || bank.landscape;
   const id = ids[Math.abs(idx) % ids.length];
   const dim =
     orientation === "squarish"
@@ -103,7 +144,7 @@ export function useValidatedImage(opts: UseValidatedImageOptions): UseValidatedI
   const heal = useCallback(async () => {
     if (attemptsRef.current >= MAX_ATTEMPTS) {
       // give up and use a curated CDN fallback
-      const url = lastResortUrl(orientation, fallbackIndex + attemptsRef.current);
+      const url = lastResortUrl(orientation, fallbackIndex + attemptsRef.current, query);
       attemptsRef.current++;
       setSrc(url);
       setStatus("pending");
@@ -118,7 +159,7 @@ export function useValidatedImage(opts: UseValidatedImageOptions): UseValidatedI
       setStatus("pending");
       return;
     }
-    const url = lastResortUrl(orientation, fallbackIndex + attemptsRef.current);
+    const url = lastResortUrl(orientation, fallbackIndex + attemptsRef.current, query);
     setSrc(url);
     setStatus("pending");
   }, [query, orientation, fallbackIndex]);
