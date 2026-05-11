@@ -305,15 +305,18 @@ const Section = ({
   section,
   theme,
   index,
+  brand,
 }: {
   section: SiteSection;
   theme: SiteContent["theme"];
   index: number;
+  brand?: string;
 }) => {
   const accentBg = `hsl(${theme.accent})`;
   const primary = `hsl(${theme.primary})`;
   const muted = `hsl(${theme.foreground} / 0.75)`;
   const alt = index % 2 === 1; // alternating bands
+  const sectionQuery = buildSectionQuery(section, brand);
 
   const PrimaryCTA = section.cta ? (
     <div className="mt-6 flex flex-col items-center gap-1.5">
