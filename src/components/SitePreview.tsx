@@ -621,7 +621,7 @@ const FeatureCard = ({
         border: `1px solid hsl(${theme.foreground} / 0.08)`,
       }}
     >
-      {item.image_url && (
+      {(item.image_url || item.image_search_query || section.type === "features" || section.type === "about") && (
         <ValidatedImg
           initial={item.image_url}
           query={buildItemQuery(item, section)}
