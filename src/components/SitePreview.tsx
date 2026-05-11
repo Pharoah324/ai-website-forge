@@ -76,10 +76,10 @@ const ValidatedBgSection = ({
   sectionStyle?: React.CSSProperties;
   children: React.ReactNode;
 }) => {
-  const { src } = useValidatedImage({
+  const { src, status } = useValidatedImage({
     initial, query, orientation, fallbackIndex, preload: true,
   });
-  const url = src || initial;
+  const url = status === "ok" ? src : undefined;
   return (
     <section
       className={sectionClassName}
@@ -335,7 +335,8 @@ const Section = ({
   ) : null;
 
   if (section.type === "hero") {
-    const hasBg = section.image_url && (section.image_placement === "background" || section.layout === "image-background");
+    const wantsBg = section.image_placement === "background" || section.layout === "image-background";
+    const hasBg = wantsBg || (!section.image_url && section.type === "hero");
     const hasSide = section.image_url && (section.layout === "image-right" || section.layout === "image-left");
 
     if (hasBg) {
