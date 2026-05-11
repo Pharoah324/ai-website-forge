@@ -95,9 +95,10 @@ export function useValidatedImage(opts: UseValidatedImageOptions): UseValidatedI
   const { initial, query, orientation = "landscape", preload, fallbackIndex = 0 } = opts;
   const [src, setSrc] = useState<string | undefined>(initial);
   const [alt, setAlt] = useState<string | undefined>(undefined);
-  const [status, setStatus] = useState<"pending" | "ok" | "broken">(initial ? "pending" : "broken");
+  const [status, setStatus] = useState<"pending" | "ok" | "broken">("pending");
   const attemptsRef = useRef(0);
   const triedSrcRef = useRef<Set<string>>(new Set());
+  const requestKeyRef = useRef("");
 
   const heal = useCallback(async () => {
     if (attemptsRef.current >= MAX_ATTEMPTS) {
@@ -138,6 +139,22 @@ export function useValidatedImage(opts: UseValidatedImageOptions): UseValidatedI
     setStatus("broken");
     void heal();
   }, [heal]);
+
+  useEffect(() => {
+    const requestKey = `${orientation}::${fallbackIndex}::${query}::${initial || ""}`;
+    if (requestKeyRef.current === requestKey) return;
+    requestKeyRef.current = requestKey;
+    attemptsRef.current = 0;
+    triedSrcRef.current = new Set(initial ? [initial] : []);
+    setAlt(undefined);
+    setSrc(initial);
+    setStatus("pending");
+  }, [initial, query, orientation, fallbackIndex]);
+
+  useEffect(() => {
+    if (src || initial || !query.trim()) return;
+    void heal();
+  }, [src, initial, query, heal]);
 
   return { src, alt, onError, status };
 }

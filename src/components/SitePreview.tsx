@@ -76,10 +76,10 @@ const ValidatedBgSection = ({
   sectionStyle?: React.CSSProperties;
   children: React.ReactNode;
 }) => {
-  const { src } = useValidatedImage({
+  const { src, status } = useValidatedImage({
     initial, query, orientation, fallbackIndex, preload: true,
   });
-  const url = src || initial;
+  const url = status === "ok" ? src : undefined;
   return (
     <section
       className={sectionClassName}
@@ -335,8 +335,9 @@ const Section = ({
   ) : null;
 
   if (section.type === "hero") {
-    const hasBg = section.image_url && (section.image_placement === "background" || section.layout === "image-background");
     const hasSide = section.image_url && (section.layout === "image-right" || section.layout === "image-left");
+    const wantsBg = section.image_placement === "background" || section.layout === "image-background";
+    const hasBg = !hasSide && (wantsBg || Boolean(section.image_url) || section.type === "hero");
 
     if (hasBg) {
       return (
@@ -620,7 +621,7 @@ const FeatureCard = ({
         border: `1px solid hsl(${theme.foreground} / 0.08)`,
       }}
     >
-      {item.image_url && (
+      {(item.image_url || item.image_search_query || section.type === "features" || section.type === "about") && (
         <ValidatedImg
           initial={item.image_url}
           query={buildItemQuery(item, section)}
