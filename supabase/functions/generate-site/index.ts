@@ -698,7 +698,7 @@ async function hydrateImages(siteJson: unknown, prompt = "") {
           .then(async (batch) => {
             for (let iIdx = 0; iIdx < sec.items!.length; iIdx++) {
               const item = sec.items![iIdx];
-              if (isTrustedImageUrl(item.image_url)) continue;
+              // Always overwrite — AI-supplied URLs are unreliable.
               let photo: UnsplashPhoto | null = null;
               const itemQuery = item.image_search_query;
               if (itemQuery) {
