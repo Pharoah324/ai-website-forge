@@ -472,7 +472,7 @@ const Section = ({
           {section.items && section.items.length > 0 && (
             <div className="mt-10 grid gap-6 md:grid-cols-3">
               {section.items.map((it, i) => (
-                <FeatureCard key={i} item={it} theme={theme} section={section} index={i} />
+                <FeatureCard key={i} item={it} theme={theme} section={section} index={i} brand={brand} />
               ))}
             </div>
           )}
