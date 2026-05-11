@@ -1,5 +1,101 @@
 import * as LucideIcons from "lucide-react";
 import type { SiteContent, SiteSection, SiteSectionItem } from "@/types/site";
+import { useValidatedImage, type ImageOrientation } from "@/hooks/useValidatedImage";
+
+// Build a useful Unsplash query for self-healing when a generated image
+// 404s. Falls back to the section heading + business context if the
+// generator didn't ship an explicit search query.
+function buildSectionQuery(
+  section: { type?: string; heading?: string; image_search_query?: string },
+  brand?: string,
+): string {
+  if (section.image_search_query) return section.image_search_query;
+  const h = (section.heading || "").trim();
+  const b = (brand || "").trim();
+  switch (section.type) {
+    case "hero": return `${b} ${h} hero professional`.trim() || "modern business hero";
+    case "about": return `${b} team office`.trim() || "professional team";
+    case "features": return `${b} ${h}`.trim() || "service detail";
+    case "testimonials": return "happy customer portrait";
+    case "cta": return `${b} ${h} lifestyle`.trim() || "call to action lifestyle";
+    case "contact": return `${b} location storefront`.trim() || "office storefront";
+    default: return `${b} ${h}`.trim() || "professional photography";
+  }
+}
+
+function buildItemQuery(
+  item: { title?: string; image_search_query?: string },
+  section: { type?: string; heading?: string },
+): string {
+  if (item.image_search_query) return item.image_search_query;
+  return `${section.heading || ""} ${item.title || ""}`.trim() || "detail photography";
+}
+
+type ValidatedImgProps = {
+  initial?: string;
+  query: string;
+  orientation?: ImageOrientation;
+  fallbackIndex?: number;
+  alt?: string;
+  className?: string;
+  loading?: "lazy" | "eager";
+  onLoaded?: () => void;
+};
+
+const ValidatedImg = ({
+  initial, query, orientation = "landscape", fallbackIndex,
+  alt, className, loading = "lazy",
+}: ValidatedImgProps) => {
+  const { src, alt: healedAlt, onError } = useValidatedImage({
+    initial, query, orientation, fallbackIndex,
+  });
+  if (!src) return null;
+  return (
+    <img
+      src={src}
+      alt={healedAlt || alt || ""}
+      loading={loading}
+      className={className}
+      onError={onError}
+    />
+  );
+};
+
+// Hero / CTA background images can't use <img onError>, so we preload-validate
+// the URL and swap to a healed src once it's verified.
+const ValidatedBgSection = ({
+  initial, query, orientation = "landscape", fallbackIndex,
+  overlay, sectionClassName, sectionStyle, children,
+}: {
+  initial?: string;
+  query: string;
+  orientation?: ImageOrientation;
+  fallbackIndex?: number;
+  overlay: string; // e.g. "linear-gradient(rgba(0,0,0,.55),rgba(0,0,0,.55))"
+  sectionClassName?: string;
+  sectionStyle?: React.CSSProperties;
+  children: React.ReactNode;
+}) => {
+  const { src } = useValidatedImage({
+    initial, query, orientation, fallbackIndex, preload: true,
+  });
+  const url = src || initial;
+  return (
+    <section
+      className={sectionClassName}
+      style={{
+        ...sectionStyle,
+        backgroundImage: url ? `${overlay}, url(${url})` : overlay,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
+      {children}
+    </section>
+  );
+};
+
+
 
 type IconCmp = React.ComponentType<{ className?: string; size?: number; strokeWidth?: number; style?: React.CSSProperties }>;
 
@@ -180,7 +276,7 @@ export const SitePreview = ({
         </header>
 
         {themedContent.sections.map((s, i) => (
-          <Section key={i} section={s} theme={themedContent.theme} index={i} />
+          <Section key={i} section={s} theme={themedContent.theme} index={i} brand={headerName} />
         ))}
 
         <footer
@@ -209,15 +305,18 @@ const Section = ({
   section,
   theme,
   index,
+  brand,
 }: {
   section: SiteSection;
   theme: SiteContent["theme"];
   index: number;
+  brand?: string;
 }) => {
   const accentBg = `hsl(${theme.accent})`;
   const primary = `hsl(${theme.primary})`;
   const muted = `hsl(${theme.foreground} / 0.75)`;
   const alt = index % 2 === 1; // alternating bands
+  const sectionQuery = buildSectionQuery(section, brand);
 
   const PrimaryCTA = section.cta ? (
     <div className="mt-6 flex flex-col items-center gap-1.5">
@@ -241,14 +340,14 @@ const Section = ({
 
     if (hasBg) {
       return (
-        <section
-          className="relative px-6 py-24 text-center"
-          style={{
-            backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url(${section.image_url})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            color: "white",
-          }}
+        <ValidatedBgSection
+          initial={section.image_url}
+          query={sectionQuery}
+          orientation="landscape"
+          fallbackIndex={index}
+          overlay="linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55))"
+          sectionClassName="relative px-6 py-24 text-center"
+          sectionStyle={{ color: "white" }}
         >
           <h1 className="mx-auto max-w-3xl text-4xl font-bold leading-tight md:text-5xl">
             {section.heading}
@@ -257,7 +356,7 @@ const Section = ({
             <p className="mx-auto mt-4 max-w-2xl text-lg opacity-95">{section.subheading}</p>
           )}
           {PrimaryCTA}
-        </section>
+        </ValidatedBgSection>
       );
     }
     if (hasSide) {
@@ -281,12 +380,13 @@ const Section = ({
                 </div>
               )}
             </div>
-            <img
-              src={section.image_url}
+            <ValidatedImg
+              initial={section.image_url}
+              query={sectionQuery}
+              orientation="landscape"
+              fallbackIndex={index}
               alt={section.image_alt || section.heading}
-              loading="lazy"
               className="aspect-[4/3] w-full rounded-lg object-cover shadow-xl"
-              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
             />
           </div>
         </section>
@@ -323,7 +423,7 @@ const Section = ({
           {section.items && section.items.length > 0 && (
             <div className="mt-10 grid gap-6 md:grid-cols-3">
               {section.items.map((it, i) => (
-                <FeatureCard key={i} item={it} theme={theme} />
+                <FeatureCard key={i} item={it} theme={theme} section={section} index={i} />
               ))}
             </div>
           )}
@@ -383,12 +483,13 @@ const Section = ({
                 <div key={i} className="rounded-lg p-5" style={{ background: `hsl(${theme.background})` }}>
                   <div className="flex items-start gap-3">
                     {it.image_thumb || it.image_url ? (
-                      <img
-                        src={it.image_thumb || it.image_url}
+                      <ValidatedImg
+                        initial={it.image_thumb || it.image_url}
+                        query={buildItemQuery(it, section)}
+                        orientation="squarish"
+                        fallbackIndex={i}
                         alt={it.author || "Testimonial"}
-                        loading="lazy"
                         className="h-12 w-12 shrink-0 rounded-full object-cover"
-                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
                       />
                     ) : (
                       <div
@@ -436,15 +537,16 @@ const Section = ({
 
   if (section.type === "cta") {
     if (section.image_url) {
+      const ctaOverlay = `linear-gradient(${primary.replace("hsl(", "hsla(").replace(")", " / 0.85)")}, ${primary.replace("hsl(", "hsla(").replace(")", " / 0.85)")})`;
       return (
-        <section
-          className="relative px-6 py-20 text-center"
-          style={{
-            backgroundImage: `linear-gradient(${primary.replace("hsl(", "hsla(").replace(")", " / 0.85)")}, ${primary.replace("hsl(", "hsla(").replace(")", " / 0.85)")}), url(${section.image_url})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            color: "white",
-          }}
+        <ValidatedBgSection
+          initial={section.image_url}
+          query={sectionQuery}
+          orientation="landscape"
+          fallbackIndex={index}
+          overlay={ctaOverlay}
+          sectionClassName="relative px-6 py-20 text-center"
+          sectionStyle={{ color: "white" }}
         >
           <h2 className="text-3xl font-bold">{section.heading}</h2>
           {section.subheading && <p className="mx-auto mt-3 max-w-xl opacity-95">{section.subheading}</p>}
@@ -456,7 +558,7 @@ const Section = ({
               {section.cta_urgency && <span className="text-xs font-medium opacity-95">⏱ {section.cta_urgency}</span>}
             </div>
           )}
-        </section>
+        </ValidatedBgSection>
       );
     }
     return (
@@ -499,7 +601,14 @@ const Section = ({
   );
 };
 
-const FeatureCard = ({ item, theme }: { item: SiteSectionItem; theme: SiteContent["theme"] }) => {
+const FeatureCard = ({
+  item, theme, section, index,
+}: {
+  item: SiteSectionItem;
+  theme: SiteContent["theme"];
+  section: SiteSection;
+  index: number;
+}) => {
   const Icon = getIcon(item.icon_name);
   const muted = `hsl(${theme.foreground} / 0.75)`;
   const primary = `hsl(${theme.primary})`;
@@ -512,12 +621,13 @@ const FeatureCard = ({ item, theme }: { item: SiteSectionItem; theme: SiteConten
       }}
     >
       {item.image_url && (
-        <img
-          src={item.image_url}
+        <ValidatedImg
+          initial={item.image_url}
+          query={buildItemQuery(item, section)}
+          orientation="landscape"
+          fallbackIndex={index}
           alt={item.image_alt || item.title}
-          loading="lazy"
           className="aspect-video w-full object-cover"
-          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
         />
       )}
       <div className="p-5">
