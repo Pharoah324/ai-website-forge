@@ -606,20 +606,20 @@ function sanitizeMarkdownImages(siteJson: unknown) {
   }
 }
 
-async function hydrateImages(siteJson: unknown) {
+async function hydrateImages(siteJson: unknown, prompt = "") {
   if (!siteJson || typeof siteJson !== "object") return;
-  if (!UNSPLASH_ACCESS_KEY) {
-    console.log("hydrateImages: UNSPLASH_ACCESS_KEY not set, skipping image hydration");
-    return;
-  }
   // deno-lint-ignore no-explicit-any
   const site = siteJson as any;
   const sections = Array.isArray(site.sections) ? site.sections : [];
+  const category = categorizeSite(site, prompt);
+  const apiAvailable = !!UNSPLASH_ACCESS_KEY;
+  if (!apiAvailable) {
+    console.log(`hydrateImages: UNSPLASH_ACCESS_KEY not set — using curated fallback (category=${category})`);
+  }
 
   // Derive a business-context phrase to enrich vague queries.
   const bizContext: string = [site.name, site.tagline].filter(Boolean).join(" ").slice(0, 80);
 
-  // Build a list of fallback search terms when AI did not provide image_search_query.
   const fallbackForSection = (sec: { type?: string; heading?: string }) => {
     const h = (sec.heading || "").replace(/[^\p{L}\p{N}\s]/gu, " ").trim().split(/\s+/).slice(0, 4).join(" ");
     const base = bizContext || h;
@@ -635,7 +635,19 @@ async function hydrateImages(siteJson: unknown) {
     }
   };
 
+  const applyPhoto = (
+    target: { image_url?: string; image_thumb?: string; image_alt?: string; image_credit?: string },
+    photo: UnsplashPhoto,
+  ) => {
+    if (target.image_url) return;
+    target.image_url = photo.regular;
+    target.image_thumb = photo.thumb;
+    target.image_alt = photo.alt;
+    target.image_credit = photo.credit;
+  };
+
   const tasks: Array<Promise<void>> = [];
+  let fallbackCounter = 0;
 
   sections.forEach((sec: { type?: string; heading?: string; image_search_query?: string; image_placement?: string; layout?: string; image_url?: string; image_thumb?: string; image_alt?: string; image_credit?: string; items?: Array<{ image_search_query?: string; image_url?: string; image_thumb?: string; image_alt?: string; image_credit?: string; title?: string }> }, sIdx: number) => {
     // Force hero to have an image and use background layout if not specified
@@ -646,48 +658,45 @@ async function hydrateImages(siteJson: unknown) {
 
     if (sec.image_placement !== "none") {
       const query = sec.image_search_query || fallbackForSection(sec);
-      const orientation = (sec.image_placement === "background" || sec.type === "hero" || sec.type === "cta") ? "landscape" : "landscape";
-      tasks.push(unsplashSearch(query, orientation, sIdx).then((r) => {
-        if (r && !sec.image_url) {
-          sec.image_url = r.regular;
-          sec.image_thumb = r.thumb;
-          sec.image_alt = r.alt;
-          sec.image_credit = r.credit;
-        }
-      }));
+      const orientation: "landscape" | "portrait" | "squarish" = "landscape";
+      const fbIdx = fallbackCounter++;
+      tasks.push(
+        unsplashSearch(query, orientation, sIdx)
+          .then((r) => {
+            if (r) applyPhoto(sec, r);
+            else applyPhoto(sec, buildFallbackPhoto(category, sIdx + fbIdx, query, orientation));
+          })
+          .catch(() => applyPhoto(sec, buildFallbackPhoto(category, sIdx + fbIdx, query, orientation))),
+      );
     }
 
     if (Array.isArray(sec.items) && sec.items.length) {
-      // Fetch a batch of photos for this section once, distribute across items for variety.
       const batchQuery = sec.image_search_query || fallbackForSection(sec);
       const itemOrient: "landscape" | "squarish" = sec.type === "testimonials" ? "squarish" : "landscape";
+      const itemCategory = sec.type === "testimonials" ? "generic" : category; // testimonials → portrait fallback bucket later
 
-      // Pre-warm a batch search so item-level lookups can reuse cache.
-      tasks.push(unsplashSearchMany(batchQuery, itemOrient, 10).then((batch) => {
-        sec.items!.forEach((item, iIdx) => {
-          if (item.image_url) return;
-          // Prefer item-specific query if present
-          const itemQuery = item.image_search_query;
-          if (itemQuery) {
-            return unsplashSearch(itemQuery, itemOrient, iIdx).then((r) => {
-              if (r && !item.image_url) {
-                item.image_url = r.regular;
-                item.image_thumb = r.thumb;
-                item.image_alt = r.alt;
-                item.image_credit = r.credit;
+      tasks.push(
+        unsplashSearchMany(batchQuery, itemOrient, 10)
+          .catch(() => null)
+          .then(async (batch) => {
+            for (let iIdx = 0; iIdx < sec.items!.length; iIdx++) {
+              const item = sec.items![iIdx];
+              if (item.image_url) continue;
+              let photo: UnsplashPhoto | null = null;
+              const itemQuery = item.image_search_query;
+              if (itemQuery) {
+                photo = await unsplashSearch(itemQuery, itemOrient, iIdx).catch(() => null);
               }
-            });
-          }
-          // Otherwise pick from batch by index for variety
-          const r = batch && batch.length ? batch[iIdx % batch.length] : null;
-          if (r) {
-            item.image_url = r.regular;
-            item.image_thumb = r.thumb;
-            item.image_alt = r.alt;
-            item.image_credit = r.credit;
-          }
-        });
-      }));
+              if (!photo && batch && batch.length) {
+                photo = batch[iIdx % batch.length];
+              }
+              if (!photo) {
+                photo = buildFallbackPhoto(itemCategory, iIdx + sIdx * 7, itemQuery || batchQuery, itemOrient);
+              }
+              applyPhoto(item, photo);
+            }
+          }),
+      );
     }
   });
 
@@ -697,7 +706,8 @@ async function hydrateImages(siteJson: unknown) {
     await Promise.allSettled(tasks.slice(i, i + chunkSize));
   }
 
-  console.log(`hydrateImages: hydrated ${sections.filter((s: { image_url?: string }) => s.image_url).length}/${sections.length} sections`);
+  const hydrated = sections.filter((s: { image_url?: string }) => s.image_url).length;
+  console.log(`hydrateImages: ${hydrated}/${sections.length} sections (category=${category}, api=${apiAvailable})`);
 }
 
 async function persistSite(
