@@ -650,16 +650,13 @@ async function hydrateImages(siteJson: unknown, prompt = "") {
     }
   };
 
-  // Treat AI-supplied image URLs as untrusted unless they're real Unsplash CDN URLs.
-  // Models routinely hallucinate placeholder URLs, which then render as broken images / alt text.
-  const isTrustedImageUrl = (u?: string) =>
-    !!u && /^https:\/\/images\.unsplash\.com\//i.test(u);
-
+  // Models routinely hallucinate Unsplash photo IDs that don't exist (returning broken images
+  // that render as alt text). We CANNOT trust any AI-supplied image URL — even if it points at
+  // images.unsplash.com — so we always overwrite with verified search results / curated fallbacks.
   const applyPhoto = (
     target: { image_url?: string; image_thumb?: string; image_alt?: string; image_credit?: string },
     photo: UnsplashPhoto,
   ) => {
-    if (isTrustedImageUrl(target.image_url)) return;
     target.image_url = photo.regular;
     target.image_thumb = photo.thumb;
     target.image_alt = photo.alt;
@@ -701,7 +698,7 @@ async function hydrateImages(siteJson: unknown, prompt = "") {
           .then(async (batch) => {
             for (let iIdx = 0; iIdx < sec.items!.length; iIdx++) {
               const item = sec.items![iIdx];
-              if (isTrustedImageUrl(item.image_url)) continue;
+              // Always overwrite — AI-supplied URLs are unreliable.
               let photo: UnsplashPhoto | null = null;
               const itemQuery = item.image_search_query;
               if (itemQuery) {

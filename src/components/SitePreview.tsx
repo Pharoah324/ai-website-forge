@@ -286,6 +286,7 @@ const Section = ({
               alt={section.image_alt || section.heading}
               loading="lazy"
               className="aspect-[4/3] w-full rounded-lg object-cover shadow-xl"
+              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
             />
           </div>
         </section>
@@ -387,6 +388,7 @@ const Section = ({
                         alt={it.author || "Testimonial"}
                         loading="lazy"
                         className="h-12 w-12 shrink-0 rounded-full object-cover"
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
                       />
                     ) : (
                       <div
@@ -515,6 +517,7 @@ const FeatureCard = ({ item, theme }: { item: SiteSectionItem; theme: SiteConten
           alt={item.image_alt || item.title}
           loading="lazy"
           className="aspect-video w-full object-cover"
+          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
         />
       )}
       <div className="p-5">
