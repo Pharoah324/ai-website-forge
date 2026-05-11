@@ -340,14 +340,14 @@ const Section = ({
 
     if (hasBg) {
       return (
-        <section
-          className="relative px-6 py-24 text-center"
-          style={{
-            backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url(${section.image_url})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            color: "white",
-          }}
+        <ValidatedBgSection
+          initial={section.image_url}
+          query={sectionQuery}
+          orientation="landscape"
+          fallbackIndex={index}
+          overlay="linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55))"
+          sectionClassName="relative px-6 py-24 text-center"
+          sectionStyle={{ color: "white" }}
         >
           <h1 className="mx-auto max-w-3xl text-4xl font-bold leading-tight md:text-5xl">
             {section.heading}
@@ -356,7 +356,7 @@ const Section = ({
             <p className="mx-auto mt-4 max-w-2xl text-lg opacity-95">{section.subheading}</p>
           )}
           {PrimaryCTA}
-        </section>
+        </ValidatedBgSection>
       );
     }
     if (hasSide) {
