@@ -335,9 +335,9 @@ const Section = ({
   ) : null;
 
   if (section.type === "hero") {
-    const wantsBg = section.image_placement === "background" || section.layout === "image-background";
-    const hasBg = wantsBg || (!section.image_url && section.type === "hero");
     const hasSide = section.image_url && (section.layout === "image-right" || section.layout === "image-left");
+    const wantsBg = section.image_placement === "background" || section.layout === "image-background";
+    const hasBg = !hasSide && (wantsBg || Boolean(section.image_url) || section.type === "hero");
 
     if (hasBg) {
       return (
