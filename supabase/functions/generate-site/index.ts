@@ -623,18 +623,68 @@ async function hydrateImages(siteJson: unknown, prompt = "") {
   // Derive a business-context phrase to enrich vague queries.
   const bizContext: string = [site.name, site.tagline].filter(Boolean).join(" ").slice(0, 80);
 
-  const fallbackForSection = (sec: { type?: string; heading?: string }) => {
+  // Rotating banks of Savile Row / luxury menswear queries so repeated
+  // sections (and gallery items) pull varied editorial imagery instead
+  // of the same suit photo over and over.
+  const FASHION_HERO = [
+    "luxury bespoke suit man portrait editorial dark",
+    "savile row tailored three piece suit gentleman",
+    "tom ford style menswear editorial moody",
+    "elegant gentleman tailored suit black background",
+  ];
+  const FASHION_ABOUT = [
+    "savile row tailor atelier craftsmanship hands",
+    "master tailor chalk fabric bespoke workshop",
+    "luxury menswear atelier interior wood",
+  ];
+  const FASHION_FEATURES = [
+    "bespoke tailoring fabric detail luxury menswear",
+    "wool suit fabric texture macro luxury",
+    "tailor measuring jacket lapel pins",
+    "luxury silk lining suit jacket detail",
+    "hand stitched buttonhole bespoke suit",
+  ];
+  const FASHION_GALLERY = [
+    "bespoke wool suit jacket detail",
+    "luxury silk pocket square folded",
+    "mens bowtie black tie elegant",
+    "polished leather oxford shoes mens",
+    "silver cufflinks mens dress shirt",
+    "luxury dress shirt collar detail",
+    "tailor chalk marking suit fabric",
+    "rolled fabric swatches bespoke tailor",
+    "well dressed man tailored suit portrait",
+    "leather brogues mens formal shoes",
+    "neatly folded mens dress shirts",
+    "vintage gentlemen tailoring tools scissors",
+  ];
+  const FASHION_TESTIMONIALS = [
+    "well dressed gentleman portrait suit black background",
+    "businessman tailored suit portrait elegant",
+    "mature gentleman bespoke suit portrait",
+  ];
+  const FASHION_CTA = [
+    "mens formal wear elegant editorial dark",
+    "tuxedo black tie gentleman dramatic",
+  ];
+  const FASHION_CONTACT = [
+    "tailor shop interior luxury menswear boutique",
+    "haberdashery shop wood interior suits",
+  ];
+  const pick = (arr: string[], idx: number) => arr[Math.abs(idx) % arr.length];
+
+  const fallbackForSection = (sec: { type?: string; heading?: string }, sIdx = 0) => {
     const h = (sec.heading || "").replace(/[^\p{L}\p{N}\s]/gu, " ").trim().split(/\s+/).slice(0, 4).join(" ");
     const base = bizContext || h;
     if (category === "fashion") {
       switch (sec.type) {
-        case "hero": return `luxury bespoke suit man portrait editorial`;
-        case "about": return `savile row tailor atelier craftsmanship`;
-        case "features": return `bespoke tailoring fabric detail luxury menswear`;
-        case "pricing": return `luxury suit jacket detail elegant`;
-        case "testimonials": return `well dressed gentleman portrait suit`;
-        case "cta": return `mens formal wear elegant editorial`;
-        case "contact": return `tailor shop interior luxury menswear boutique`;
+        case "hero": return pick(FASHION_HERO, sIdx);
+        case "about": return pick(FASHION_ABOUT, sIdx);
+        case "features": return pick(FASHION_FEATURES, sIdx);
+        case "pricing": return "luxury suit jacket detail elegant editorial";
+        case "testimonials": return pick(FASHION_TESTIMONIALS, sIdx);
+        case "cta": return pick(FASHION_CTA, sIdx);
+        case "contact": return pick(FASHION_CONTACT, sIdx);
         default: return `luxury menswear bespoke ${h}`.trim();
       }
     }
@@ -674,7 +724,7 @@ async function hydrateImages(siteJson: unknown, prompt = "") {
     }
 
     if (sec.image_placement !== "none") {
-      const query = sec.image_search_query || fallbackForSection(sec);
+      const query = sec.image_search_query || fallbackForSection(sec, sIdx);
       const orientation: "landscape" | "portrait" | "squarish" = "landscape";
       const fbIdx = fallbackCounter++;
       tasks.push(
@@ -688,9 +738,9 @@ async function hydrateImages(siteJson: unknown, prompt = "") {
     }
 
     if (Array.isArray(sec.items) && sec.items.length) {
-      const batchQuery = sec.image_search_query || fallbackForSection(sec);
+      const batchQuery = sec.image_search_query || fallbackForSection(sec, sIdx);
       const itemOrient: "landscape" | "squarish" = sec.type === "testimonials" ? "squarish" : "landscape";
-      const itemCategory = sec.type === "testimonials" ? "generic" : category; // testimonials → portrait fallback bucket later
+      const itemCategory = sec.type === "testimonials" ? "generic" : category;
 
       tasks.push(
         unsplashSearchMany(batchQuery, itemOrient, 10)
@@ -698,9 +748,16 @@ async function hydrateImages(siteJson: unknown, prompt = "") {
           .then(async (batch) => {
             for (let iIdx = 0; iIdx < sec.items!.length; iIdx++) {
               const item = sec.items![iIdx];
-              // Always overwrite — AI-supplied URLs are unreliable.
               let photo: UnsplashPhoto | null = null;
-              const itemQuery = item.image_search_query;
+              // For luxury menswear galleries/features, rotate through a curated
+              // bank of Savile Row queries per item so each card shows a
+              // different facet of the craft (fabric, shoes, cufflinks, etc.).
+              let itemQuery = item.image_search_query;
+              if (!itemQuery && category === "fashion" && sec.type !== "testimonials") {
+                itemQuery = pick(FASHION_GALLERY, iIdx + sIdx);
+              } else if (!itemQuery && category === "fashion" && sec.type === "testimonials") {
+                itemQuery = pick(FASHION_TESTIMONIALS, iIdx);
+              }
               if (itemQuery) {
                 photo = await unsplashSearch(itemQuery, itemOrient, iIdx).catch(() => null);
               }
