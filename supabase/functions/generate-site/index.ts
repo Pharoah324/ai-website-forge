@@ -465,19 +465,21 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
 });
 
 // ----- Unsplash hydration -----
-const unsplashCache = new Map<string, { regular: string; thumb: string; alt: string; credit: string } | null>();
+type UnsplashPhoto = { regular: string; thumb: string; alt: string; credit: string };
+const unsplashCache = new Map<string, UnsplashPhoto[] | null>();
 
-async function unsplashSearch(query: string, orientation: "landscape" | "portrait" | "squarish" = "landscape") {
+async function unsplashSearchMany(
+  query: string,
+  orientation: "landscape" | "portrait" | "squarish" = "landscape",
+  perPage = 10,
+): Promise<UnsplashPhoto[] | null> {
   if (!UNSPLASH_ACCESS_KEY || !query) return null;
-  const cacheKey = `${orientation}:${query}`;
+  const cacheKey = `${orientation}:${perPage}:${query}`;
   if (unsplashCache.has(cacheKey)) return unsplashCache.get(cacheKey)!;
   try {
-    const url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&orientation=${orientation}&per_page=1&content_filter=high`;
+    const url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&orientation=${orientation}&per_page=${perPage}&content_filter=high&order_by=relevant`;
     const r = await fetch(url, {
-      headers: {
-        Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}`,
-        "Accept-Version": "v1",
-      },
+      headers: { Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}`, "Accept-Version": "v1" },
     });
     if (!r.ok) {
       console.warn("unsplash error", r.status, query);
@@ -485,24 +487,26 @@ async function unsplashSearch(query: string, orientation: "landscape" | "portrai
       return null;
     }
     const data = await r.json();
-    const photo = data?.results?.[0];
-    if (!photo) {
-      unsplashCache.set(cacheKey, null);
-      return null;
-    }
-    const result = {
-      regular: photo.urls.regular,
-      thumb: photo.urls.thumb,
-      alt: photo.alt_description || query,
-      credit: `Photo by ${photo.user?.name || "Unsplash"} on Unsplash`,
-    };
-    unsplashCache.set(cacheKey, result);
-    return result;
+    const photos: UnsplashPhoto[] = (data?.results || []).map((p: { urls: { regular: string; thumb: string }; alt_description?: string; user?: { name?: string } }) => ({
+      regular: p.urls.regular,
+      thumb: p.urls.thumb,
+      alt: p.alt_description || query,
+      credit: `Photo by ${p.user?.name || "Unsplash"} on Unsplash`,
+    }));
+    if (!photos.length) { unsplashCache.set(cacheKey, null); return null; }
+    unsplashCache.set(cacheKey, photos);
+    return photos;
   } catch (e) {
     console.warn("unsplash exception", e);
     unsplashCache.set(cacheKey, null);
     return null;
   }
+}
+
+async function unsplashSearch(query: string, orientation: "landscape" | "portrait" | "squarish" = "landscape", pickIndex = 0): Promise<UnsplashPhoto | null> {
+  const photos = await unsplashSearchMany(query, orientation, 10);
+  if (!photos || !photos.length) return null;
+  return photos[pickIndex % photos.length];
 }
 
 // Strip markdown image syntax from text fields. If a field contains
