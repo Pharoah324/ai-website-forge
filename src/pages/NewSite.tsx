@@ -618,7 +618,7 @@ export default function NewSite() {
           )}
         </div>
 
-        <div className="flex flex-1 items-start justify-center overflow-y-auto p-6">
+        <div className="flex flex-1 items-start justify-center overflow-y-auto p-2 lg:p-3">
           {!content && !generating && (
             <div className="flex h-full flex-col items-center justify-center text-center">
               <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
