@@ -565,14 +565,39 @@ async function hydrateImages(siteJson: unknown) {
   const site = siteJson as any;
   const sections = Array.isArray(site.sections) ? site.sections : [];
 
-  // Run a bounded number of parallel queries to avoid Unsplash rate limits (50/hour demo).
+  // Derive a business-context phrase to enrich vague queries.
+  const bizContext: string = [site.name, site.tagline].filter(Boolean).join(" ").slice(0, 80);
+
+  // Build a list of fallback search terms when AI did not provide image_search_query.
+  const fallbackForSection = (sec: { type?: string; heading?: string }) => {
+    const h = (sec.heading || "").replace(/[^\p{L}\p{N}\s]/gu, " ").trim().split(/\s+/).slice(0, 4).join(" ");
+    const base = bizContext || h;
+    switch (sec.type) {
+      case "hero": return `${base} professional`;
+      case "about": return `${base} team office`;
+      case "features": return `${base} ${h || "service"}`;
+      case "pricing": return `${base} workspace modern`;
+      case "testimonials": return `happy customer portrait`;
+      case "cta": return `${base} lifestyle`;
+      case "contact": return `${base} location storefront`;
+      default: return `${base} ${h}`.trim();
+    }
+  };
+
   const tasks: Array<Promise<void>> = [];
 
-  for (const sec of sections) {
-    if (sec?.image_search_query && sec?.image_placement !== "none") {
-      const orientation = sec.image_placement === "background" || sec.type === "hero" ? "landscape" : "landscape";
-      tasks.push(unsplashSearch(sec.image_search_query, orientation).then((r) => {
-        if (r) {
+  sections.forEach((sec: { type?: string; heading?: string; image_search_query?: string; image_placement?: string; layout?: string; image_url?: string; image_thumb?: string; image_alt?: string; image_credit?: string; items?: Array<{ image_search_query?: string; image_url?: string; image_thumb?: string; image_alt?: string; image_credit?: string; title?: string }> }, sIdx: number) => {
+    // Force hero to have an image and use background layout if not specified
+    if (sec.type === "hero") {
+      if (!sec.image_placement || sec.image_placement === "none") sec.image_placement = "background";
+      if (!sec.layout) sec.layout = "image-background";
+    }
+
+    if (sec.image_placement !== "none") {
+      const query = sec.image_search_query || fallbackForSection(sec);
+      const orientation = (sec.image_placement === "background" || sec.type === "hero" || sec.type === "cta") ? "landscape" : "landscape";
+      tasks.push(unsplashSearch(query, orientation, sIdx).then((r) => {
+        if (r && !sec.image_url) {
           sec.image_url = r.regular;
           sec.image_thumb = r.thumb;
           sec.image_alt = r.alt;
@@ -580,28 +605,48 @@ async function hydrateImages(siteJson: unknown) {
         }
       }));
     }
-    if (Array.isArray(sec?.items)) {
-      for (const item of sec.items) {
-        if (item?.image_search_query) {
-          const orient = sec.type === "testimonials" ? "squarish" : "landscape";
-          tasks.push(unsplashSearch(item.image_search_query, orient).then((r) => {
-            if (r) {
-              item.image_url = r.regular;
-              item.image_thumb = r.thumb;
-              item.image_alt = r.alt;
-              item.image_credit = r.credit;
-            }
-          }));
-        }
-      }
-    }
-  }
 
-  // Cap concurrency at 8. Use allSettled so one failed image never blocks generation.
-  const chunkSize = 8;
+    if (Array.isArray(sec.items) && sec.items.length) {
+      // Fetch a batch of photos for this section once, distribute across items for variety.
+      const batchQuery = sec.image_search_query || fallbackForSection(sec);
+      const itemOrient: "landscape" | "squarish" = sec.type === "testimonials" ? "squarish" : "landscape";
+
+      // Pre-warm a batch search so item-level lookups can reuse cache.
+      tasks.push(unsplashSearchMany(batchQuery, itemOrient, 10).then((batch) => {
+        sec.items!.forEach((item, iIdx) => {
+          if (item.image_url) return;
+          // Prefer item-specific query if present
+          const itemQuery = item.image_search_query;
+          if (itemQuery) {
+            return unsplashSearch(itemQuery, itemOrient, iIdx).then((r) => {
+              if (r && !item.image_url) {
+                item.image_url = r.regular;
+                item.image_thumb = r.thumb;
+                item.image_alt = r.alt;
+                item.image_credit = r.credit;
+              }
+            });
+          }
+          // Otherwise pick from batch by index for variety
+          const r = batch && batch.length ? batch[iIdx % batch.length] : null;
+          if (r) {
+            item.image_url = r.regular;
+            item.image_thumb = r.thumb;
+            item.image_alt = r.alt;
+            item.image_credit = r.credit;
+          }
+        });
+      }));
+    }
+  });
+
+  // Cap concurrency at 6 (Unsplash demo: 50 req/hr).
+  const chunkSize = 6;
   for (let i = 0; i < tasks.length; i += chunkSize) {
     await Promise.allSettled(tasks.slice(i, i + chunkSize));
   }
+
+  console.log(`hydrateImages: hydrated ${sections.filter((s: { image_url?: string }) => s.image_url).length}/${sections.length} sections`);
 }
 
 async function persistSite(
