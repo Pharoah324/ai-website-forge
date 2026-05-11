@@ -388,6 +388,7 @@ const Section = ({
                         alt={it.author || "Testimonial"}
                         loading="lazy"
                         className="h-12 w-12 shrink-0 rounded-full object-cover"
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
                       />
                     ) : (
                       <div
