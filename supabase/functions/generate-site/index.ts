@@ -503,6 +503,7 @@ function categorizeSite(site: { name?: string; tagline?: string }, prompt = ""):
     ["beauty",     /\b(salon|barber|hair|nail|makeup|beauty|spa|stylist|lash|brow)\b/],
     ["coaching",   /\b(coach|coaching|consult|mentor|life coach|business coach|speaker|author)\b/],
     ["tech",       /\b(software|saas|app|tech|startup|developer|api|ai|cloud|data|cyber)\b/],
+    ["fashion",    /\b(bespoke|tailor|tailoring|sartorial|savile|haberdash|menswear|suit|suiting|atelier|couture|luxury fashion|formal wear|dress shirt|bowtie|pocket square|cufflink|cravat)\b/],
     ["retail",     /\b(shop|store|retail|boutique|ecommerce|product|brand|fashion|apparel)\b/],
     ["travel",     /\b(travel|tour|hotel|resort|vacation|airbnb|trip|adventure|destination)\b/],
     ["education",  /\b(school|tutor|education|course|class|learn|teach|academy|university|coaching center)\b/],
