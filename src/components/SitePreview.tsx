@@ -515,6 +515,7 @@ const FeatureCard = ({ item, theme }: { item: SiteSectionItem; theme: SiteConten
           alt={item.image_alt || item.title}
           loading="lazy"
           className="aspect-video w-full object-cover"
+          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
         />
       )}
       <div className="p-5">
