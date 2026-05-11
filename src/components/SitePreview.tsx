@@ -483,12 +483,13 @@ const Section = ({
                 <div key={i} className="rounded-lg p-5" style={{ background: `hsl(${theme.background})` }}>
                   <div className="flex items-start gap-3">
                     {it.image_thumb || it.image_url ? (
-                      <img
-                        src={it.image_thumb || it.image_url}
+                      <ValidatedImg
+                        initial={it.image_thumb || it.image_url}
+                        query={buildItemQuery(it, section)}
+                        orientation="squarish"
+                        fallbackIndex={i}
                         alt={it.author || "Testimonial"}
-                        loading="lazy"
                         className="h-12 w-12 shrink-0 rounded-full object-cover"
-                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
                       />
                     ) : (
                       <div
