@@ -724,7 +724,7 @@ async function hydrateImages(siteJson: unknown, prompt = "") {
     }
 
     if (sec.image_placement !== "none") {
-      const query = sec.image_search_query || fallbackForSection(sec);
+      const query = sec.image_search_query || fallbackForSection(sec, sIdx);
       const orientation: "landscape" | "portrait" | "squarish" = "landscape";
       const fbIdx = fallbackCounter++;
       tasks.push(
@@ -738,9 +738,9 @@ async function hydrateImages(siteJson: unknown, prompt = "") {
     }
 
     if (Array.isArray(sec.items) && sec.items.length) {
-      const batchQuery = sec.image_search_query || fallbackForSection(sec);
+      const batchQuery = sec.image_search_query || fallbackForSection(sec, sIdx);
       const itemOrient: "landscape" | "squarish" = sec.type === "testimonials" ? "squarish" : "landscape";
-      const itemCategory = sec.type === "testimonials" ? "generic" : category; // testimonials → portrait fallback bucket later
+      const itemCategory = sec.type === "testimonials" ? "generic" : category;
 
       tasks.push(
         unsplashSearchMany(batchQuery, itemOrient, 10)
@@ -748,9 +748,16 @@ async function hydrateImages(siteJson: unknown, prompt = "") {
           .then(async (batch) => {
             for (let iIdx = 0; iIdx < sec.items!.length; iIdx++) {
               const item = sec.items![iIdx];
-              // Always overwrite — AI-supplied URLs are unreliable.
               let photo: UnsplashPhoto | null = null;
-              const itemQuery = item.image_search_query;
+              // For luxury menswear galleries/features, rotate through a curated
+              // bank of Savile Row queries per item so each card shows a
+              // different facet of the craft (fabric, shoes, cufflinks, etc.).
+              let itemQuery = item.image_search_query;
+              if (!itemQuery && category === "fashion" && sec.type !== "testimonials") {
+                itemQuery = pick(FASHION_GALLERY, iIdx + sIdx);
+              } else if (!itemQuery && category === "fashion" && sec.type === "testimonials") {
+                itemQuery = pick(FASHION_TESTIMONIALS, iIdx);
+              }
               if (itemQuery) {
                 photo = await unsplashSearch(itemQuery, itemOrient, iIdx).catch(() => null);
               }
