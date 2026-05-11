@@ -144,7 +144,7 @@ export function useValidatedImage(opts: UseValidatedImageOptions): UseValidatedI
   const heal = useCallback(async () => {
     if (attemptsRef.current >= MAX_ATTEMPTS) {
       // give up and use a curated CDN fallback
-      const url = lastResortUrl(orientation, fallbackIndex + attemptsRef.current);
+      const url = lastResortUrl(orientation, fallbackIndex + attemptsRef.current, query);
       attemptsRef.current++;
       setSrc(url);
       setStatus("pending");
@@ -159,7 +159,7 @@ export function useValidatedImage(opts: UseValidatedImageOptions): UseValidatedI
       setStatus("pending");
       return;
     }
-    const url = lastResortUrl(orientation, fallbackIndex + attemptsRef.current);
+    const url = lastResortUrl(orientation, fallbackIndex + attemptsRef.current, query);
     setSrc(url);
     setStatus("pending");
   }, [query, orientation, fallbackIndex]);
