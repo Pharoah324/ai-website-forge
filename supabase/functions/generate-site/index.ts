@@ -365,7 +365,7 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
         });
       }
       try { sanitizeMarkdownImages(parsed); } catch (e) { console.warn("sanitizeMarkdownImages failed:", e); }
-      try { await hydrateImages(parsed); } catch (e) { console.warn("hydrateImages failed (continuing without images):", e); }
+      try { await hydrateImages(parsed, prompt); } catch (e) { console.warn("hydrateImages failed (continuing without images):", e); }
       const site = await persistSite(supabase, user.id, prompt, parsed, profile, isUnlimited, isAdmin, effectiveWorkspaceId);
       return new Response(JSON.stringify({ site }), {
         status: 200,
@@ -423,7 +423,7 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
           }
 
           try { sanitizeMarkdownImages(parsed); } catch (e) { console.warn("sanitizeMarkdownImages failed:", e); }
-      try { await hydrateImages(parsed); } catch (e) { console.warn("hydrateImages failed (continuing without images):", e); }
+      try { await hydrateImages(parsed, prompt); } catch (e) { console.warn("hydrateImages failed (continuing without images):", e); }
 
           const site = await persistSite(
             supabase,
