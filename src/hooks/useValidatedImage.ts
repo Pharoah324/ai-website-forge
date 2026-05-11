@@ -152,9 +152,9 @@ export function useValidatedImage(opts: UseValidatedImageOptions): UseValidatedI
   }, [initial, query, orientation, fallbackIndex]);
 
   useEffect(() => {
-    if (src || !query.trim()) return;
+    if (src || initial || !query.trim()) return;
     void heal();
-  }, [src, query, heal]);
+  }, [src, initial, query, heal]);
 
   return { src, alt, onError, status };
 }
