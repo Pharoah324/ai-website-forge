@@ -486,6 +486,8 @@ const FALLBACK_PHOTOS: Record<string, string[]> = {
   travel:     ["1488646953014-85cb44e25828","1469854523086-cc02fe5d8800","1507525428034-b723cf961d3e","1502602898657-3e91760cbb34","1507525428034-b723cf961d3e","1444084316824-dc26d6657664"],
   education:  ["1497633762265-9d179a990aa6","1523580494863-6f3031224c94","1503676260728-1c00da094a0b","1571260899304-425eee4c7efc","1509062522246-3755977927d7","1488190211105-8b0e65b80b4e"],
   finance:    ["1554224155-8d04cb21cd6c","1611974789855-9c2a0a7236a3","1559526324-4b87b5e36e44","1551288049-bebda4e38f71","1518186285589-2f7649de83e0","1579621970590-9d624316904b"],
+  // Luxury menswear / bespoke tailoring / Savile Row aesthetic
+  fashion:    ["1593030103066-0093718efeb9","1507679799987-c73779587ccf","1594938298603-c8148c4dae35","1617137968427-85924c800a22","1521572163474-6864f9cf17ab","1564859228273-274232fdb516","1473966968600-fa801b869a1a","1519415510236-718bdfcd89c8","1593032465175-481ac7f401a0","1509631179647-0177331693ae","1490578474895-699cd4e2cf59","1553240799-36bbf332a5e3","1507003211169-0a1dd7228f2d","1580618864180-f6d7d39b8ff6","1551803091-e20673f15770"],
   generic:    ["1497366216548-37526070297c","1497366754035-f200968a6e72","1486406146926-c627a92ad1ab","1454165804606-c3d57bc86b40","1542744173-8e7e53415bb0","1517048676732-d65bc937f952","1556761175-b413da4baf72","1507003211169-0a1dd7228f2d"],
 };
 
@@ -501,6 +503,7 @@ function categorizeSite(site: { name?: string; tagline?: string }, prompt = ""):
     ["beauty",     /\b(salon|barber|hair|nail|makeup|beauty|spa|stylist|lash|brow)\b/],
     ["coaching",   /\b(coach|coaching|consult|mentor|life coach|business coach|speaker|author)\b/],
     ["tech",       /\b(software|saas|app|tech|startup|developer|api|ai|cloud|data|cyber)\b/],
+    ["fashion",    /\b(bespoke|tailor|tailoring|sartorial|savile|haberdash|menswear|suit|suiting|atelier|couture|luxury fashion|formal wear|dress shirt|bowtie|pocket square|cufflink|cravat)\b/],
     ["retail",     /\b(shop|store|retail|boutique|ecommerce|product|brand|fashion|apparel)\b/],
     ["travel",     /\b(travel|tour|hotel|resort|vacation|airbnb|trip|adventure|destination)\b/],
     ["education",  /\b(school|tutor|education|course|class|learn|teach|academy|university|coaching center)\b/],
@@ -623,6 +626,18 @@ async function hydrateImages(siteJson: unknown, prompt = "") {
   const fallbackForSection = (sec: { type?: string; heading?: string }) => {
     const h = (sec.heading || "").replace(/[^\p{L}\p{N}\s]/gu, " ").trim().split(/\s+/).slice(0, 4).join(" ");
     const base = bizContext || h;
+    if (category === "fashion") {
+      switch (sec.type) {
+        case "hero": return `luxury bespoke suit man portrait editorial`;
+        case "about": return `savile row tailor atelier craftsmanship`;
+        case "features": return `bespoke tailoring fabric detail luxury menswear`;
+        case "pricing": return `luxury suit jacket detail elegant`;
+        case "testimonials": return `well dressed gentleman portrait suit`;
+        case "cta": return `mens formal wear elegant editorial`;
+        case "contact": return `tailor shop interior luxury menswear boutique`;
+        default: return `luxury menswear bespoke ${h}`.trim();
+      }
+    }
     switch (sec.type) {
       case "hero": return `${base} professional`;
       case "about": return `${base} team office`;
@@ -635,11 +650,16 @@ async function hydrateImages(siteJson: unknown, prompt = "") {
     }
   };
 
+  // Treat AI-supplied image URLs as untrusted unless they're real Unsplash CDN URLs.
+  // Models routinely hallucinate placeholder URLs, which then render as broken images / alt text.
+  const isTrustedImageUrl = (u?: string) =>
+    !!u && /^https:\/\/images\.unsplash\.com\//i.test(u);
+
   const applyPhoto = (
     target: { image_url?: string; image_thumb?: string; image_alt?: string; image_credit?: string },
     photo: UnsplashPhoto,
   ) => {
-    if (target.image_url) return;
+    if (isTrustedImageUrl(target.image_url)) return;
     target.image_url = photo.regular;
     target.image_thumb = photo.thumb;
     target.image_alt = photo.alt;
@@ -681,7 +701,7 @@ async function hydrateImages(siteJson: unknown, prompt = "") {
           .then(async (batch) => {
             for (let iIdx = 0; iIdx < sec.items!.length; iIdx++) {
               const item = sec.items![iIdx];
-              if (item.image_url) continue;
+              if (isTrustedImageUrl(item.image_url)) continue;
               let photo: UnsplashPhoto | null = null;
               const itemQuery = item.image_search_query;
               if (itemQuery) {
