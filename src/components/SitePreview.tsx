@@ -537,15 +537,16 @@ const Section = ({
 
   if (section.type === "cta") {
     if (section.image_url) {
+      const ctaOverlay = `linear-gradient(${primary.replace("hsl(", "hsla(").replace(")", " / 0.85)")}, ${primary.replace("hsl(", "hsla(").replace(")", " / 0.85)")})`;
       return (
-        <section
-          className="relative px-6 py-20 text-center"
-          style={{
-            backgroundImage: `linear-gradient(${primary.replace("hsl(", "hsla(").replace(")", " / 0.85)")}, ${primary.replace("hsl(", "hsla(").replace(")", " / 0.85)")}), url(${section.image_url})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            color: "white",
-          }}
+        <ValidatedBgSection
+          initial={section.image_url}
+          query={sectionQuery}
+          orientation="landscape"
+          fallbackIndex={index}
+          overlay={ctaOverlay}
+          sectionClassName="relative px-6 py-20 text-center"
+          sectionStyle={{ color: "white" }}
         >
           <h2 className="text-3xl font-bold">{section.heading}</h2>
           {section.subheading && <p className="mx-auto mt-3 max-w-xl opacity-95">{section.subheading}</p>}
@@ -557,7 +558,7 @@ const Section = ({
               {section.cta_urgency && <span className="text-xs font-medium opacity-95">⏱ {section.cta_urgency}</span>}
             </div>
           )}
-        </section>
+        </ValidatedBgSection>
       );
     }
     return (
