@@ -468,6 +468,57 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
 type UnsplashPhoto = { regular: string; thumb: string; alt: string; credit: string };
 const unsplashCache = new Map<string, UnsplashPhoto[] | null>();
 
+// Curated, license-free Unsplash photo IDs grouped by category.
+// These are served directly from the Unsplash CDN — no API key required.
+// Used as a guaranteed fallback when the Unsplash search API is unavailable,
+// rate-limited, or returns no results for a query.
+const FALLBACK_PHOTOS: Record<string, string[]> = {
+  medical:    ["1576091160399-112ba8d25d1d","1579684385127-1ef15d508118","1631815589968-fdb09a223b1e","1666214280557-f1b5022eb634","1551601651-bc60f254d532","1666214280391-8ff5bd3c0bf0"],
+  restaurant: ["1517248135467-4c7edcad34c4","1555396273-367ea4eb4db5","1414235077428-338989a2e8c0","1565299624946-b28f40a0ae38","1504674900247-0877df9cc836","1546069901-ba9599a7e63c"],
+  realestate: ["1564013799919-ab600027ffc6","1570129477492-45c003edd2be","1512917774080-9991f1c4c750","1600585154340-be6161a56a0c","1582268611958-ebfd161ef9cf","1600596542815-ffad4c1539a9"],
+  fitness:    ["1534438327276-14e5300c3a48","1571019614242-c5c5dee9f50b","1517836357463-d25dfeac3438","1540497077202-7c8a3999166f","1583454110551-21f2fa2afe61","1518611012118-696072aa579a"],
+  legal:      ["1589994965851-a8f479c573a9","1521791136064-7986c2920216","1505664194779-8beaceb93744","1450101499163-c8848c66ca85","1589216532372-1c2a367900d9","1505663912202-ac22d4cb3707"],
+  contractor: ["1503387762-592deb58ef4e","1581094794329-c8112a89af12","1504307651254-35680f356dfd","1572177812156-58036aae439c","1521791055366-0d553872125f","1581092918056-0c4c3acd3789"],
+  beauty:     ["1560066984-138dadb4c035","1522337360788-8b13dee7a37e","1487412947147-5cebf100ffc2","1559599101-f09722fb4948","1532710093739-9470acff878f","1583241800698-9c3b7a4e2c64"],
+  coaching:   ["1573497019940-1c28c88b4f3e","1558222218-b7b54eede3f3","1551836022-d5d88e9218df","1521791055366-0d553872125f","1573497019418-b400bb3ab074","1556761175-5973dc0f32e7"],
+  tech:       ["1517077304055-6e89abbf09b0","1518770660439-4636190af475","1551434678-e076c223a692","1487058792275-0ad4aaf24ca7","1531297484001-80022131f5a1","1498050108023-c5249f4df085"],
+  retail:     ["1483985988355-763728e1935b","1441986300917-64674bd600d8","1560769629-975ec94e6a86","1567401893414-76b7b1e5a7a5","1607082348824-0a96f2a4b9da","1556905055-8f358a7a47b2"],
+  travel:     ["1488646953014-85cb44e25828","1469854523086-cc02fe5d8800","1507525428034-b723cf961d3e","1502602898657-3e91760cbb34","1507525428034-b723cf961d3e","1444084316824-dc26d6657664"],
+  education:  ["1497633762265-9d179a990aa6","1523580494863-6f3031224c94","1503676260728-1c00da094a0b","1571260899304-425eee4c7efc","1509062522246-3755977927d7","1488190211105-8b0e65b80b4e"],
+  finance:    ["1554224155-8d04cb21cd6c","1611974789855-9c2a0a7236a3","1559526324-4b87b5e36e44","1551288049-bebda4e38f71","1518186285589-2f7649de83e0","1579621970590-9d624316904b"],
+  generic:    ["1497366216548-37526070297c","1497366754035-f200968a6e72","1486406146926-c627a92ad1ab","1454165804606-c3d57bc86b40","1542744173-8e7e53415bb0","1517048676732-d65bc937f952","1556761175-b413da4baf72","1507003211169-0a1dd7228f2d"],
+};
+
+function categorizeSite(site: { name?: string; tagline?: string }, prompt = ""): string {
+  const text = `${site.name || ""} ${site.tagline || ""} ${prompt}`.toLowerCase();
+  const buckets: Array<[string, RegExp]> = [
+    ["medical",    /\b(medspa|medical|clinic|doctor|dental|dentist|health|wellness|chiro|therapy|botox|aesthetic|skincare|derma)\b/],
+    ["restaurant", /\b(restaurant|cafe|coffee|bar|bistro|food|pizza|sushi|kitchen|bakery|catering|chef|dining)\b/],
+    ["realestate", /\b(real estate|realtor|property|properties|homes|housing|apartment|broker|mortgage|rental)\b/],
+    ["fitness",    /\b(gym|fitness|yoga|pilates|crossfit|trainer|workout|athletic|sports|martial)\b/],
+    ["legal",      /\b(law|legal|attorney|lawyer|firm|counsel|litigation|paralegal)\b/],
+    ["contractor", /\b(contractor|construction|plumb|electric|hvac|roof|landscap|remodel|renovation|builder|handyman|painter)\b/],
+    ["beauty",     /\b(salon|barber|hair|nail|makeup|beauty|spa|stylist|lash|brow)\b/],
+    ["coaching",   /\b(coach|coaching|consult|mentor|life coach|business coach|speaker|author)\b/],
+    ["tech",       /\b(software|saas|app|tech|startup|developer|api|ai|cloud|data|cyber)\b/],
+    ["retail",     /\b(shop|store|retail|boutique|ecommerce|product|brand|fashion|apparel)\b/],
+    ["travel",     /\b(travel|tour|hotel|resort|vacation|airbnb|trip|adventure|destination)\b/],
+    ["education",  /\b(school|tutor|education|course|class|learn|teach|academy|university|coaching center)\b/],
+    ["finance",    /\b(finance|financial|accounting|bookkeep|tax|investment|wealth|advisor|insurance)\b/],
+  ];
+  for (const [name, re] of buckets) if (re.test(text)) return name;
+  return "generic";
+}
+
+function buildFallbackPhoto(category: string, idx: number, query: string, orientation: "landscape" | "portrait" | "squarish"): UnsplashPhoto {
+  const ids = FALLBACK_PHOTOS[category] || FALLBACK_PHOTOS.generic;
+  const id = ids[Math.abs(idx) % ids.length];
+  const dim = orientation === "squarish" ? "w=800&h=800" : orientation === "portrait" ? "w=900&h=1200" : "w=1600&h=1000";
+  const regular = `https://images.unsplash.com/photo-${id}?${dim}&fit=crop&auto=format&q=80`;
+  const thumb = `https://images.unsplash.com/photo-${id}?w=400&h=300&fit=crop&auto=format&q=70`;
+  return { regular, thumb, alt: query || category, credit: "Photo via Unsplash" };
+}
+
 async function unsplashSearchMany(
   query: string,
   orientation: "landscape" | "portrait" | "squarish" = "landscape",
