@@ -209,8 +209,10 @@ const TESTIMONIALS = [
 ];
 
 function Cell({ value }: { value: string | boolean }) {
-  if (value === true) return <Check className="mx-auto h-5 w-5 text-primary-glow" />;
-  if (value === false) return <X className="mx-auto h-5 w-5 text-destructive/80" />;
+  if (value === true)
+    return <Check className="mx-auto h-5 w-5 text-primary-glow" role="img" aria-label="Included" />;
+  if (value === false)
+    return <X className="mx-auto h-5 w-5 text-destructive/80" role="img" aria-label="Not included" />;
   return <span className="text-base text-navy-foreground">{value}</span>;
 }
 
@@ -529,14 +531,26 @@ export default function Landing() {
           </FadeIn>
           <FadeIn>
             <div className="rounded-2xl border border-primary/30 shadow-glow">
-              <div className="overflow-x-auto rounded-2xl">
+              <div
+                className="overflow-x-auto rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-navy"
+                tabIndex={0}
+                role="region"
+                aria-label="Feature comparison between Base44, Lovable, and Virtual Engine Builder. Scroll horizontally to see all columns."
+              >
                 <table className="w-full min-w-[640px] border-collapse text-sm">
+                  <caption className="sr-only">
+                    Comparison of features across Base44, Lovable, and Virtual Engine Builder.
+                  </caption>
                   <thead>
                     <tr className="bg-navy-muted text-navy-foreground">
-                      <th className="px-5 py-5 text-left text-base font-semibold">Feature</th>
-                      <th className="px-5 py-5 text-center text-base font-semibold">Base44</th>
-                      <th className="px-5 py-5 text-center text-base font-semibold">Lovable</th>
-                      <th className="px-5 py-5 text-center text-base font-bold text-primary-foreground" style={{ background: "hsl(var(--primary))" }}>
+                      <th scope="col" className="px-5 py-5 text-left text-base font-semibold">Feature</th>
+                      <th scope="col" className="px-5 py-5 text-center text-base font-semibold">Base44</th>
+                      <th scope="col" className="px-5 py-5 text-center text-base font-semibold">Lovable</th>
+                      <th
+                        scope="col"
+                        className="px-5 py-5 text-center text-base font-bold text-primary-foreground"
+                        style={{ background: "hsl(var(--primary))" }}
+                      >
                         Virtual Engine Builder
                       </th>
                     </tr>
@@ -544,7 +558,9 @@ export default function Landing() {
                   <tbody>
                     {COMPARISON_ROWS.map((r, i) => (
                       <tr key={r.feature} className={i % 2 ? "bg-navy/50" : "bg-navy-muted/50"}>
-                        <td className="px-5 py-4 text-base text-navy-foreground">{r.feature}</td>
+                        <th scope="row" className="px-5 py-4 text-left text-base font-normal text-navy-foreground">
+                          {r.feature}
+                        </th>
                         <td className="px-5 py-4 text-center text-navy-foreground/85">
                           <Cell value={r.base} />
                         </td>
@@ -557,7 +573,8 @@ export default function Landing() {
                         >
                           {typeof r.veb === "string" ? (
                             <span className="inline-flex items-center gap-1.5">
-                              <Check className="h-5 w-5 text-primary-glow" />
+                              <Check className="h-5 w-5 text-primary-glow" aria-hidden="true" />
+                              <span className="sr-only">Included: </span>
                               {r.veb}
                             </span>
                           ) : null}
