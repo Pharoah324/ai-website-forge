@@ -1,5 +1,67 @@
 import * as LucideIcons from "lucide-react";
 import type { SiteContent, SiteSection, SiteSectionItem } from "@/types/site";
+import { useValidatedImage, type ImageOrientation } from "@/hooks/useValidatedImage";
+
+// Build a useful Unsplash query for self-healing when a generated image
+// 404s. Falls back to the section heading + business context if the
+// generator didn't ship an explicit search query.
+function buildSectionQuery(
+  section: { type?: string; heading?: string; image_search_query?: string },
+  brand?: string,
+): string {
+  if (section.image_search_query) return section.image_search_query;
+  const h = (section.heading || "").trim();
+  const b = (brand || "").trim();
+  switch (section.type) {
+    case "hero": return `${b} ${h} hero professional`.trim() || "modern business hero";
+    case "about": return `${b} team office`.trim() || "professional team";
+    case "features": return `${b} ${h}`.trim() || "service detail";
+    case "testimonials": return "happy customer portrait";
+    case "cta": return `${b} ${h} lifestyle`.trim() || "call to action lifestyle";
+    case "contact": return `${b} location storefront`.trim() || "office storefront";
+    default: return `${b} ${h}`.trim() || "professional photography";
+  }
+}
+
+function buildItemQuery(
+  item: { title?: string; image_search_query?: string },
+  section: { type?: string; heading?: string },
+): string {
+  if (item.image_search_query) return item.image_search_query;
+  return `${section.heading || ""} ${item.title || ""}`.trim() || "detail photography";
+}
+
+type ValidatedImgProps = {
+  initial?: string;
+  query: string;
+  orientation?: ImageOrientation;
+  fallbackIndex?: number;
+  alt?: string;
+  className?: string;
+  loading?: "lazy" | "eager";
+  onLoaded?: () => void;
+};
+
+const ValidatedImg = ({
+  initial, query, orientation = "landscape", fallbackIndex,
+  alt, className, loading = "lazy",
+}: ValidatedImgProps) => {
+  const { src, alt: healedAlt, onError } = useValidatedImage({
+    initial, query, orientation, fallbackIndex,
+  });
+  if (!src) return null;
+  return (
+    <img
+      src={src}
+      alt={healedAlt || alt || ""}
+      loading={loading}
+      className={className}
+      onError={onError}
+    />
+  );
+};
+
+
 
 type IconCmp = React.ComponentType<{ className?: string; size?: number; strokeWidth?: number; style?: React.CSSProperties }>;
 
