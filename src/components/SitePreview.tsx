@@ -276,7 +276,7 @@ export const SitePreview = ({
         </header>
 
         {themedContent.sections.map((s, i) => (
-          <Section key={i} section={s} theme={themedContent.theme} index={i} />
+          <Section key={i} section={s} theme={themedContent.theme} index={i} brand={headerName} />
         ))}
 
         <footer
