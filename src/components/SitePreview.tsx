@@ -534,7 +534,7 @@ const Section = ({
                     {it.image_thumb || it.image_url ? (
                       <ValidatedImg
                         initial={it.image_thumb || it.image_url}
-                        query={buildItemQuery(it, section)}
+                        query={buildItemQuery(it, section, brand)}
                         orientation="squarish"
                         fallbackIndex={i}
                         alt={it.author || "Testimonial"}
@@ -651,12 +651,13 @@ const Section = ({
 };
 
 const FeatureCard = ({
-  item, theme, section, index,
+  item, theme, section, index, brand,
 }: {
   item: SiteSectionItem;
   theme: SiteContent["theme"];
   section: SiteSection;
   index: number;
+  brand?: string;
 }) => {
   const Icon = getIcon(item.icon_name);
   const muted = `hsl(${theme.foreground} / 0.75)`;
@@ -672,7 +673,7 @@ const FeatureCard = ({
       {(item.image_url || item.image_search_query || section.type === "features" || section.type === "about") && (
         <ValidatedImg
           initial={item.image_url}
-          query={buildItemQuery(item, section)}
+          query={buildItemQuery(item, section, brand)}
           orientation="landscape"
           fallbackIndex={index}
           alt={item.image_alt || item.title}
