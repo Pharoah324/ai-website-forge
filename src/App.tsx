@@ -40,7 +40,13 @@ import { WorkspaceProvider } from "./contexts/WorkspaceContext";
 import { getCustomerSubdomain } from "./lib/subdomain";
 import { I18nProvider } from "./lib/i18n";
 import { captureRefFromUrl } from "./lib/affiliateTracking";
+import { usePageTranslator } from "./hooks/usePageTranslator";
 import { useEffect } from "react";
+
+function TranslatorMount() {
+  usePageTranslator();
+  return null;
+}
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, refetchOnWindowFocus: false } },
@@ -69,6 +75,7 @@ function RootLayout() {
         <Toaster />
         <Sonner />
         <I18nProvider>
+          <TranslatorMount />
           <AuthProvider>
             <WorkspaceProvider>
               <ErrorBoundary>
