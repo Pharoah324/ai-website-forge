@@ -499,18 +499,19 @@ export default function Landing() {
           </FadeIn>
           <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
             {[
-              "Google Search Console",
-              "Google Analytics",
-              "Search Atlas",
-              "GoHighLevel",
-              "Stripe",
+              { name: "Google Search Console", icon: "https://cdn.simpleicons.org/googlesearchconsole/ffffff" },
+              { name: "Google Analytics", icon: "https://cdn.simpleicons.org/googleanalytics/ffffff" },
+              { name: "Search Atlas", icon: "https://www.google.com/s2/favicons?domain=searchatlas.com&sz=128" },
+              { name: "GoHighLevel", icon: "https://www.google.com/s2/favicons?domain=gohighlevel.com&sz=128" },
+              { name: "Stripe", icon: "https://cdn.simpleicons.org/stripe/ffffff" },
             ].map((s) => (
               <div
-                key={s}
-                className="flex h-24 items-center justify-center rounded-xl border border-primary/25 px-4 text-center text-sm font-semibold"
+                key={s.name}
+                className="flex h-24 flex-col items-center justify-center gap-2 rounded-xl border border-primary/25 px-4 text-center text-sm font-semibold"
                 style={{ background: "rgba(16,185,129,0.06)" }}
               >
-                {s}
+                <img src={s.icon} alt={`${s.name} logo`} className="h-7 w-7 object-contain" loading="lazy" />
+                <span>{s.name}</span>
               </div>
             ))}
           </div>
