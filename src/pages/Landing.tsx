@@ -530,12 +530,51 @@ export default function Landing() {
             </p>
           </FadeIn>
           <FadeIn>
-            <div className="rounded-2xl border border-primary/30 shadow-glow">
+            {/* Mobile: stacked card list — no horizontal scroll required */}
+            <div className="space-y-3 md:hidden">
+              {COMPARISON_ROWS.map((r) => (
+                <div
+                  key={r.feature}
+                  className="rounded-xl border border-primary/30 bg-navy-muted/40 p-4 shadow-glow"
+                >
+                  <div className="mb-3 text-base font-semibold text-navy-foreground">
+                    {r.feature}
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                    <div className="rounded-lg border border-navy-foreground/10 bg-navy/40 p-2">
+                      <div className="mb-1 text-[10px] uppercase tracking-wide text-navy-foreground/60">Base44</div>
+                      <div className="flex items-center justify-center text-navy-foreground/85">
+                        <Cell value={r.base} />
+                      </div>
+                    </div>
+                    <div className="rounded-lg border border-navy-foreground/10 bg-navy/40 p-2">
+                      <div className="mb-1 text-[10px] uppercase tracking-wide text-navy-foreground/60">Lovable</div>
+                      <div className="flex items-center justify-center text-navy-foreground/85">
+                        <Cell value={r.lov} />
+                      </div>
+                    </div>
+                    <div
+                      className="rounded-lg border border-primary/40 p-2"
+                      style={{ background: "rgba(16,185,129,0.18)" }}
+                    >
+                      <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-primary-glow">VEB</div>
+                      <div className="flex items-center justify-center gap-1 text-[13px] font-semibold text-navy-foreground">
+                        <Check className="h-4 w-4 shrink-0 text-primary-glow" aria-hidden="true" />
+                        <span className="leading-tight">{r.veb}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop / tablet: full table */}
+            <div className="hidden rounded-2xl border border-primary/30 shadow-glow md:block">
               <div
                 className="overflow-x-auto rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-navy"
                 tabIndex={0}
                 role="region"
-                aria-label="Feature comparison between Base44, Lovable, and Virtual Engine Builder. Scroll horizontally to see all columns."
+                aria-label="Feature comparison between Base44, Lovable, and Virtual Engine Builder."
               >
                 <table className="w-full min-w-[640px] border-collapse text-sm">
                   <caption className="sr-only">
