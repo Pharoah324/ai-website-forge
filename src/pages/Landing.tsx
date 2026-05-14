@@ -989,8 +989,8 @@ export default function Landing() {
                 <li><a href="#" className="hover:text-primary-glow">Help Center</a></li>
                 <li><a href="#" className="hover:text-primary-glow">Contact</a></li>
                 <li><a href="#" className="hover:text-primary-glow">Status</a></li>
-                <li><a href="#" className="hover:text-primary-glow">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-primary-glow">Terms</a></li>
+                <li><Link to="/privacy" className="hover:text-primary-glow">Privacy Policy</Link></li>
+                <li><Link to="/terms" className="hover:text-primary-glow">Terms</Link></li>
               </ul>
             </div>
           </div>

@@ -7,6 +7,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
 import Dashboard from "./pages/Dashboard";
 import NewSite from "./pages/NewSite";
 import SiteDetail from "./pages/SiteDetail";
@@ -96,6 +98,8 @@ export const routes: RouteRecord[] = [
     children: [
       { index: true, Component: Landing },
       { path: "auth", Component: Auth },
+      { path: "privacy", Component: Privacy },
+      { path: "terms", Component: Terms },
       { path: "invite/:token", Component: InviteAccept },
       { path: "share/:token", Component: Share },
       { path: "affiliates", Component: Affiliates },
