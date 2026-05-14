@@ -9,6 +9,8 @@ import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
+import Contact from "./pages/Contact";
+import Help from "./pages/Help";
 import Dashboard from "./pages/Dashboard";
 import NewSite from "./pages/NewSite";
 import SiteDetail from "./pages/SiteDetail";
