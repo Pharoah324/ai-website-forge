@@ -988,7 +988,7 @@ export default function Landing() {
                 <li><Link to="/affiliates" className="hover:text-primary-glow">Affiliate Program</Link></li>
                 <li><Link to="/help" className="hover:text-primary-glow">Help Center</Link></li>
                 <li><Link to="/contact" className="hover:text-primary-glow">Contact</Link></li>
-                <li><a href="https://status.virtualengine.instatus.com" target="_blank" rel="noopener noreferrer" className="hover:text-primary-glow">Status</a></li>
+                <li><a href="https://virtualengine.instatus.com" target="_blank" rel="noopener noreferrer" className="hover:text-primary-glow">Status</a></li>
                 <li><Link to="/privacy" className="hover:text-primary-glow">Privacy Policy</Link></li>
                 <li><Link to="/terms" className="hover:text-primary-glow">Terms</Link></li>
               </ul>
