@@ -684,11 +684,15 @@ const Section = ({
   theme,
   index,
   brand,
+  siteId,
+  hasBookingCta,
 }: {
   section: SiteSection;
   theme: SiteContent["theme"];
   index: number;
   brand?: string;
+  siteId?: string;
+  hasBookingCta?: boolean;
 }) => {
   const accentBg = `hsl(${theme.accent})`;
   const primary = `hsl(${theme.primary})`;
@@ -698,12 +702,7 @@ const Section = ({
 
   const PrimaryCTA = section.cta ? (
     <div className="mt-6 flex flex-col items-center gap-1.5">
-      <button
-        style={{ background: primary, color: "white" }}
-        className="rounded-md px-6 py-3 text-sm font-semibold shadow-md"
-      >
-        {section.cta}
-      </button>
+      <CTAButton label={section.cta} primary={primary} />
       {section.cta_urgency && (
         <span className="text-xs font-medium" style={{ color: `hsl(${theme.primary})` }}>
           ⏱ {section.cta_urgency}
