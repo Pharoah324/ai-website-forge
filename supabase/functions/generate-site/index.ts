@@ -419,13 +419,11 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
               if (!json || json === "[DONE]") continue;
               try {
                 const evt = JSON.parse(json);
-                // Anthropic streaming: input_json_delta carries tool input chunks
-                if (evt.type === "content_block_delta" && evt.delta?.type === "input_json_delta") {
-                  const argChunk = evt.delta.partial_json;
-                  if (typeof argChunk === "string" && argChunk.length) {
-                    accumulated += argChunk;
-                    send("delta", { partial_json: argChunk });
-                  }
+                // OpenAI-compatible streaming: tool_calls deltas carry function.arguments chunks
+                const argChunk = evt.choices?.[0]?.delta?.tool_calls?.[0]?.function?.arguments;
+                if (typeof argChunk === "string" && argChunk.length) {
+                  accumulated += argChunk;
+                  send("delta", { partial_json: argChunk });
                 }
               } catch { /* ignore */ }
             }
