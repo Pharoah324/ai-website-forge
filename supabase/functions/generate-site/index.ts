@@ -332,24 +332,44 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
     });
 
     if (!aiResp.ok) {
+      const t = await aiResp.text();
+      console.error("[generate-site] Anthropic API error", {
+        status: aiResp.status,
+        statusText: aiResp.statusText,
+        body: t.slice(0, 2000),
+      });
+
+      let parsedErr: { error?: { type?: string; message?: string } } = {};
+      try { parsedErr = JSON.parse(t); } catch { /* not JSON */ }
+      const apiMsg = parsedErr.error?.message || t.slice(0, 500) || aiResp.statusText;
+      const apiType = parsedErr.error?.type;
+
+      if (aiResp.status === 401 || apiType === "authentication_error") {
+        return new Response(JSON.stringify({
+          error: "AI authentication failed",
+          detail: `Anthropic rejected the API key: ${apiMsg}. Verify ANTHROPIC_API_KEY in Supabase Edge Function secrets is a valid Anthropic key.`,
+          code: "invalid_api_key",
+          provider_status: aiResp.status,
+        }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
       if (aiResp.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Rate limited. Try again in a moment." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-        );
+        return new Response(JSON.stringify({
+          error: "Rate limited. Try again in a moment.",
+          detail: apiMsg,
+        }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
       if (aiResp.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "Anthropic credits exhausted." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-        );
+        return new Response(JSON.stringify({
+          error: "Anthropic credits exhausted.",
+          detail: apiMsg,
+        }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
-      const t = await aiResp.text();
-      console.error("Anthropic error:", aiResp.status, t);
-      return new Response(JSON.stringify({ error: "AI provider error" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(JSON.stringify({
+        error: "AI provider error",
+        detail: apiMsg,
+        code: apiType || "upstream_error",
+        provider_status: aiResp.status,
+      }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     if (!stream) {
