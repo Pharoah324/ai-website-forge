@@ -188,7 +188,7 @@ async function verifySecrets() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
+          model: "claude-sonnet-4-5-20250929",
           max_tokens: 1,
           messages: [{ role: "user", content: "ping" }],
         }),
@@ -385,7 +385,7 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
     }
 
     const aiBody = {
-      model: "claude-sonnet-4-20250514",
+      model: "claude-sonnet-4-5-20250929",
       max_tokens: 8192,
       system: SYSTEM_PROMPT + voiceAddon,
       messages: [
