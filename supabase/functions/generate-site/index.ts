@@ -153,9 +153,80 @@ const TOOL = {
   },
 };
 
+async function verifySecrets() {
+  const required = [
+    "LOVABLE_API_KEY",
+    "SUPABASE_URL",
+    "SUPABASE_ANON_KEY",
+    "SUPABASE_SERVICE_ROLE_KEY",
+  ];
+  const optional = ["UNSPLASH_ACCESS_KEY"];
+  const checks: Record<string, { present: boolean; valid?: boolean; detail?: string }> = {};
+  const missing: string[] = [];
+  const invalid: string[] = [];
+
+  for (const k of required) {
+    const v = Deno.env.get(k);
+    const present = !!(v && v.trim());
+    checks[k] = { present };
+    if (!present) missing.push(k);
+  }
+  for (const k of optional) {
+    const v = Deno.env.get(k);
+    checks[k] = { present: !!(v && v.trim()) };
+  }
+
+  // Live-validate LOVABLE_API_KEY against the gateway.
+  const lk = Deno.env.get("LOVABLE_API_KEY");
+  if (lk && lk.trim()) {
+    try {
+      const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${lk}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash-lite",
+          messages: [{ role: "user", content: "ping" }],
+          max_tokens: 1,
+        }),
+      });
+      const txt = await r.text();
+      if (r.ok) {
+        checks.LOVABLE_API_KEY.valid = true;
+      } else {
+        checks.LOVABLE_API_KEY.valid = false;
+        checks.LOVABLE_API_KEY.detail = `gateway ${r.status}: ${txt.slice(0, 200)}`;
+        if (r.status === 401 || r.status === 403) invalid.push("LOVABLE_API_KEY");
+        else if (r.status === 402) checks.LOVABLE_API_KEY.detail = "credits_exhausted";
+        else if (r.status === 429) checks.LOVABLE_API_KEY.detail = "rate_limited";
+      }
+    } catch (e) {
+      checks.LOVABLE_API_KEY.valid = false;
+      checks.LOVABLE_API_KEY.detail = `network: ${e instanceof Error ? e.message : String(e)}`;
+    }
+  }
+
+  const ok = missing.length === 0 && invalid.length === 0;
+  return { ok, missing, invalid, checks };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Public health/verify endpoint — no auth required so it's diagnosable
+  // even when auth is the problem. Triggered by GET, ?verify=1, or path /verify.
+  const url = new URL(req.url);
+  if (
+    req.method === "GET" ||
+    url.searchParams.get("verify") === "1" ||
+    url.pathname.endsWith("/verify")
+  ) {
+    const result = await verifySecrets();
+    return new Response(JSON.stringify(result, null, 2), {
+      status: result.ok ? 200 : 503,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   try {
