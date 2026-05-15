@@ -159,16 +159,15 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!ANTHROPIC_API_KEY || !ANTHROPIC_API_KEY.trim()) {
-      console.error("[generate-site] ANTHROPIC_API_KEY is missing or empty in edge function secrets.");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY || !LOVABLE_API_KEY.trim()) {
+      console.error("[generate-site] LOVABLE_API_KEY is missing.");
       return new Response(JSON.stringify({
         error: "AI provider not configured",
-        detail: "ANTHROPIC_API_KEY is missing. Set it in Supabase Edge Function secrets.",
+        detail: "LOVABLE_API_KEY is missing.",
         code: "missing_api_key",
       }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-    console.log("[generate-site] ANTHROPIC_API_KEY present, length:", ANTHROPIC_API_KEY.length, "prefix:", ANTHROPIC_API_KEY.slice(0, 7));
 
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
