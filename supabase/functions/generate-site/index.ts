@@ -490,9 +490,15 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
               if (!json || json === "[DONE]") continue;
               try {
                 const evt = JSON.parse(json);
-                // OpenAI-compatible streaming: tool_calls deltas carry function.arguments chunks
-                const argChunk = evt.choices?.[0]?.delta?.tool_calls?.[0]?.function?.arguments;
-                if (typeof argChunk === "string" && argChunk.length) {
+                // Anthropic streaming: tool_use input arrives via
+                // content_block_delta events with delta.type === "input_json_delta".
+                if (
+                  evt.type === "content_block_delta" &&
+                  evt.delta?.type === "input_json_delta" &&
+                  typeof evt.delta.partial_json === "string" &&
+                  evt.delta.partial_json.length
+                ) {
+                  const argChunk = evt.delta.partial_json;
                   accumulated += argChunk;
                   send("delta", { partial_json: argChunk });
                 }
