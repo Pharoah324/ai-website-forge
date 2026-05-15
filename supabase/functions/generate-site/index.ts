@@ -155,7 +155,7 @@ const TOOL = {
 
 async function verifySecrets() {
   const required = [
-    "LOVABLE_API_KEY",
+    "ANTHROPIC_API_KEY",
     "SUPABASE_URL",
     "SUPABASE_ANON_KEY",
     "SUPABASE_SERVICE_ROLE_KEY",
@@ -176,32 +176,35 @@ async function verifySecrets() {
     checks[k] = { present: !!(v && v.trim()) };
   }
 
-  // Live-validate LOVABLE_API_KEY against the gateway.
-  const lk = Deno.env.get("LOVABLE_API_KEY");
-  if (lk && lk.trim()) {
+  // Live-validate ANTHROPIC_API_KEY against the Anthropic API.
+  const ak = Deno.env.get("ANTHROPIC_API_KEY");
+  if (ak && ak.trim()) {
     try {
-      const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      const r = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
-        headers: { Authorization: `Bearer ${lk}`, "Content-Type": "application/json" },
+        headers: {
+          "x-api-key": ak,
+          "anthropic-version": "2023-06-01",
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash-lite",
-          messages: [{ role: "user", content: "ping" }],
+          model: "claude-sonnet-4-20250514",
           max_tokens: 1,
+          messages: [{ role: "user", content: "ping" }],
         }),
       });
       const txt = await r.text();
       if (r.ok) {
-        checks.LOVABLE_API_KEY.valid = true;
+        checks.ANTHROPIC_API_KEY.valid = true;
       } else {
-        checks.LOVABLE_API_KEY.valid = false;
-        checks.LOVABLE_API_KEY.detail = `gateway ${r.status}: ${txt.slice(0, 200)}`;
-        if (r.status === 401 || r.status === 403) invalid.push("LOVABLE_API_KEY");
-        else if (r.status === 402) checks.LOVABLE_API_KEY.detail = "credits_exhausted";
-        else if (r.status === 429) checks.LOVABLE_API_KEY.detail = "rate_limited";
+        checks.ANTHROPIC_API_KEY.valid = false;
+        checks.ANTHROPIC_API_KEY.detail = `anthropic ${r.status}: ${txt.slice(0, 200)}`;
+        if (r.status === 401 || r.status === 403) invalid.push("ANTHROPIC_API_KEY");
+        else if (r.status === 429) checks.ANTHROPIC_API_KEY.detail = "rate_limited";
       }
     } catch (e) {
-      checks.LOVABLE_API_KEY.valid = false;
-      checks.LOVABLE_API_KEY.detail = `network: ${e instanceof Error ? e.message : String(e)}`;
+      checks.ANTHROPIC_API_KEY.valid = false;
+      checks.ANTHROPIC_API_KEY.detail = `network: ${e instanceof Error ? e.message : String(e)}`;
     }
   }
 
@@ -230,12 +233,12 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY || !LOVABLE_API_KEY.trim()) {
-      console.error("[generate-site] LOVABLE_API_KEY is missing.");
+    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!ANTHROPIC_API_KEY || !ANTHROPIC_API_KEY.trim()) {
+      console.error("[generate-site] ANTHROPIC_API_KEY is missing.");
       return new Response(JSON.stringify({
         error: "AI provider not configured",
-        detail: "LOVABLE_API_KEY is missing.",
+        detail: "ANTHROPIC_API_KEY is missing.",
         code: "missing_api_key",
       }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
@@ -382,27 +385,26 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
     }
 
     const aiBody = {
-      model: "google/gemini-2.5-pro",
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 8192,
+      system: SYSTEM_PROMPT + voiceAddon,
       messages: [
-        { role: "system", content: SYSTEM_PROMPT + voiceAddon },
         { role: "user", content: userMessage },
       ],
       tools: [{
-        type: "function",
-        function: {
-          name: TOOL.name,
-          description: TOOL.description,
-          parameters: TOOL.input_schema,
-        },
+        name: TOOL.name,
+        description: TOOL.description,
+        input_schema: TOOL.input_schema,
       }],
-      tool_choice: { type: "function", function: { name: TOOL.name } },
+      tool_choice: { type: "tool", name: TOOL.name },
       stream,
     };
 
-    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const aiResp = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
         "Content-Type": "application/json",
       },
       body: JSON.stringify(aiBody),
@@ -410,7 +412,7 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
 
     if (!aiResp.ok) {
       const t = await aiResp.text();
-      console.error("[generate-site] Lovable AI Gateway error", {
+      console.error("[generate-site] Anthropic API error", {
         status: aiResp.status,
         statusText: aiResp.statusText,
         body: t.slice(0, 2000),
@@ -421,11 +423,12 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
           detail: t.slice(0, 500),
         }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
-      if (aiResp.status === 402) {
+      if (aiResp.status === 401 || aiResp.status === 403) {
         return new Response(JSON.stringify({
-          error: "AI credits exhausted. Add funds in Settings → Workspace → Usage.",
+          error: "Invalid Anthropic API key",
           detail: t.slice(0, 500),
-        }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          code: "invalid_api_key",
+        }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
       return new Response(JSON.stringify({
         error: "AI provider error",
@@ -436,21 +439,18 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
 
     if (!stream) {
       const data = await aiResp.json();
-      const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-      const argStr = toolCall?.function?.arguments || null;
-      if (!argStr) {
+      // Anthropic returns content blocks; find the tool_use block
+      const toolBlock = Array.isArray(data.content)
+        ? data.content.find((b: { type?: string }) => b?.type === "tool_use")
+        : null;
+      const parsedInput = toolBlock?.input ?? null;
+      if (!parsedInput) {
         return new Response(JSON.stringify({ error: "AI returned no site" }), {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      let parsed: unknown;
-      try { parsed = JSON.parse(argStr); } catch {
-        return new Response(JSON.stringify({ error: "AI returned invalid JSON" }), {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
+      const parsed: unknown = parsedInput;
       try { sanitizeMarkdownImages(parsed); } catch (e) { console.warn("sanitizeMarkdownImages failed:", e); }
       try { await hydrateImages(parsed, prompt); } catch (e) { console.warn("hydrateImages failed (continuing without images):", e); }
       const site = await persistSite(supabase, user.id, prompt, parsed, profile, isUnlimited, isAdmin, effectiveWorkspaceId);
@@ -490,9 +490,15 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
               if (!json || json === "[DONE]") continue;
               try {
                 const evt = JSON.parse(json);
-                // OpenAI-compatible streaming: tool_calls deltas carry function.arguments chunks
-                const argChunk = evt.choices?.[0]?.delta?.tool_calls?.[0]?.function?.arguments;
-                if (typeof argChunk === "string" && argChunk.length) {
+                // Anthropic streaming: tool_use input arrives via
+                // content_block_delta events with delta.type === "input_json_delta".
+                if (
+                  evt.type === "content_block_delta" &&
+                  evt.delta?.type === "input_json_delta" &&
+                  typeof evt.delta.partial_json === "string" &&
+                  evt.delta.partial_json.length
+                ) {
+                  const argChunk = evt.delta.partial_json;
                   accumulated += argChunk;
                   send("delta", { partial_json: argChunk });
                 }
