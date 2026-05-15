@@ -52,18 +52,138 @@ TRUST SIGNALS:
 MOBILE-FIRST:
 - Stack columns to single column on mobile. 48px tap targets. Never <14px on mobile. No horizontal scrolling. Hero image works portrait.
 
-SECTION ORDER FOR MAX CONVERSION:
-1) hero  2) social proof / stats strip  3) problem/pain  4) solution  5) services/features w/ images  6) how it works (3 steps)  7) testimonials w/ photos  8) about w/ team photo  9) final CTA w/ urgency  10) contact/footer.
+LAYOUT ARCHITECTURE BY INDUSTRY:
+Detect the industry from the user's prompt and apply the matching architecture below. Each industry MUST feel structurally distinct — never reuse another industry's section order, hero style, feature presentation, or testimonial treatment. Use the layout/image_placement fields and section ordering described to enforce this.
 
-INDUSTRY DESIGN:
-Medical/MedSpa: clean whites, soft tones, professional photos, trust-heavy.
-Restaurant: large food photography, warm colors, menu prominent.
-Real Estate: full-width property photos, agent headshot, map.
-Fitness/Gym: high-energy photos, bold colors, transformation results.
-Law Firm: dark professional colors, attorney photos, trust signals.
-Contractor: before/after, project gallery, reviews.
-Salon/Beauty: lifestyle photography, soft aesthetic, booking prominent.
-Coaching: large personal-brand photo, results + testimonials heavy.
+RESTAURANT / CAFE / FOOD — Editorial magazine, asymmetric, warm:
+1) hero (image-background, full-bleed atmospheric photo, centered headline, reservation CTA)
+2) features "Tonight's Menu" (cards-3, 3 dishes w/ photos, name, one-line desc)
+3) gallery (asymmetric grid: large left + two stacked right)
+4) about (image-left founder photo, intimate narrative)
+5) press/awards strip (horizontal logo bar / star ratings)
+6) testimonials (quotes layout, 2 large italic serif pull-quotes, NO cards)
+7) cta hours + reservation (dark background, warm accent)
+Backgrounds: cream → terracotta → cream → dark.
+
+MEDICAL / MEDSPA / HEALTHCARE / DENTAL — Clinical luxury, clean, trustworthy:
+1) hero (image-right, photo 60% / headline+CTA 40%, lots of white space)
+2) stats trust bar (4 credentials: board certified, years, patients, rating)
+3) features treatments (cards-3, subtle icons, name + one-line benefit)
+4) "Your Journey" 3-step horizontal process (Consult → Treatment → Results)
+5) before/after results (photo-forward)
+6) about provider (image-left professional photo, credentials, statement)
+7) cta booking (soft background, prominent calendar button)
+Backgrounds: white → soft tint → white throughout.
+
+FITNESS / GYM / CROSSFIT / MARTIAL ARTS — Dark, aggressive, motivating:
+1) hero (image-background dark, action photo, large aggressive headline, NO subhead)
+2) stats strip (4 numbers: members, classes/week, coaches, years)
+3) features programs (cards-3, dark background, bold names, intensity badge)
+4) "A Day at [GYM]" schedule preview with time slots (list)
+5) testimonials transformations (2-3 member stories with metrics: lbs lost, PRs)
+6) team coaches (avatars in a row, name + specialty only)
+7) pricing (3 tiers, dark cards, most popular highlighted)
+8) cta free trial (full-width, maximum urgency)
+Backgrounds: stay dark throughout.
+
+REAL ESTATE / REALTOR / PROPERTY — Trustworthy, local, results-driven:
+1) hero (property photo, outcome-focused headline)
+2) stats market (4 numbers: homes sold, avg DOM, list/sale ratio, reviews)
+3) features "How I Help" (cards-3 columns Buyers/Sellers/Investors, distinct CTA each)
+4) gallery featured listings (2-3 property cards w/ photo, beds/baths, price)
+5) about agent (image-left large pro photo, story-driven, local credibility)
+6) gallery video / virtual tour
+7) testimonials (cards-3 w/ family names + transaction type)
+8) contact (map + form side by side)
+
+LAW FIRM / ATTORNEY / LEGAL — Navy dominant, gold accents, serif, gravitas:
+1) hero (image-background dark navy, minimal text, ONE powerful headline, ONE CTA)
+2) features practice areas (list-with-icons VERTICAL list, NOT 3-column cards)
+3) features "Why clients choose us" (grid 2x2, 4 differentiators)
+4) team attorneys (horizontal cards w/ photo, name, bar admissions, specialty)
+5) stats case results (3 anonymized verdicts with amounts)
+6) testimonials (quotes, 2 long-form quotes, full name + matter type)
+7) faq accordion (4-6 questions)
+8) cta free consultation (phone number prominently displayed)
+Backgrounds: white → navy → white → navy.
+
+CONTRACTOR / HVAC / PLUMBER / ELECTRICIAN — Trustworthy, urgent, local:
+1) hero (urgency focused, phone number IN hero, 24/7 badge)
+2) features "Why choose us" (4 trust icons: Licensed, Insured, Warranty, 24/7)
+3) features services (list-with-icons, NOT cards, brief descriptions)
+4) "How it works" 3 steps (Call → We Arrive → Fixed)
+5) gallery projects (3-4 before/after photos)
+6) testimonials reviews (cards-3 w/ star ratings, first name + city)
+7) contact service area (map or city list)
+8) cta emergency (red/urgent, phone number large, available now)
+
+BEAUTY / SALON / HAIR / NAILS — Editorial, aspirational, feminine but distinctive:
+1) hero (image-background full-bleed editorial, model/results photo)
+2) pricing services menu (price list format with categories Hair/Color/Treatments, NOT cards)
+3) gallery "The experience" (3 photos in horizontal filmstrip)
+4) gallery featured work (masonry grid, 5-6 photos)
+5) team (avatars circular headshots, name + specialty)
+6) testimonials (Instagram-style quote cards)
+7) cta booking (calendar embed / prominent booking button)
+
+E-COMMERCE / PRODUCT / BRAND — Product-forward editorial, authentic:
+1) hero (image-right product image, value prop left, buy CTA prominent)
+2) features "Why it's different" (cards-3 w/ close-up photos)
+3) gallery bestsellers (horizontal scroll product row, name + price)
+4) about founder story (image-left, conversational, origin narrative)
+5) stats social proof (review count + star rating + 3 verified reviews)
+6) about "How it's made" / sustainability (process/values)
+7) cta final (free shipping threshold, return policy, buy now)
+
+WELLNESS / YOGA / MASSAGE / HOLISTIC — Soft, organic, unhurried:
+1) hero (image-background soft nature/studio, gentle headline, NO urgency)
+2) about philosophy (full-width quote / mission in large italic serif)
+3) features services (cards-3 w/ soft rounded corners, gentle icons)
+4) "Your practice" timeline / journey of transformation
+5) about practitioner (image-left warm personal photo in natural setting)
+6) testimonials community (handwritten-note / soft card style)
+7) features schedule / upcoming classes (list)
+8) cta gentle ("Begin your journey" not "Book now")
+Backgrounds: cream → white → sage → white (stay soft).
+
+COACHING / CONSULTING / ADVISOR — Personal brand, authority, transformation:
+1) hero (image-right LARGE personal photo, bold transformation headline)
+2) features "Who I work with" (cards-3 client avatars/personas)
+3) about the problem (agitate pain points)
+4) features the solution / methodology (3-4 steps or pillars, numbered)
+5) testimonials results (2-3 case studies with specific outcomes)
+6) about credibility + story
+7) press podcast/media strip (if applicable)
+8) cta application ("Apply to work with me" not "Contact")
+
+TECH / SAAS / SOFTWARE / APP — Clean, product-screenshot forward, conversion-optimized:
+1) hero (image-right product screenshot/demo, benefit headline, free trial CTA, social proof)
+2) press logo bar ("trusted by" companies)
+3) features alternating image-left/image-right rows w/ product screenshots (NOT 3-column cards)
+4) "How it works" 3-step numbered process
+5) pricing (3 tiers, monthly/annual toggle)
+6) press integration logos ("works with your stack")
+7) testimonials (company name, role, metric achieved)
+8) cta final (free trial, no credit card required)
+Backgrounds: white → light gray → white → dark.
+
+CREATIVE AGENCY / DESIGN / MARKETING — Dark, editorial, type-forward, portfolio-centric:
+1) hero (dark, BOLD statement headline, NO hero image — type dominates, image_placement "none")
+2) gallery work/portfolio (3 case study cards: client, category, result)
+3) features services (list style, NOT cards)
+4) "How we work" 3 phases (Discover / Design / Deploy)
+5) press client logos grid
+6) team (editorial headshots, role + one quirky fact)
+7) press awards/recognition strip
+8) cta new business ("Tell us about your project")
+
+CRITICAL LAYOUT RULES:
+- NEVER use the same section order for different industries — the skeleton must feel architecturally distinct.
+- VARY the hero: restaurant full-bleed centered; medical split 60/40; fitness full-bleed dark; law minimal dark one-headline; tech product-screenshot right; coaching personal-photo dominant; agency type-only no image.
+- VARY feature presentation: some industries use cards-3, others list-with-icons vertical, others alternating image-left/image-right rows, others numbered steps, others a price-list. NEVER default to 3-column cards for every industry.
+- VARY testimonial style: restaurant large italic pull-quotes; fitness transformation w/ metrics; law formal anonymized; wellness soft handwritten; tech company+role+metric. NEVER use identical card style across industries.
+- SECTION COUNT varies: simple local 6-7; restaurant 7-8; saas/tech 8-9; law/medical 7-8; e-commerce 7-8.
+- BACKGROUND ALTERNATION matches mood (see per-industry notes above).
 
 FUNNEL MODES (when funnel_type is provided):
 - lead_capture: single page, no nav, hero form above fold, minimal fields, trust badges + testimonials below form, NO multi-section nav links.
@@ -120,7 +240,7 @@ const TOOL = {
             properties: {
               type: {
                 type: "string",
-                enum: ["hero", "features", "about", "testimonials", "pricing", "faq", "cta", "contact"],
+                enum: ["hero", "features", "about", "testimonials", "pricing", "faq", "cta", "contact", "gallery", "stats"],
               },
               heading: { type: "string" },
               subheading: { type: "string" },
@@ -128,7 +248,7 @@ const TOOL = {
               cta_urgency: { type: "string" },
               image_search_query: { type: "string", description: "English search phrase for Unsplash" },
               image_placement: { type: "string", enum: ["background", "side", "card", "avatar", "none"] },
-              layout: { type: "string", enum: ["image-right", "image-left", "image-background", "grid", "stacked"] },
+              layout: { type: "string", enum: ["image-right", "image-left", "image-background", "grid", "stacked", "cards", "cards-3", "quotes", "list", "list-with-icons"] },
               items: {
                 type: "array",
                 items: {
