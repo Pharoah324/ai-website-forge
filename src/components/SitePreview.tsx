@@ -300,7 +300,7 @@ const ContactForm = ({
       setStatus("success");
     } catch (err) {
       setStatus("error");
-      setErrorMsg(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+      setErrorMsg(err instanceof Error ? err.message : t("err_generic"));
     }
   };
 
