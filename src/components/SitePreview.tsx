@@ -312,10 +312,10 @@ const ContactForm = ({
           style={{ border: `1px solid hsl(${theme.primary} / 0.4)`, background: `hsl(${theme.primary} / 0.06)` }}
         >
           <h2 className="text-2xl font-bold" style={{ color: primary }}>
-            Thank you!
+            {t("thank_you")}
           </h2>
           <p className="mt-3" style={{ color: muted }}>
-            We'll be in touch within 24 hours.
+            {t("we_will_be_in_touch")}
           </p>
         </div>
       </section>
