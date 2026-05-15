@@ -336,7 +336,7 @@ const ContactForm = ({
             className="mx-auto mt-4 max-w-md rounded-md px-3 py-2 text-center text-xs"
             style={{ background: `hsl(${theme.primary} / 0.08)`, color: primary }}
           >
-            We'll confirm your reservation by phone or email.
+            {t("reservation_note")}
           </p>
         )}
 
