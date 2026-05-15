@@ -149,7 +149,7 @@ const ValidatedImg = ({
 // the URL and swap to a healed src once it's verified.
 const ValidatedBgSection = ({
   initial, query, orientation = "landscape", fallbackIndex,
-  overlay, sectionClassName, sectionStyle, children,
+  overlay, sectionClassName, sectionStyle, children, credit,
 }: {
   initial?: string;
   query: string;
@@ -159,6 +159,7 @@ const ValidatedBgSection = ({
   sectionClassName?: string;
   sectionStyle?: React.CSSProperties;
   children: React.ReactNode;
+  credit?: string;
 }) => {
   const { src, status } = useValidatedImage({
     initial, query, orientation, fallbackIndex, preload: true,
@@ -166,7 +167,7 @@ const ValidatedBgSection = ({
   const url = status === "ok" ? src : undefined;
   return (
     <section
-      className={sectionClassName}
+      className={`relative ${sectionClassName || ""}`}
       style={{
         ...sectionStyle,
         backgroundImage: url ? `${overlay}, url(${url})` : overlay,
@@ -175,6 +176,7 @@ const ValidatedBgSection = ({
       }}
     >
       {children}
+      {url && credit && <PhotoCredit credit={credit} />}
     </section>
   );
 };
