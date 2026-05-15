@@ -623,7 +623,7 @@ async function unsplashSearchMany(
   orientation: "landscape" | "portrait" | "squarish" = "landscape",
   perPage = 10,
 ): Promise<UnsplashPhoto[] | null> {
-  if (!UNSPLASH_ACCESS_KEY || !query) return null;
+  if (!UNSPLASH_ACCESS_KEY || !query || unsplashDisabled) return null;
   const cacheKey = `${orientation}:${perPage}:${query}`;
   if (unsplashCache.has(cacheKey)) return unsplashCache.get(cacheKey)!;
   try {
@@ -633,6 +633,10 @@ async function unsplashSearchMany(
     });
     if (!r.ok) {
       console.warn("unsplash error", r.status, query);
+      if (r.status === 401 || r.status === 403) {
+        console.warn("unsplash key invalid — disabling for this invocation");
+        unsplashDisabled = true;
+      }
       unsplashCache.set(cacheKey, null);
       return null;
     }
