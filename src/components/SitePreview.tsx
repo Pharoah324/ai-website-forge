@@ -748,6 +748,9 @@ export const SitePreview = ({
     branding?.footer_text ||
     `© ${new Date().getFullYear()} ${headerName}`;
 
+  const lang = themedContent.lang;
+  const t = makeT(lang);
+
   // Booking-style CTA anywhere on the page → show reservation reassurance in form.
   const hasBookingCta = themedContent.sections.some(
     (s) => (s.cta && BOOKING_RE.test(s.cta)) || (s.heading && BOOKING_RE.test(s.heading)),
@@ -759,14 +762,14 @@ export const SitePreview = ({
         ...themedContent.sections,
         {
           type: "contact",
-          heading: "Get in touch",
-          subheading: "Tell us what you need and we'll be in touch within 24 hours.",
-          cta: "Send message",
+          heading: t("contact_heading"),
+          subheading: t("contact_subheading"),
+          cta: t("send_message"),
         } as SiteSection,
       ];
 
   return (
-    <div style={style} className="min-h-full" dir={themedContent.dir || "ltr"}>
+    <div style={style} className="min-h-full" dir={themedContent.dir || "ltr"} lang={lang}>
       <div
         style={{
           background: `hsl(${themedContent.theme.background})`,
@@ -795,7 +798,7 @@ export const SitePreview = ({
               style={{ background: `hsl(${themedContent.theme.primary})`, color: "white" }}
               className="rounded-md px-3 py-1.5 text-xs font-medium"
             >
-              Get started
+              {t("get_started")}
             </a>
           </div>
         </header>
@@ -809,6 +812,7 @@ export const SitePreview = ({
             brand={headerName}
             siteId={siteId}
             hasBookingCta={hasBookingCta}
+            lang={lang}
           />
         ))}
 
