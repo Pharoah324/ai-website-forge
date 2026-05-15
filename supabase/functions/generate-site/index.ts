@@ -385,27 +385,26 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
     }
 
     const aiBody = {
-      model: "google/gemini-2.5-pro",
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 8192,
+      system: SYSTEM_PROMPT + voiceAddon,
       messages: [
-        { role: "system", content: SYSTEM_PROMPT + voiceAddon },
         { role: "user", content: userMessage },
       ],
       tools: [{
-        type: "function",
-        function: {
-          name: TOOL.name,
-          description: TOOL.description,
-          parameters: TOOL.input_schema,
-        },
+        name: TOOL.name,
+        description: TOOL.description,
+        input_schema: TOOL.input_schema,
       }],
-      tool_choice: { type: "function", function: { name: TOOL.name } },
+      tool_choice: { type: "tool", name: TOOL.name },
       stream,
     };
 
-    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const aiResp = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
         "Content-Type": "application/json",
       },
       body: JSON.stringify(aiBody),
@@ -413,7 +412,7 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
 
     if (!aiResp.ok) {
       const t = await aiResp.text();
-      console.error("[generate-site] Lovable AI Gateway error", {
+      console.error("[generate-site] Anthropic API error", {
         status: aiResp.status,
         statusText: aiResp.statusText,
         body: t.slice(0, 2000),
@@ -424,11 +423,12 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
           detail: t.slice(0, 500),
         }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
-      if (aiResp.status === 402) {
+      if (aiResp.status === 401 || aiResp.status === 403) {
         return new Response(JSON.stringify({
-          error: "AI credits exhausted. Add funds in Settings → Workspace → Usage.",
+          error: "Invalid Anthropic API key",
           detail: t.slice(0, 500),
-        }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          code: "invalid_api_key",
+        }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
       return new Response(JSON.stringify({
         error: "AI provider error",
@@ -439,21 +439,18 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
 
     if (!stream) {
       const data = await aiResp.json();
-      const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-      const argStr = toolCall?.function?.arguments || null;
-      if (!argStr) {
+      // Anthropic returns content blocks; find the tool_use block
+      const toolBlock = Array.isArray(data.content)
+        ? data.content.find((b: { type?: string }) => b?.type === "tool_use")
+        : null;
+      const parsedInput = toolBlock?.input ?? null;
+      if (!parsedInput) {
         return new Response(JSON.stringify({ error: "AI returned no site" }), {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      let parsed: unknown;
-      try { parsed = JSON.parse(argStr); } catch {
-        return new Response(JSON.stringify({ error: "AI returned invalid JSON" }), {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
+      const parsed: unknown = parsedInput;
       try { sanitizeMarkdownImages(parsed); } catch (e) { console.warn("sanitizeMarkdownImages failed:", e); }
       try { await hydrateImages(parsed, prompt); } catch (e) { console.warn("hydrateImages failed (continuing without images):", e); }
       const site = await persistSite(supabase, user.id, prompt, parsed, profile, isUnlimited, isAdmin, effectiveWorkspaceId);
