@@ -240,7 +240,7 @@ const TOOL = {
             properties: {
               type: {
                 type: "string",
-                enum: ["hero", "features", "about", "testimonials", "pricing", "faq", "cta", "contact"],
+                enum: ["hero", "features", "about", "testimonials", "pricing", "faq", "cta", "contact", "gallery", "stats"],
               },
               heading: { type: "string" },
               subheading: { type: "string" },
@@ -248,7 +248,7 @@ const TOOL = {
               cta_urgency: { type: "string" },
               image_search_query: { type: "string", description: "English search phrase for Unsplash" },
               image_placement: { type: "string", enum: ["background", "side", "card", "avatar", "none"] },
-              layout: { type: "string", enum: ["image-right", "image-left", "image-background", "grid", "stacked"] },
+              layout: { type: "string", enum: ["image-right", "image-left", "image-background", "grid", "stacked", "cards", "cards-3", "quotes", "list", "list-with-icons"] },
               items: {
                 type: "array",
                 items: {
