@@ -579,6 +579,8 @@ const Section = ({
                         fallbackIndex={i}
                         alt={it.author || "Testimonial"}
                         className="h-12 w-12 shrink-0 rounded-full object-cover"
+                        credit={it.image_credit}
+                        creditMode="tooltip"
                       />
                     ) : (
                       <div
