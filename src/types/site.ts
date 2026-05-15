@@ -67,5 +67,6 @@ export type SiteContent = {
     accent: string;
   };
   sections: SiteSection[];
+  layoutVariant?: string;
 };
 
