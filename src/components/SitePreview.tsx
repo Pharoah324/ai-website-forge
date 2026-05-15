@@ -475,6 +475,7 @@ const Section = ({
               fallbackIndex={index}
               alt={section.image_alt || section.heading}
               className="aspect-[4/3] w-full rounded-lg object-cover shadow-xl"
+              credit={section.image_credit}
             />
           </div>
         </section>
