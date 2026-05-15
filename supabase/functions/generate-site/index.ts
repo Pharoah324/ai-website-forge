@@ -149,8 +149,7 @@ const TOOL = {
           },
         },
       },
-      required: ["name", "tagline", "theme", "sections"],
-    },
+    required: ["name", "tagline", "theme", "sections"],
   },
 };
 
