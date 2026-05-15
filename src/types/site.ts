@@ -1,16 +1,16 @@
 export type SiteSectionItem = {
-  title: string;
+  title?: string;
   body?: string;
   price?: string;
   author?: string;
   value?: string;
+  label?: string;
   icon_name?: string;
   image_search_query?: string;
   image_url?: string;
   image_thumb?: string;
   image_alt?: string;
   image_credit?: string;
-  [key: string]: unknown;
 };
 
 export type SiteSection = {
@@ -30,7 +30,7 @@ export type SiteSection = {
   cta?: string;
   cta_urgency?: string;
   badge?: string;
-  image?: string;
+  image?: string | { query: string; position: string };
   image_search_query?: string;
   image_placement?: "background" | "side" | "card" | "avatar" | "none";
   layout?:
@@ -49,7 +49,6 @@ export type SiteSection = {
   image_alt?: string;
   image_credit?: string;
   items?: SiteSectionItem[];
-  [key: string]: unknown;
 };
 
 export type SiteContent = {
@@ -65,3 +64,4 @@ export type SiteContent = {
   };
   sections: SiteSection[];
 };
+
