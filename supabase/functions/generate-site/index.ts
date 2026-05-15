@@ -155,7 +155,7 @@ const TOOL = {
 
 async function verifySecrets() {
   const required = [
-    "LOVABLE_API_KEY",
+    "ANTHROPIC_API_KEY",
     "SUPABASE_URL",
     "SUPABASE_ANON_KEY",
     "SUPABASE_SERVICE_ROLE_KEY",
@@ -176,32 +176,35 @@ async function verifySecrets() {
     checks[k] = { present: !!(v && v.trim()) };
   }
 
-  // Live-validate LOVABLE_API_KEY against the gateway.
-  const lk = Deno.env.get("LOVABLE_API_KEY");
-  if (lk && lk.trim()) {
+  // Live-validate ANTHROPIC_API_KEY against the Anthropic API.
+  const ak = Deno.env.get("ANTHROPIC_API_KEY");
+  if (ak && ak.trim()) {
     try {
-      const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      const r = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
-        headers: { Authorization: `Bearer ${lk}`, "Content-Type": "application/json" },
+        headers: {
+          "x-api-key": ak,
+          "anthropic-version": "2023-06-01",
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash-lite",
-          messages: [{ role: "user", content: "ping" }],
+          model: "claude-sonnet-4-20250514",
           max_tokens: 1,
+          messages: [{ role: "user", content: "ping" }],
         }),
       });
       const txt = await r.text();
       if (r.ok) {
-        checks.LOVABLE_API_KEY.valid = true;
+        checks.ANTHROPIC_API_KEY.valid = true;
       } else {
-        checks.LOVABLE_API_KEY.valid = false;
-        checks.LOVABLE_API_KEY.detail = `gateway ${r.status}: ${txt.slice(0, 200)}`;
-        if (r.status === 401 || r.status === 403) invalid.push("LOVABLE_API_KEY");
-        else if (r.status === 402) checks.LOVABLE_API_KEY.detail = "credits_exhausted";
-        else if (r.status === 429) checks.LOVABLE_API_KEY.detail = "rate_limited";
+        checks.ANTHROPIC_API_KEY.valid = false;
+        checks.ANTHROPIC_API_KEY.detail = `anthropic ${r.status}: ${txt.slice(0, 200)}`;
+        if (r.status === 401 || r.status === 403) invalid.push("ANTHROPIC_API_KEY");
+        else if (r.status === 429) checks.ANTHROPIC_API_KEY.detail = "rate_limited";
       }
     } catch (e) {
-      checks.LOVABLE_API_KEY.valid = false;
-      checks.LOVABLE_API_KEY.detail = `network: ${e instanceof Error ? e.message : String(e)}`;
+      checks.ANTHROPIC_API_KEY.valid = false;
+      checks.ANTHROPIC_API_KEY.detail = `network: ${e instanceof Error ? e.message : String(e)}`;
     }
   }
 
