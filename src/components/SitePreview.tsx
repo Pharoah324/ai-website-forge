@@ -410,7 +410,7 @@ const ContactForm = ({
             style={{ background: primary, color: "white", opacity: status === "submitting" ? 0.7 : 1 }}
             className="w-full rounded-md py-2.5 text-sm font-semibold"
           >
-            {status === "submitting" ? "Sending…" : section.cta || "Send"}
+            {status === "submitting" ? t("sending") : section.cta || t("send")}
           </button>
         </form>
       </div>
