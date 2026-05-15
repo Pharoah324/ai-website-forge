@@ -72,10 +72,165 @@ type ContactFormProps = {
   showBookingNote: boolean;
 };
 
-const ContactForm = ({ section, theme, siteId, showBookingNote }: ContactFormProps) => {
+// ---------------------------------------------------------------------------
+// Static UI strings — translated to match the generated site language.
+// Falls back to English for any unsupported locale.
+// ---------------------------------------------------------------------------
+type UiKey =
+  | "get_started"
+  | "send_message"
+  | "send"
+  | "sending"
+  | "name_placeholder"
+  | "email_placeholder"
+  | "phone_placeholder"
+  | "message_placeholder"
+  | "thank_you"
+  | "we_will_be_in_touch"
+  | "reservation_note"
+  | "support"
+  | "contact_heading"
+  | "contact_subheading"
+  | "err_name_required"
+  | "err_name_long"
+  | "err_email_required"
+  | "err_email_invalid"
+  | "err_email_long"
+  | "err_phone_short"
+  | "err_phone_long"
+  | "err_message_required"
+  | "err_message_long"
+  | "err_generic";
+
+const UI_STRINGS: Record<string, Record<UiKey, string>> = {
+  en: {
+    get_started: "Get started",
+    send_message: "Send message",
+    send: "Send",
+    sending: "Sending…",
+    name_placeholder: "Your name",
+    email_placeholder: "Email",
+    phone_placeholder: "Phone (optional)",
+    message_placeholder: "Message",
+    thank_you: "Thank you!",
+    we_will_be_in_touch: "We'll be in touch within 24 hours.",
+    reservation_note: "We'll confirm your reservation by phone or email.",
+    support: "Support",
+    contact_heading: "Get in touch",
+    contact_subheading: "Tell us what you need and we'll be in touch within 24 hours.",
+    err_name_required: "Please enter your name",
+    err_name_long: "Name is too long",
+    err_email_required: "Please enter your email",
+    err_email_invalid: "Please enter a valid email",
+    err_email_long: "Email is too long",
+    err_phone_short: "Phone number looks too short",
+    err_phone_long: "Phone number is too long",
+    err_message_required: "Please enter a message",
+    err_message_long: "Message is too long",
+    err_generic: "Something went wrong. Please try again.",
+  },
+  es: {
+    get_started: "Comenzar",
+    send_message: "Enviar mensaje",
+    send: "Enviar",
+    sending: "Enviando…",
+    name_placeholder: "Tu nombre",
+    email_placeholder: "Correo electrónico",
+    phone_placeholder: "Teléfono (opcional)",
+    message_placeholder: "Mensaje",
+    thank_you: "¡Gracias!",
+    we_will_be_in_touch: "Nos pondremos en contacto en menos de 24 horas.",
+    reservation_note: "Confirmaremos tu reserva por teléfono o correo electrónico.",
+    support: "Soporte",
+    contact_heading: "Contáctanos",
+    contact_subheading: "Cuéntanos qué necesitas y te responderemos en menos de 24 horas.",
+    err_name_required: "Por favor ingresa tu nombre",
+    err_name_long: "El nombre es demasiado largo",
+    err_email_required: "Por favor ingresa tu correo electrónico",
+    err_email_invalid: "Por favor ingresa un correo válido",
+    err_email_long: "El correo es demasiado largo",
+    err_phone_short: "El número de teléfono parece muy corto",
+    err_phone_long: "El número de teléfono es demasiado largo",
+    err_message_required: "Por favor ingresa un mensaje",
+    err_message_long: "El mensaje es demasiado largo",
+    err_generic: "Algo salió mal. Por favor intenta de nuevo.",
+  },
+  pt: {
+    get_started: "Começar",
+    send_message: "Enviar mensagem",
+    send: "Enviar",
+    sending: "Enviando…",
+    name_placeholder: "Seu nome",
+    email_placeholder: "E-mail",
+    phone_placeholder: "Telefone (opcional)",
+    message_placeholder: "Mensagem",
+    thank_you: "Obrigado!",
+    we_will_be_in_touch: "Entraremos em contato em até 24 horas.",
+    reservation_note: "Confirmaremos sua reserva por telefone ou e-mail.",
+    support: "Suporte",
+    contact_heading: "Fale conosco",
+    contact_subheading: "Conte o que você precisa e responderemos em até 24 horas.",
+    err_name_required: "Por favor, informe seu nome",
+    err_name_long: "Nome muito longo",
+    err_email_required: "Por favor, informe seu e-mail",
+    err_email_invalid: "Por favor, informe um e-mail válido",
+    err_email_long: "E-mail muito longo",
+    err_phone_short: "O número de telefone parece muito curto",
+    err_phone_long: "Número de telefone muito longo",
+    err_message_required: "Por favor, escreva uma mensagem",
+    err_message_long: "Mensagem muito longa",
+    err_generic: "Algo deu errado. Por favor, tente novamente.",
+  },
+  fr: {
+    get_started: "Commencer",
+    send_message: "Envoyer le message",
+    send: "Envoyer",
+    sending: "Envoi…",
+    name_placeholder: "Votre nom",
+    email_placeholder: "E-mail",
+    phone_placeholder: "Téléphone (facultatif)",
+    message_placeholder: "Message",
+    thank_you: "Merci !",
+    we_will_be_in_touch: "Nous vous répondrons sous 24 heures.",
+    reservation_note: "Nous confirmerons votre réservation par téléphone ou e-mail.",
+    support: "Support",
+    contact_heading: "Contactez-nous",
+    contact_subheading: "Dites-nous ce dont vous avez besoin et nous vous répondrons sous 24 heures.",
+    err_name_required: "Veuillez entrer votre nom",
+    err_name_long: "Le nom est trop long",
+    err_email_required: "Veuillez entrer votre e-mail",
+    err_email_invalid: "Veuillez entrer un e-mail valide",
+    err_email_long: "L'e-mail est trop long",
+    err_phone_short: "Le numéro de téléphone semble trop court",
+    err_phone_long: "Le numéro de téléphone est trop long",
+    err_message_required: "Veuillez entrer un message",
+    err_message_long: "Le message est trop long",
+    err_generic: "Une erreur s'est produite. Veuillez réessayer.",
+  },
+};
+
+function getLangKey(lang?: string): string {
+  if (!lang) return "en";
+  const code = lang.toLowerCase().split(/[-_]/)[0];
+  return UI_STRINGS[code] ? code : "en";
+}
+
+function makeT(lang?: string) {
+  const dict = UI_STRINGS[getLangKey(lang)];
+  return (key: UiKey) => dict[key];
+}
+
+const ContactForm = ({
+  section,
+  theme,
+  siteId,
+  showBookingNote,
+  lang,
+}: ContactFormProps & { lang?: string }) => {
   const primary = `hsl(${theme.primary})`;
   const muted = `hsl(${theme.foreground} / 0.75)`;
   const border = `1px solid hsl(${theme.foreground} / 0.15)`;
+  const t = makeT(lang);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
