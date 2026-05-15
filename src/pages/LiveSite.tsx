@@ -10,7 +10,7 @@ export default function LiveSite({ subdomain }: Props) {
   const [state, setState] = useState<
     | { kind: "loading" }
     | { kind: "notfound" }
-    | { kind: "ok"; content: SiteContent; name: string; branding: SiteBranding | null }
+    | { kind: "ok"; id: string; content: SiteContent; name: string; branding: SiteBranding | null }
   >({ kind: "loading" });
 
   useEffect(() => {
@@ -35,6 +35,7 @@ export default function LiveSite({ subdomain }: Props) {
         : data.name || subdomain;
       setState({
         kind: "ok",
+        id: data.id,
         content: content as unknown as SiteContent,
         name: data.name,
         branding,
@@ -63,5 +64,5 @@ export default function LiveSite({ subdomain }: Props) {
       </div>
     );
   }
-  return <SitePreview content={state.content} branding={state.branding} />;
+  return <SitePreview content={state.content} branding={state.branding} siteId={state.id} />;
 }
