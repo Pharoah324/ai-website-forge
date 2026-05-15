@@ -346,7 +346,7 @@ const ContactForm = ({
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Your name"
+              placeholder={t("name_placeholder")}
               maxLength={100}
               autoComplete="name"
               required
@@ -361,7 +361,7 @@ const ContactForm = ({
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email"
+              placeholder={t("email_placeholder")}
               maxLength={255}
               autoComplete="email"
               required
@@ -376,7 +376,7 @@ const ContactForm = ({
               type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              placeholder="Phone (optional)"
+              placeholder={t("phone_placeholder")}
               maxLength={40}
               autoComplete="tel"
               aria-invalid={!!fieldErrors.phone}
@@ -389,7 +389,7 @@ const ContactForm = ({
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Message"
+              placeholder={t("message_placeholder")}
               rows={4}
               maxLength={2000}
               required
