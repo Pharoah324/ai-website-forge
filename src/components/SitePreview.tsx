@@ -826,7 +826,7 @@ export const SitePreview = ({
           <div>{footerLine}</div>
           {branding?.support_email && (
             <div className="mt-1 opacity-80">
-              Support:{" "}
+              {t("support")}:{" "}
               <a href={`mailto:${branding.support_email}`} className="underline">
                 {branding.support_email}
               </a>
