@@ -933,9 +933,7 @@ const Section = ({
           {section.subheading && <p className="mx-auto mt-3 max-w-xl opacity-95">{section.subheading}</p>}
           {section.cta && (
             <div className="mt-6 flex flex-col items-center gap-1.5">
-              <button className="rounded-md bg-white px-6 py-3 text-sm font-semibold" style={{ color: primary }}>
-                {section.cta}
-              </button>
+              <CTAButton label={section.cta} primary={primary} variant="inverse" />
               {section.cta_urgency && <span className="text-xs font-medium opacity-95">⏱ {section.cta_urgency}</span>}
             </div>
           )}
@@ -948,9 +946,7 @@ const Section = ({
         {section.subheading && <p className="mx-auto mt-3 max-w-xl opacity-90">{section.subheading}</p>}
         {section.cta && (
           <div className="mt-6 flex flex-col items-center gap-1.5">
-            <button className="rounded-md bg-white px-6 py-3 text-sm font-semibold" style={{ color: primary }}>
-              {section.cta}
-            </button>
+            <CTAButton label={section.cta} primary={primary} variant="inverse" />
             {section.cta_urgency && <span className="text-xs font-medium opacity-95">⏱ {section.cta_urgency}</span>}
           </div>
         )}
@@ -958,27 +954,14 @@ const Section = ({
     );
   }
 
-  // contact
+  // contact — real form wired to form-submission-webhook
   return (
-    <section className="px-6 py-16">
-      <div className="mx-auto max-w-xl">
-        <h2 className="text-center text-3xl font-bold">{section.heading}</h2>
-        {section.subheading && (
-          <p className="mx-auto mt-3 text-center" style={{ color: muted }}>{section.subheading}</p>
-        )}
-        <div className="mt-6 space-y-3">
-          <input placeholder="Your name" className="w-full rounded-md px-3 py-2 text-sm"
-            style={{ border: `1px solid hsl(${theme.foreground} / 0.15)` }} />
-          <input placeholder="Email" className="w-full rounded-md px-3 py-2 text-sm"
-            style={{ border: `1px solid hsl(${theme.foreground} / 0.15)` }} />
-          <textarea placeholder="Message" rows={4} className="w-full rounded-md px-3 py-2 text-sm"
-            style={{ border: `1px solid hsl(${theme.foreground} / 0.15)` }} />
-          <button style={{ background: primary, color: "white" }} className="w-full rounded-md py-2.5 text-sm font-semibold">
-            {section.cta || "Send"}
-          </button>
-        </div>
-      </div>
-    </section>
+    <ContactForm
+      section={section}
+      theme={theme}
+      siteId={siteId}
+      showBookingNote={!!hasBookingCta}
+    />
   );
 };
 
