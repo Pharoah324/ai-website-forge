@@ -638,6 +638,7 @@ const Section = ({
           overlay={ctaOverlay}
           sectionClassName="relative px-6 py-20 text-center"
           sectionStyle={{ color: "white" }}
+          credit={section.image_credit}
         >
           <h2 className="text-3xl font-bold">{section.heading}</h2>
           {section.subheading && <p className="mx-auto mt-3 max-w-xl opacity-95">{section.subheading}</p>}
