@@ -94,11 +94,9 @@ Legal: Consultation→Scale, Contract→FileText, Court→Building, Research→S
 Generic: Phone, Mail, MapPin, Clock, Users, Shield, Award, Star, DollarSign, CalendarCheck.`;
 
 const TOOL = {
-  type: "function" as const,
-  function: {
-    name: "build_site",
-    description: "Build a structured website definition.",
-    parameters: {
+  name: "build_site",
+  description: "Build a structured website definition.",
+  input_schema: {
       type: "object",
       properties: {
         name: { type: "string" },
