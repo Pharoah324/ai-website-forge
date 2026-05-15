@@ -30,6 +30,8 @@ export type SiteSection = {
   cta?: string;
   cta_urgency?: string;
   badge?: string;
+  columns?: number;
+  overlay?: string | boolean | number;
   image?: string | { query: string; position: string };
   image_search_query?: string;
   image_placement?: "background" | "side" | "card" | "avatar" | "none";
