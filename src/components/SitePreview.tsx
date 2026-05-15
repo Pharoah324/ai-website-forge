@@ -721,6 +721,7 @@ const FeatureCard = ({
           fallbackIndex={index}
           alt={item.image_alt || item.title}
           className="aspect-video w-full object-cover"
+          credit={item.image_credit}
         />
       )}
       <div className="p-5">
