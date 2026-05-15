@@ -845,6 +845,7 @@ const Section = ({
   brand,
   siteId,
   hasBookingCta,
+  lang,
 }: {
   section: SiteSection;
   theme: SiteContent["theme"];
@@ -852,6 +853,7 @@ const Section = ({
   brand?: string;
   siteId?: string;
   hasBookingCta?: boolean;
+  lang?: string;
 }) => {
   const accentBg = `hsl(${theme.accent})`;
   const primary = `hsl(${theme.primary})`;
