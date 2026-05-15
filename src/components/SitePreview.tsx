@@ -88,24 +88,55 @@ type ValidatedImgProps = {
   className?: string;
   loading?: "lazy" | "eager";
   onLoaded?: () => void;
+  /** "Photo by X on Unsplash" — required by Unsplash API ToS. */
+  credit?: string;
+  /** "overlay" wraps in <figure> with a caption; "tooltip" only sets title (use for tiny avatars). */
+  creditMode?: "overlay" | "tooltip";
 };
+
+const UNSPLASH_REF = "?utm_source=virtualengine_builder&utm_medium=referral";
+
+const PhotoCredit = ({ credit, className }: { credit: string; className?: string }) => (
+  <a
+    href={`https://unsplash.com/${UNSPLASH_REF}`}
+    target="_blank"
+    rel="noopener noreferrer"
+    className={
+      className ||
+      "absolute bottom-1 right-1 rounded bg-black/45 px-1.5 py-0.5 text-[10px] font-medium leading-none text-white/95 no-underline hover:bg-black/70"
+    }
+    style={{ backdropFilter: "blur(2px)" }}
+  >
+    {credit}
+  </a>
+);
 
 const ValidatedImg = ({
   initial, query, orientation = "landscape", fallbackIndex,
-  alt, className, loading = "lazy",
+  alt, className, loading = "lazy", credit, creditMode = "overlay",
 }: ValidatedImgProps) => {
   const { src, alt: healedAlt, onError } = useValidatedImage({
     initial, query, orientation, fallbackIndex,
   });
   if (!src) return null;
-  return (
+  const img = (
     <img
       src={src}
       alt={healedAlt || alt || ""}
+      title={credit && creditMode === "tooltip" ? credit : undefined}
       loading={loading}
       className={className}
       onError={onError}
     />
+  );
+  if (!credit || creditMode === "tooltip") return img;
+  return (
+    <figure className={`relative ${className?.includes("rounded") ? "" : ""}`} style={{ display: "contents" }}>
+      <span className="relative inline-block">
+        {img}
+        <PhotoCredit credit={credit} />
+      </span>
+    </figure>
   );
 };
 
