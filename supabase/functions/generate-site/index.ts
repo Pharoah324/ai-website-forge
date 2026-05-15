@@ -560,6 +560,9 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
 // ----- Unsplash hydration -----
 type UnsplashPhoto = { regular: string; thumb: string; alt: string; credit: string };
 const unsplashCache = new Map<string, UnsplashPhoto[] | null>();
+// If Unsplash returns 401/403 once, the key is bad — stop hammering it for
+// the rest of this invocation. Saves 10–20s of dead requests per generation.
+let unsplashDisabled = false;
 
 // Curated, license-free Unsplash photo IDs grouped by category.
 // These are served directly from the Unsplash CDN — no API key required.
