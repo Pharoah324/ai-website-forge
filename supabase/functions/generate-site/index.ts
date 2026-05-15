@@ -160,7 +160,15 @@ Deno.serve(async (req) => {
 
   try {
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY not configured");
+    if (!ANTHROPIC_API_KEY || !ANTHROPIC_API_KEY.trim()) {
+      console.error("[generate-site] ANTHROPIC_API_KEY is missing or empty in edge function secrets.");
+      return new Response(JSON.stringify({
+        error: "AI provider not configured",
+        detail: "ANTHROPIC_API_KEY is missing. Set it in Supabase Edge Function secrets.",
+        code: "missing_api_key",
+      }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    console.log("[generate-site] ANTHROPIC_API_KEY present, length:", ANTHROPIC_API_KEY.length, "prefix:", ANTHROPIC_API_KEY.slice(0, 7));
 
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -324,24 +332,44 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
     });
 
     if (!aiResp.ok) {
+      const t = await aiResp.text();
+      console.error("[generate-site] Anthropic API error", {
+        status: aiResp.status,
+        statusText: aiResp.statusText,
+        body: t.slice(0, 2000),
+      });
+
+      let parsedErr: { error?: { type?: string; message?: string } } = {};
+      try { parsedErr = JSON.parse(t); } catch { /* not JSON */ }
+      const apiMsg = parsedErr.error?.message || t.slice(0, 500) || aiResp.statusText;
+      const apiType = parsedErr.error?.type;
+
+      if (aiResp.status === 401 || apiType === "authentication_error") {
+        return new Response(JSON.stringify({
+          error: "AI authentication failed",
+          detail: `Anthropic rejected the API key: ${apiMsg}. Verify ANTHROPIC_API_KEY in Supabase Edge Function secrets is a valid Anthropic key.`,
+          code: "invalid_api_key",
+          provider_status: aiResp.status,
+        }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
       if (aiResp.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Rate limited. Try again in a moment." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-        );
+        return new Response(JSON.stringify({
+          error: "Rate limited. Try again in a moment.",
+          detail: apiMsg,
+        }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
       if (aiResp.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "Anthropic credits exhausted." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-        );
+        return new Response(JSON.stringify({
+          error: "Anthropic credits exhausted.",
+          detail: apiMsg,
+        }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
-      const t = await aiResp.text();
-      console.error("Anthropic error:", aiResp.status, t);
-      return new Response(JSON.stringify({ error: "AI provider error" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(JSON.stringify({
+        error: "AI provider error",
+        detail: apiMsg,
+        code: apiType || "upstream_error",
+        provider_status: aiResp.status,
+      }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     if (!stream) {
