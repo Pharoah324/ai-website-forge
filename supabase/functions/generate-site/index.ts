@@ -461,6 +461,7 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
     }
 
     // STREAMING
+    unsplashDisabled = false;
     const reader = aiResp.body!.getReader();
     const decoder = new TextDecoder();
     const encoder = new TextEncoder();
@@ -469,11 +470,20 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
 
     const out = new ReadableStream({
       async start(controller) {
-        const send = (event: string, data: unknown) => {
-          controller.enqueue(
-            encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`),
-          );
+        let closed = false;
+        const safeEnqueue = (chunk: Uint8Array) => {
+          if (closed) return;
+          try { controller.enqueue(chunk); } catch { /* controller already closed */ }
         };
+        const send = (event: string, data: unknown) => {
+          safeEnqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
+        };
+        // SSE keepalive — comment lines every 10s prevent the client's
+        // 45s stall watchdog from tripping during long Anthropic pauses
+        // or post-stream image hydration.
+        const heartbeat = setInterval(() => {
+          safeEnqueue(encoder.encode(`: keepalive ${Date.now()}\n\n`));
+        }, 10_000);
 
         try {
           while (true) {
@@ -511,12 +521,14 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
             parsed = JSON.parse(accumulated);
           } catch {
             send("error", { error: "Failed to parse AI output" });
-            controller.close();
+            clearInterval(heartbeat);
+            closed = true;
+            try { controller.close(); } catch { /* noop */ }
             return;
           }
 
           try { sanitizeMarkdownImages(parsed); } catch (e) { console.warn("sanitizeMarkdownImages failed:", e); }
-      try { await hydrateImages(parsed, prompt); } catch (e) { console.warn("hydrateImages failed (continuing without images):", e); }
+          try { await hydrateImages(parsed, prompt); } catch (e) { console.warn("hydrateImages failed (continuing without images):", e); }
 
           const site = await persistSite(
             supabase,
@@ -529,12 +541,16 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
             effectiveWorkspaceId,
           );
           send("done", { site });
-          controller.close();
+          clearInterval(heartbeat);
+          closed = true;
+          try { controller.close(); } catch { /* noop */ }
         } catch (e) {
           const msg = e instanceof Error ? e.message : "stream error";
           console.error("stream error:", msg);
           send("error", { error: msg });
-          controller.close();
+          clearInterval(heartbeat);
+          closed = true;
+          try { controller.close(); } catch { /* noop */ }
         }
       },
     });
@@ -560,6 +576,9 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
 // ----- Unsplash hydration -----
 type UnsplashPhoto = { regular: string; thumb: string; alt: string; credit: string };
 const unsplashCache = new Map<string, UnsplashPhoto[] | null>();
+// If Unsplash returns 401/403 once, the key is bad — stop hammering it for
+// the rest of this invocation. Saves 10–20s of dead requests per generation.
+let unsplashDisabled = false;
 
 // Curated, license-free Unsplash photo IDs grouped by category.
 // These are served directly from the Unsplash CDN — no API key required.
@@ -620,7 +639,7 @@ async function unsplashSearchMany(
   orientation: "landscape" | "portrait" | "squarish" = "landscape",
   perPage = 10,
 ): Promise<UnsplashPhoto[] | null> {
-  if (!UNSPLASH_ACCESS_KEY || !query) return null;
+  if (!UNSPLASH_ACCESS_KEY || !query || unsplashDisabled) return null;
   const cacheKey = `${orientation}:${perPage}:${query}`;
   if (unsplashCache.has(cacheKey)) return unsplashCache.get(cacheKey)!;
   try {
@@ -630,6 +649,10 @@ async function unsplashSearchMany(
     });
     if (!r.ok) {
       console.warn("unsplash error", r.status, query);
+      if (r.status === 401 || r.status === 403) {
+        console.warn("unsplash key invalid — disabling for this invocation");
+        unsplashDisabled = true;
+      }
       unsplashCache.set(cacheKey, null);
       return null;
     }
