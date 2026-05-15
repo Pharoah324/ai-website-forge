@@ -233,12 +233,12 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY || !LOVABLE_API_KEY.trim()) {
-      console.error("[generate-site] LOVABLE_API_KEY is missing.");
+    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!ANTHROPIC_API_KEY || !ANTHROPIC_API_KEY.trim()) {
+      console.error("[generate-site] ANTHROPIC_API_KEY is missing.");
       return new Response(JSON.stringify({
         error: "AI provider not configured",
-        detail: "LOVABLE_API_KEY is missing.",
+        detail: "ANTHROPIC_API_KEY is missing.",
         code: "missing_api_key",
       }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
