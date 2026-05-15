@@ -311,20 +311,27 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
     }
 
     const aiBody = {
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 8192,
-      system: SYSTEM_PROMPT + voiceAddon,
-      messages: [{ role: "user", content: userMessage }],
-      tools: [TOOL],
-      tool_choice: { type: "tool", name: "build_site" },
+      model: "google/gemini-2.5-pro",
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT + voiceAddon },
+        { role: "user", content: userMessage },
+      ],
+      tools: [{
+        type: "function",
+        function: {
+          name: TOOL.name,
+          description: TOOL.description,
+          parameters: TOOL.input_schema,
+        },
+      }],
+      tool_choice: { type: "function", function: { name: TOOL.name } },
       stream,
     };
 
-    const aiResp = await fetch("https://api.anthropic.com/v1/messages", {
+    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        "x-api-key": ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(aiBody),
@@ -332,41 +339,26 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
 
     if (!aiResp.ok) {
       const t = await aiResp.text();
-      console.error("[generate-site] Anthropic API error", {
+      console.error("[generate-site] Lovable AI Gateway error", {
         status: aiResp.status,
         statusText: aiResp.statusText,
         body: t.slice(0, 2000),
       });
-
-      let parsedErr: { error?: { type?: string; message?: string } } = {};
-      try { parsedErr = JSON.parse(t); } catch { /* not JSON */ }
-      const apiMsg = parsedErr.error?.message || t.slice(0, 500) || aiResp.statusText;
-      const apiType = parsedErr.error?.type;
-
-      if (aiResp.status === 401 || apiType === "authentication_error") {
-        return new Response(JSON.stringify({
-          error: "AI authentication failed",
-          detail: `Anthropic rejected the API key: ${apiMsg}. Verify ANTHROPIC_API_KEY in Supabase Edge Function secrets is a valid Anthropic key.`,
-          code: "invalid_api_key",
-          provider_status: aiResp.status,
-        }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
       if (aiResp.status === 429) {
         return new Response(JSON.stringify({
           error: "Rate limited. Try again in a moment.",
-          detail: apiMsg,
+          detail: t.slice(0, 500),
         }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
       if (aiResp.status === 402) {
         return new Response(JSON.stringify({
-          error: "Anthropic credits exhausted.",
-          detail: apiMsg,
+          error: "AI credits exhausted. Add funds in Settings → Workspace → Usage.",
+          detail: t.slice(0, 500),
         }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
       return new Response(JSON.stringify({
         error: "AI provider error",
-        detail: apiMsg,
-        code: apiType || "upstream_error",
+        detail: t.slice(0, 500),
         provider_status: aiResp.status,
       }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
