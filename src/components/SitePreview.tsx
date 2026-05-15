@@ -242,15 +242,15 @@ const ContactForm = ({
 
   const validate = () => {
     const errs: Record<string, string> = {};
-    if (!name.trim()) errs.name = "Please enter your name";
-    else if (name.trim().length > 100) errs.name = "Name is too long";
-    if (!email.trim()) errs.email = "Please enter your email";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) errs.email = "Please enter a valid email";
-    else if (email.trim().length > 255) errs.email = "Email is too long";
-    if (phone.trim() && phone.replace(/[^\d+]/g, "").length < 7) errs.phone = "Phone number looks too short";
-    if (phone.trim().length > 40) errs.phone = "Phone number is too long";
-    if (!message.trim()) errs.message = "Please enter a message";
-    else if (message.trim().length > 2000) errs.message = "Message is too long";
+    if (!name.trim()) errs.name = t("err_name_required");
+    else if (name.trim().length > 100) errs.name = t("err_name_long");
+    if (!email.trim()) errs.email = t("err_email_required");
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) errs.email = t("err_email_invalid");
+    else if (email.trim().length > 255) errs.email = t("err_email_long");
+    if (phone.trim() && phone.replace(/[^\d+]/g, "").length < 7) errs.phone = t("err_phone_short");
+    if (phone.trim().length > 40) errs.phone = t("err_phone_long");
+    if (!message.trim()) errs.message = t("err_message_required");
+    else if (message.trim().length > 2000) errs.message = t("err_message_long");
     setFieldErrors(errs);
     return Object.keys(errs).length === 0;
   };
