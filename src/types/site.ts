@@ -1,8 +1,10 @@
 export type SiteSectionItem = {
-  title: string;
+  title?: string;
   body?: string;
   price?: string;
   author?: string;
+  value?: string;
+  label?: string;
   icon_name?: string;
   image_search_query?: string;
   image_url?: string;
@@ -20,14 +22,32 @@ export type SiteSection = {
     | "pricing"
     | "faq"
     | "cta"
-    | "contact";
+    | "contact"
+    | "gallery"
+    | "stats";
   heading: string;
   subheading?: string;
   cta?: string;
   cta_urgency?: string;
+  badge?: string;
+  columns?: number;
+  overlay?: string | boolean | number;
+  overlayOpacity?: number;
+  images?: Array<string | { query: string; position?: string; alt?: string }>;
+  image?: string | { query: string; position: string };
   image_search_query?: string;
   image_placement?: "background" | "side" | "card" | "avatar" | "none";
-  layout?: "image-right" | "image-left" | "image-background" | "grid" | "stacked";
+  layout?:
+    | "image-right"
+    | "image-left"
+    | "image-background"
+    | "grid"
+    | "stacked"
+    | "cards"
+    | "cards-3"
+    | "quotes"
+    | "list"
+    | "list-with-icons";
   image_url?: string;
   image_thumb?: string;
   image_alt?: string;
@@ -47,4 +67,7 @@ export type SiteContent = {
     accent: string;
   };
   sections: SiteSection[];
+  layoutVariant?: string;
+  unsplash?: Record<string, string>;
 };
+
