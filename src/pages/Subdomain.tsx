@@ -39,5 +39,5 @@ export default function SubdomainPage() {
     );
   }
   const content = (data.site.site_data ?? data.site.content) as unknown as SiteContent;
-  return <SitePreview content={content} branding={data.branding} />;
+  return <SitePreview content={content} branding={data.branding} siteId={data.site.id} />;
 }
