@@ -837,7 +837,7 @@ const Section = ({
                     <h3 className="font-semibold">{it.title}</h3>
                     {it.price && <p className="mt-3 text-3xl font-bold" style={{ color: primary }}>{it.price}</p>}
                     {it.body && (
-                      <p className="mt-2 text-sm" style={{ color: muted }}>{it.body}</p>
+                      <p className="mt-2 text-sm" style={{ color: muted }}>{linkifyPhones(it.body)}</p>
                     )}
                   </div>
                 );
@@ -905,7 +905,7 @@ const Section = ({
               {section.items.map((it, i) => (
                 <div key={i} className="rounded-lg p-4" style={{ border: `1px solid hsl(${theme.foreground} / 0.1)` }}>
                   <p className="font-semibold">{it.title}</p>
-                  {it.body && <p className="mt-1 text-sm" style={{ color: muted }}>{it.body}</p>}
+                  {it.body && <p className="mt-1 text-sm" style={{ color: muted }}>{linkifyPhones(it.body)}</p>}
                 </div>
               ))}
             </div>
@@ -1009,7 +1009,7 @@ const FeatureCard = ({
           {Icon && item.image_url && <Icon size={18} strokeWidth={2} style={{ color: primary }} />}
           {item.title}
         </h3>
-        {item.body && <p className="mt-2 text-sm" style={{ color: muted }}>{item.body}</p>}
+        {item.body && <p className="mt-2 text-sm" style={{ color: muted }}>{linkifyPhones(item.body)}</p>}
       </div>
     </div>
   );
