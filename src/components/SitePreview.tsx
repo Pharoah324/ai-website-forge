@@ -119,23 +119,28 @@ const ValidatedImg = ({
     initial, query, orientation, fallbackIndex,
   });
   if (!src) return null;
-  const img = (
-    <img
-      src={src}
-      alt={healedAlt || alt || ""}
-      title={credit && creditMode === "tooltip" ? credit : undefined}
-      loading={loading}
-      className={className}
-      onError={onError}
-    />
-  );
-  if (!credit || creditMode === "tooltip") return img;
+  if (!credit || creditMode === "tooltip") {
+    return (
+      <img
+        src={src}
+        alt={healedAlt || alt || ""}
+        title={credit && creditMode === "tooltip" ? credit : undefined}
+        loading={loading}
+        className={className}
+        onError={onError}
+      />
+    );
+  }
   return (
-    <figure className={`relative ${className?.includes("rounded") ? "" : ""}`} style={{ display: "contents" }}>
-      <span className="relative inline-block">
-        {img}
-        <PhotoCredit credit={credit} />
-      </span>
+    <figure className={`relative overflow-hidden ${className || ""}`}>
+      <img
+        src={src}
+        alt={healedAlt || alt || ""}
+        loading={loading}
+        className="h-full w-full object-cover"
+        onError={onError}
+      />
+      <PhotoCredit credit={credit} />
     </figure>
   );
 };
