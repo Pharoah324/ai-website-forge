@@ -365,8 +365,8 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
 
     if (!stream) {
       const data = await aiResp.json();
-      const toolUse = (data.content || []).find((b: { type: string }) => b.type === "tool_use");
-      const argStr = toolUse ? JSON.stringify(toolUse.input) : null;
+      const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+      const argStr = toolCall?.function?.arguments || null;
       if (!argStr) {
         return new Response(JSON.stringify({ error: "AI returned no site" }), {
           status: 500,
