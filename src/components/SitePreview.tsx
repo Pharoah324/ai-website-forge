@@ -559,9 +559,12 @@ export type SiteBranding = {
 export const SitePreview = ({
   content,
   branding,
+  siteId,
 }: {
   content: SiteContent;
   branding?: SiteBranding | null;
+  /** When set, the contact form posts to the form-submission-webhook for this site. */
+  siteId?: string;
 }) => {
   const cleanedContent = sanitizeContent(content);
 
@@ -590,6 +593,23 @@ export const SitePreview = ({
     branding?.footer_text ||
     `© ${new Date().getFullYear()} ${headerName}`;
 
+  // Booking-style CTA anywhere on the page → show reservation reassurance in form.
+  const hasBookingCta = themedContent.sections.some(
+    (s) => (s.cta && BOOKING_RE.test(s.cta)) || (s.heading && BOOKING_RE.test(s.heading)),
+  );
+  // Ensure there's always a contact section to scroll to.
+  const sectionsToRender: SiteSection[] = themedContent.sections.some((s) => s.type === "contact")
+    ? themedContent.sections
+    : [
+        ...themedContent.sections,
+        {
+          type: "contact",
+          heading: "Get in touch",
+          subheading: "Tell us what you need and we'll be in touch within 24 hours.",
+          cta: "Send message",
+        } as SiteSection,
+      ];
+
   return (
     <div style={style} className="min-h-full" dir={themedContent.dir || "ltr"}>
       <div
@@ -614,17 +634,27 @@ export const SitePreview = ({
               )}
               <span className="font-bold">{headerName}</span>
             </div>
-            <button
+            <a
+              href="#contact"
+              onClick={scrollToContact}
               style={{ background: `hsl(${themedContent.theme.primary})`, color: "white" }}
               className="rounded-md px-3 py-1.5 text-xs font-medium"
             >
               Get started
-            </button>
+            </a>
           </div>
         </header>
 
-        {themedContent.sections.map((s, i) => (
-          <Section key={i} section={s} theme={themedContent.theme} index={i} brand={headerName} />
+        {sectionsToRender.map((s, i) => (
+          <Section
+            key={i}
+            section={s}
+            theme={themedContent.theme}
+            index={i}
+            brand={headerName}
+            siteId={siteId}
+            hasBookingCta={hasBookingCta}
+          />
         ))}
 
         <footer
