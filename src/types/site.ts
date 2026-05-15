@@ -32,6 +32,8 @@ export type SiteSection = {
   badge?: string;
   columns?: number;
   overlay?: string | boolean | number;
+  overlayOpacity?: number;
+  images?: Array<string | { query: string; position?: string }>;
   image?: string | { query: string; position: string };
   image_search_query?: string;
   image_placement?: "background" | "side" | "card" | "avatar" | "none";
