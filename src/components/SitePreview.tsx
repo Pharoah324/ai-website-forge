@@ -88,24 +88,60 @@ type ValidatedImgProps = {
   className?: string;
   loading?: "lazy" | "eager";
   onLoaded?: () => void;
+  /** "Photo by X on Unsplash" — required by Unsplash API ToS. */
+  credit?: string;
+  /** "overlay" wraps in <figure> with a caption; "tooltip" only sets title (use for tiny avatars). */
+  creditMode?: "overlay" | "tooltip";
 };
+
+const UNSPLASH_REF = "?utm_source=virtualengine_builder&utm_medium=referral";
+
+const PhotoCredit = ({ credit, className }: { credit: string; className?: string }) => (
+  <a
+    href={`https://unsplash.com/${UNSPLASH_REF}`}
+    target="_blank"
+    rel="noopener noreferrer"
+    className={
+      className ||
+      "absolute bottom-1 right-1 rounded bg-black/45 px-1.5 py-0.5 text-[10px] font-medium leading-none text-white/95 no-underline hover:bg-black/70"
+    }
+    style={{ backdropFilter: "blur(2px)" }}
+  >
+    {credit}
+  </a>
+);
 
 const ValidatedImg = ({
   initial, query, orientation = "landscape", fallbackIndex,
-  alt, className, loading = "lazy",
+  alt, className, loading = "lazy", credit, creditMode = "overlay",
 }: ValidatedImgProps) => {
   const { src, alt: healedAlt, onError } = useValidatedImage({
     initial, query, orientation, fallbackIndex,
   });
   if (!src) return null;
+  if (!credit || creditMode === "tooltip") {
+    return (
+      <img
+        src={src}
+        alt={healedAlt || alt || ""}
+        title={credit && creditMode === "tooltip" ? credit : undefined}
+        loading={loading}
+        className={className}
+        onError={onError}
+      />
+    );
+  }
   return (
-    <img
-      src={src}
-      alt={healedAlt || alt || ""}
-      loading={loading}
-      className={className}
-      onError={onError}
-    />
+    <figure className={`relative overflow-hidden ${className || ""}`}>
+      <img
+        src={src}
+        alt={healedAlt || alt || ""}
+        loading={loading}
+        className="h-full w-full object-cover"
+        onError={onError}
+      />
+      <PhotoCredit credit={credit} />
+    </figure>
   );
 };
 
@@ -113,7 +149,7 @@ const ValidatedImg = ({
 // the URL and swap to a healed src once it's verified.
 const ValidatedBgSection = ({
   initial, query, orientation = "landscape", fallbackIndex,
-  overlay, sectionClassName, sectionStyle, children,
+  overlay, sectionClassName, sectionStyle, children, credit,
 }: {
   initial?: string;
   query: string;
@@ -123,6 +159,7 @@ const ValidatedBgSection = ({
   sectionClassName?: string;
   sectionStyle?: React.CSSProperties;
   children: React.ReactNode;
+  credit?: string;
 }) => {
   const { src, status } = useValidatedImage({
     initial, query, orientation, fallbackIndex, preload: true,
@@ -130,7 +167,7 @@ const ValidatedBgSection = ({
   const url = status === "ok" ? src : undefined;
   return (
     <section
-      className={sectionClassName}
+      className={`relative ${sectionClassName || ""}`}
       style={{
         ...sectionStyle,
         backgroundImage: url ? `${overlay}, url(${url})` : overlay,
@@ -139,6 +176,7 @@ const ValidatedBgSection = ({
       }}
     >
       {children}
+      {url && credit && <PhotoCredit credit={credit} />}
     </section>
   );
 };
@@ -397,6 +435,7 @@ const Section = ({
           overlay="linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55))"
           sectionClassName="relative px-6 py-24 text-center"
           sectionStyle={{ color: "white" }}
+          credit={section.image_credit}
         >
           <h1 className="mx-auto max-w-3xl text-4xl font-bold leading-tight md:text-5xl">
             {section.heading}
@@ -436,6 +475,7 @@ const Section = ({
               fallbackIndex={index}
               alt={section.image_alt || section.heading}
               className="aspect-[4/3] w-full rounded-lg object-cover shadow-xl"
+              credit={section.image_credit}
             />
           </div>
         </section>
@@ -539,6 +579,8 @@ const Section = ({
                         fallbackIndex={i}
                         alt={it.author || "Testimonial"}
                         className="h-12 w-12 shrink-0 rounded-full object-cover"
+                        credit={it.image_credit}
+                        creditMode="tooltip"
                       />
                     ) : (
                       <div
@@ -596,6 +638,7 @@ const Section = ({
           overlay={ctaOverlay}
           sectionClassName="relative px-6 py-20 text-center"
           sectionStyle={{ color: "white" }}
+          credit={section.image_credit}
         >
           <h2 className="text-3xl font-bold">{section.heading}</h2>
           {section.subheading && <p className="mx-auto mt-3 max-w-xl opacity-95">{section.subheading}</p>}
@@ -678,6 +721,7 @@ const FeatureCard = ({
           fallbackIndex={index}
           alt={item.image_alt || item.title}
           className="aspect-video w-full object-cover"
+          credit={item.image_credit}
         />
       )}
       <div className="p-5">
