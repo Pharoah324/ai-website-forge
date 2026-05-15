@@ -68,5 +68,6 @@ export type SiteContent = {
   };
   sections: SiteSection[];
   layoutVariant?: string;
+  unsplash?: Record<string, string>;
 };
 
