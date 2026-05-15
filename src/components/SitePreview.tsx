@@ -1122,6 +1122,7 @@ const Section = ({
       theme={theme}
       siteId={siteId}
       showBookingNote={!!hasBookingCta}
+      lang={lang}
     />
   );
 };
