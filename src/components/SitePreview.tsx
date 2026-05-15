@@ -435,6 +435,7 @@ const Section = ({
           overlay="linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55))"
           sectionClassName="relative px-6 py-24 text-center"
           sectionStyle={{ color: "white" }}
+          credit={section.image_credit}
         >
           <h1 className="mx-auto max-w-3xl text-4xl font-bold leading-tight md:text-5xl">
             {section.heading}
