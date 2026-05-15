@@ -94,11 +94,9 @@ Legal: Consultation→Scale, Contract→FileText, Court→Building, Research→S
 Generic: Phone, Mail, MapPin, Clock, Users, Shield, Award, Star, DollarSign, CalendarCheck.`;
 
 const TOOL = {
-  type: "function" as const,
-  function: {
-    name: "build_site",
-    description: "Build a structured website definition.",
-    parameters: {
+  name: "build_site",
+  description: "Build a structured website definition.",
+  input_schema: {
       type: "object",
       properties: {
         name: { type: "string" },
@@ -151,8 +149,7 @@ const TOOL = {
           },
         },
       },
-      required: ["name", "tagline", "theme", "sections"],
-    },
+    required: ["name", "tagline", "theme", "sections"],
   },
 };
 
@@ -162,8 +159,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY not configured");
 
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -307,20 +304,20 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
     }
 
     const aiBody = {
-      model: "google/gemini-2.5-pro",
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT + voiceAddon },
-        { role: "user", content: userMessage },
-      ],
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 8192,
+      system: SYSTEM_PROMPT + voiceAddon,
+      messages: [{ role: "user", content: userMessage }],
       tools: [TOOL],
-      tool_choice: { type: "function", function: { name: "build_site" } },
+      tool_choice: { type: "tool", name: "build_site" },
       stream,
     };
 
-    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const aiResp = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
         "Content-Type": "application/json",
       },
       body: JSON.stringify(aiBody),
@@ -335,12 +332,12 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
       }
       if (aiResp.status === 402) {
         return new Response(
-          JSON.stringify({ error: "Lovable AI credits exhausted. Add funds in Settings → Workspace → Usage." }),
+          JSON.stringify({ error: "Anthropic credits exhausted." }),
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
       const t = await aiResp.text();
-      console.error("Lovable AI error:", aiResp.status, t);
+      console.error("Anthropic error:", aiResp.status, t);
       return new Response(JSON.stringify({ error: "AI provider error" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -349,8 +346,8 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
 
     if (!stream) {
       const data = await aiResp.json();
-      const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-      const argStr = toolCall?.function?.arguments;
+      const toolUse = (data.content || []).find((b: { type: string }) => b.type === "tool_use");
+      const argStr = toolUse ? JSON.stringify(toolUse.input) : null;
       if (!argStr) {
         return new Response(JSON.stringify({ error: "AI returned no site" }), {
           status: 500,
@@ -403,11 +400,13 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
               if (!json || json === "[DONE]") continue;
               try {
                 const evt = JSON.parse(json);
-                const delta = evt.choices?.[0]?.delta;
-                const argChunk = delta?.tool_calls?.[0]?.function?.arguments;
-                if (typeof argChunk === "string" && argChunk.length) {
-                  accumulated += argChunk;
-                  send("delta", { partial_json: argChunk });
+                // Anthropic streaming: input_json_delta carries tool input chunks
+                if (evt.type === "content_block_delta" && evt.delta?.type === "input_json_delta") {
+                  const argChunk = evt.delta.partial_json;
+                  if (typeof argChunk === "string" && argChunk.length) {
+                    accumulated += argChunk;
+                    send("delta", { partial_json: argChunk });
+                  }
                 }
               } catch { /* ignore */ }
             }
