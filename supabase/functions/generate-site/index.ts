@@ -461,6 +461,7 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
     }
 
     // STREAMING
+    unsplashDisabled = false;
     const reader = aiResp.body!.getReader();
     const decoder = new TextDecoder();
     const encoder = new TextEncoder();
@@ -469,11 +470,20 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
 
     const out = new ReadableStream({
       async start(controller) {
-        const send = (event: string, data: unknown) => {
-          controller.enqueue(
-            encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`),
-          );
+        let closed = false;
+        const safeEnqueue = (chunk: Uint8Array) => {
+          if (closed) return;
+          try { controller.enqueue(chunk); } catch { /* controller already closed */ }
         };
+        const send = (event: string, data: unknown) => {
+          safeEnqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
+        };
+        // SSE keepalive — comment lines every 10s prevent the client's
+        // 45s stall watchdog from tripping during long Anthropic pauses
+        // or post-stream image hydration.
+        const heartbeat = setInterval(() => {
+          safeEnqueue(encoder.encode(`: keepalive ${Date.now()}\n\n`));
+        }, 10_000);
 
         try {
           while (true) {
@@ -511,12 +521,14 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
             parsed = JSON.parse(accumulated);
           } catch {
             send("error", { error: "Failed to parse AI output" });
-            controller.close();
+            clearInterval(heartbeat);
+            closed = true;
+            try { controller.close(); } catch { /* noop */ }
             return;
           }
 
           try { sanitizeMarkdownImages(parsed); } catch (e) { console.warn("sanitizeMarkdownImages failed:", e); }
-      try { await hydrateImages(parsed, prompt); } catch (e) { console.warn("hydrateImages failed (continuing without images):", e); }
+          try { await hydrateImages(parsed, prompt); } catch (e) { console.warn("hydrateImages failed (continuing without images):", e); }
 
           const site = await persistSite(
             supabase,
@@ -529,12 +541,16 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
             effectiveWorkspaceId,
           );
           send("done", { site });
-          controller.close();
+          clearInterval(heartbeat);
+          closed = true;
+          try { controller.close(); } catch { /* noop */ }
         } catch (e) {
           const msg = e instanceof Error ? e.message : "stream error";
           console.error("stream error:", msg);
           send("error", { error: msg });
-          controller.close();
+          clearInterval(heartbeat);
+          closed = true;
+          try { controller.close(); } catch { /* noop */ }
         }
       },
     });
