@@ -33,7 +33,7 @@ export type SiteSection = {
   columns?: number;
   overlay?: string | boolean | number;
   overlayOpacity?: number;
-  images?: Array<string | { query: string; position?: string }>;
+  images?: Array<string | { query: string; position?: string; alt?: string }>;
   image?: string | { query: string; position: string };
   image_search_query?: string;
   image_placement?: "background" | "side" | "card" | "avatar" | "none";
