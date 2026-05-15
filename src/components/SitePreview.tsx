@@ -72,10 +72,165 @@ type ContactFormProps = {
   showBookingNote: boolean;
 };
 
-const ContactForm = ({ section, theme, siteId, showBookingNote }: ContactFormProps) => {
+// ---------------------------------------------------------------------------
+// Static UI strings — translated to match the generated site language.
+// Falls back to English for any unsupported locale.
+// ---------------------------------------------------------------------------
+type UiKey =
+  | "get_started"
+  | "send_message"
+  | "send"
+  | "sending"
+  | "name_placeholder"
+  | "email_placeholder"
+  | "phone_placeholder"
+  | "message_placeholder"
+  | "thank_you"
+  | "we_will_be_in_touch"
+  | "reservation_note"
+  | "support"
+  | "contact_heading"
+  | "contact_subheading"
+  | "err_name_required"
+  | "err_name_long"
+  | "err_email_required"
+  | "err_email_invalid"
+  | "err_email_long"
+  | "err_phone_short"
+  | "err_phone_long"
+  | "err_message_required"
+  | "err_message_long"
+  | "err_generic";
+
+const UI_STRINGS: Record<string, Record<UiKey, string>> = {
+  en: {
+    get_started: "Get started",
+    send_message: "Send message",
+    send: "Send",
+    sending: "Sending…",
+    name_placeholder: "Your name",
+    email_placeholder: "Email",
+    phone_placeholder: "Phone (optional)",
+    message_placeholder: "Message",
+    thank_you: "Thank you!",
+    we_will_be_in_touch: "We'll be in touch within 24 hours.",
+    reservation_note: "We'll confirm your reservation by phone or email.",
+    support: "Support",
+    contact_heading: "Get in touch",
+    contact_subheading: "Tell us what you need and we'll be in touch within 24 hours.",
+    err_name_required: "Please enter your name",
+    err_name_long: "Name is too long",
+    err_email_required: "Please enter your email",
+    err_email_invalid: "Please enter a valid email",
+    err_email_long: "Email is too long",
+    err_phone_short: "Phone number looks too short",
+    err_phone_long: "Phone number is too long",
+    err_message_required: "Please enter a message",
+    err_message_long: "Message is too long",
+    err_generic: "Something went wrong. Please try again.",
+  },
+  es: {
+    get_started: "Comenzar",
+    send_message: "Enviar mensaje",
+    send: "Enviar",
+    sending: "Enviando…",
+    name_placeholder: "Tu nombre",
+    email_placeholder: "Correo electrónico",
+    phone_placeholder: "Teléfono (opcional)",
+    message_placeholder: "Mensaje",
+    thank_you: "¡Gracias!",
+    we_will_be_in_touch: "Nos pondremos en contacto en menos de 24 horas.",
+    reservation_note: "Confirmaremos tu reserva por teléfono o correo electrónico.",
+    support: "Soporte",
+    contact_heading: "Contáctanos",
+    contact_subheading: "Cuéntanos qué necesitas y te responderemos en menos de 24 horas.",
+    err_name_required: "Por favor ingresa tu nombre",
+    err_name_long: "El nombre es demasiado largo",
+    err_email_required: "Por favor ingresa tu correo electrónico",
+    err_email_invalid: "Por favor ingresa un correo válido",
+    err_email_long: "El correo es demasiado largo",
+    err_phone_short: "El número de teléfono parece muy corto",
+    err_phone_long: "El número de teléfono es demasiado largo",
+    err_message_required: "Por favor ingresa un mensaje",
+    err_message_long: "El mensaje es demasiado largo",
+    err_generic: "Algo salió mal. Por favor intenta de nuevo.",
+  },
+  pt: {
+    get_started: "Começar",
+    send_message: "Enviar mensagem",
+    send: "Enviar",
+    sending: "Enviando…",
+    name_placeholder: "Seu nome",
+    email_placeholder: "E-mail",
+    phone_placeholder: "Telefone (opcional)",
+    message_placeholder: "Mensagem",
+    thank_you: "Obrigado!",
+    we_will_be_in_touch: "Entraremos em contato em até 24 horas.",
+    reservation_note: "Confirmaremos sua reserva por telefone ou e-mail.",
+    support: "Suporte",
+    contact_heading: "Fale conosco",
+    contact_subheading: "Conte o que você precisa e responderemos em até 24 horas.",
+    err_name_required: "Por favor, informe seu nome",
+    err_name_long: "Nome muito longo",
+    err_email_required: "Por favor, informe seu e-mail",
+    err_email_invalid: "Por favor, informe um e-mail válido",
+    err_email_long: "E-mail muito longo",
+    err_phone_short: "O número de telefone parece muito curto",
+    err_phone_long: "Número de telefone muito longo",
+    err_message_required: "Por favor, escreva uma mensagem",
+    err_message_long: "Mensagem muito longa",
+    err_generic: "Algo deu errado. Por favor, tente novamente.",
+  },
+  fr: {
+    get_started: "Commencer",
+    send_message: "Envoyer le message",
+    send: "Envoyer",
+    sending: "Envoi…",
+    name_placeholder: "Votre nom",
+    email_placeholder: "E-mail",
+    phone_placeholder: "Téléphone (facultatif)",
+    message_placeholder: "Message",
+    thank_you: "Merci !",
+    we_will_be_in_touch: "Nous vous répondrons sous 24 heures.",
+    reservation_note: "Nous confirmerons votre réservation par téléphone ou e-mail.",
+    support: "Support",
+    contact_heading: "Contactez-nous",
+    contact_subheading: "Dites-nous ce dont vous avez besoin et nous vous répondrons sous 24 heures.",
+    err_name_required: "Veuillez entrer votre nom",
+    err_name_long: "Le nom est trop long",
+    err_email_required: "Veuillez entrer votre e-mail",
+    err_email_invalid: "Veuillez entrer un e-mail valide",
+    err_email_long: "L'e-mail est trop long",
+    err_phone_short: "Le numéro de téléphone semble trop court",
+    err_phone_long: "Le numéro de téléphone est trop long",
+    err_message_required: "Veuillez entrer un message",
+    err_message_long: "Le message est trop long",
+    err_generic: "Une erreur s'est produite. Veuillez réessayer.",
+  },
+};
+
+function getLangKey(lang?: string): string {
+  if (!lang) return "en";
+  const code = lang.toLowerCase().split(/[-_]/)[0];
+  return UI_STRINGS[code] ? code : "en";
+}
+
+function makeT(lang?: string) {
+  const dict = UI_STRINGS[getLangKey(lang)];
+  return (key: UiKey) => dict[key];
+}
+
+const ContactForm = ({
+  section,
+  theme,
+  siteId,
+  showBookingNote,
+  lang,
+}: ContactFormProps & { lang?: string }) => {
   const primary = `hsl(${theme.primary})`;
   const muted = `hsl(${theme.foreground} / 0.75)`;
   const border = `1px solid hsl(${theme.foreground} / 0.15)`;
+  const t = makeT(lang);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -87,15 +242,15 @@ const ContactForm = ({ section, theme, siteId, showBookingNote }: ContactFormPro
 
   const validate = () => {
     const errs: Record<string, string> = {};
-    if (!name.trim()) errs.name = "Please enter your name";
-    else if (name.trim().length > 100) errs.name = "Name is too long";
-    if (!email.trim()) errs.email = "Please enter your email";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) errs.email = "Please enter a valid email";
-    else if (email.trim().length > 255) errs.email = "Email is too long";
-    if (phone.trim() && phone.replace(/[^\d+]/g, "").length < 7) errs.phone = "Phone number looks too short";
-    if (phone.trim().length > 40) errs.phone = "Phone number is too long";
-    if (!message.trim()) errs.message = "Please enter a message";
-    else if (message.trim().length > 2000) errs.message = "Message is too long";
+    if (!name.trim()) errs.name = t("err_name_required");
+    else if (name.trim().length > 100) errs.name = t("err_name_long");
+    if (!email.trim()) errs.email = t("err_email_required");
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) errs.email = t("err_email_invalid");
+    else if (email.trim().length > 255) errs.email = t("err_email_long");
+    if (phone.trim() && phone.replace(/[^\d+]/g, "").length < 7) errs.phone = t("err_phone_short");
+    if (phone.trim().length > 40) errs.phone = t("err_phone_long");
+    if (!message.trim()) errs.message = t("err_message_required");
+    else if (message.trim().length > 2000) errs.message = t("err_message_long");
     setFieldErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -145,7 +300,7 @@ const ContactForm = ({ section, theme, siteId, showBookingNote }: ContactFormPro
       setStatus("success");
     } catch (err) {
       setStatus("error");
-      setErrorMsg(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+      setErrorMsg(err instanceof Error ? err.message : t("err_generic"));
     }
   };
 
@@ -157,10 +312,10 @@ const ContactForm = ({ section, theme, siteId, showBookingNote }: ContactFormPro
           style={{ border: `1px solid hsl(${theme.primary} / 0.4)`, background: `hsl(${theme.primary} / 0.06)` }}
         >
           <h2 className="text-2xl font-bold" style={{ color: primary }}>
-            Thank you!
+            {t("thank_you")}
           </h2>
           <p className="mt-3" style={{ color: muted }}>
-            We'll be in touch within 24 hours.
+            {t("we_will_be_in_touch")}
           </p>
         </div>
       </section>
@@ -181,7 +336,7 @@ const ContactForm = ({ section, theme, siteId, showBookingNote }: ContactFormPro
             className="mx-auto mt-4 max-w-md rounded-md px-3 py-2 text-center text-xs"
             style={{ background: `hsl(${theme.primary} / 0.08)`, color: primary }}
           >
-            We'll confirm your reservation by phone or email.
+            {t("reservation_note")}
           </p>
         )}
 
@@ -191,7 +346,7 @@ const ContactForm = ({ section, theme, siteId, showBookingNote }: ContactFormPro
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Your name"
+              placeholder={t("name_placeholder")}
               maxLength={100}
               autoComplete="name"
               required
@@ -206,7 +361,7 @@ const ContactForm = ({ section, theme, siteId, showBookingNote }: ContactFormPro
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email"
+              placeholder={t("email_placeholder")}
               maxLength={255}
               autoComplete="email"
               required
@@ -221,7 +376,7 @@ const ContactForm = ({ section, theme, siteId, showBookingNote }: ContactFormPro
               type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              placeholder="Phone (optional)"
+              placeholder={t("phone_placeholder")}
               maxLength={40}
               autoComplete="tel"
               aria-invalid={!!fieldErrors.phone}
@@ -234,7 +389,7 @@ const ContactForm = ({ section, theme, siteId, showBookingNote }: ContactFormPro
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Message"
+              placeholder={t("message_placeholder")}
               rows={4}
               maxLength={2000}
               required
@@ -255,7 +410,7 @@ const ContactForm = ({ section, theme, siteId, showBookingNote }: ContactFormPro
             style={{ background: primary, color: "white", opacity: status === "submitting" ? 0.7 : 1 }}
             className="w-full rounded-md py-2.5 text-sm font-semibold"
           >
-            {status === "submitting" ? "Sending…" : section.cta || "Send"}
+            {status === "submitting" ? t("sending") : section.cta || t("send")}
           </button>
         </form>
       </div>
@@ -593,6 +748,9 @@ export const SitePreview = ({
     branding?.footer_text ||
     `© ${new Date().getFullYear()} ${headerName}`;
 
+  const lang = themedContent.lang;
+  const t = makeT(lang);
+
   // Booking-style CTA anywhere on the page → show reservation reassurance in form.
   const hasBookingCta = themedContent.sections.some(
     (s) => (s.cta && BOOKING_RE.test(s.cta)) || (s.heading && BOOKING_RE.test(s.heading)),
@@ -604,14 +762,14 @@ export const SitePreview = ({
         ...themedContent.sections,
         {
           type: "contact",
-          heading: "Get in touch",
-          subheading: "Tell us what you need and we'll be in touch within 24 hours.",
-          cta: "Send message",
+          heading: t("contact_heading"),
+          subheading: t("contact_subheading"),
+          cta: t("send_message"),
         } as SiteSection,
       ];
 
   return (
-    <div style={style} className="min-h-full" dir={themedContent.dir || "ltr"}>
+    <div style={style} className="min-h-full" dir={themedContent.dir || "ltr"} lang={lang}>
       <div
         style={{
           background: `hsl(${themedContent.theme.background})`,
@@ -640,7 +798,7 @@ export const SitePreview = ({
               style={{ background: `hsl(${themedContent.theme.primary})`, color: "white" }}
               className="rounded-md px-3 py-1.5 text-xs font-medium"
             >
-              Get started
+              {t("get_started")}
             </a>
           </div>
         </header>
@@ -654,6 +812,7 @@ export const SitePreview = ({
             brand={headerName}
             siteId={siteId}
             hasBookingCta={hasBookingCta}
+            lang={lang}
           />
         ))}
 
@@ -667,7 +826,7 @@ export const SitePreview = ({
           <div>{footerLine}</div>
           {branding?.support_email && (
             <div className="mt-1 opacity-80">
-              Support:{" "}
+              {t("support")}:{" "}
               <a href={`mailto:${branding.support_email}`} className="underline">
                 {branding.support_email}
               </a>
@@ -686,6 +845,7 @@ const Section = ({
   brand,
   siteId,
   hasBookingCta,
+  lang,
 }: {
   section: SiteSection;
   theme: SiteContent["theme"];
@@ -693,6 +853,7 @@ const Section = ({
   brand?: string;
   siteId?: string;
   hasBookingCta?: boolean;
+  lang?: string;
 }) => {
   const accentBg = `hsl(${theme.accent})`;
   const primary = `hsl(${theme.primary})`;
@@ -961,6 +1122,7 @@ const Section = ({
       theme={theme}
       siteId={siteId}
       showBookingNote={!!hasBookingCta}
+      lang={lang}
     />
   );
 };
