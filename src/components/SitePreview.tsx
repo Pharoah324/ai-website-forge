@@ -750,9 +750,7 @@ const Section = ({
               )}
               {section.cta && (
                 <div className="mt-6 flex items-center gap-3">
-                  <button style={{ background: primary, color: "white" }} className="rounded-md px-6 py-3 text-sm font-semibold shadow-md">
-                    {section.cta}
-                  </button>
+                  <CTAButton label={section.cta} primary={primary} />
                   {section.cta_urgency && (
                     <span className="text-xs font-medium" style={{ color: `hsl(${theme.primary})` }}>⏱ {section.cta_urgency}</span>
                   )}
