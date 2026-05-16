@@ -1130,6 +1130,7 @@ const Section = ({
       siteId={siteId}
       showBookingNote={!!hasBookingCta}
       lang={lang}
+      ui={ui}
     />
   );
 };
