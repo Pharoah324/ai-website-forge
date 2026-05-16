@@ -57,12 +57,17 @@ Deno.serve(async (req) => {
 
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
-    // Look up site owner
+    // Look up site owner — must be a real, published site
     const { data: site, error: siteErr } = await admin.from("sites")
-      .select("id, user_id").eq("id", site_id).maybeSingle();
+      .select("id, user_id, published").eq("id", site_id).maybeSingle();
     if (siteErr || !site) {
       return new Response(JSON.stringify({ error: "Site not found" }), {
         status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (!site.published) {
+      return new Response(JSON.stringify({ error: "Site is not published" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
