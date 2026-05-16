@@ -851,6 +851,7 @@ const Section = ({
   siteId,
   hasBookingCta,
   lang,
+  ui,
 }: {
   section: SiteSection;
   theme: SiteContent["theme"];
@@ -859,6 +860,7 @@ const Section = ({
   siteId?: string;
   hasBookingCta?: boolean;
   lang?: string;
+  ui?: Partial<Record<UiKey, string>>;
 }) => {
   const accentBg = `hsl(${theme.accent})`;
   const primary = `hsl(${theme.primary})`;
