@@ -215,9 +215,13 @@ function getLangKey(lang?: string): string {
   return UI_STRINGS[code] ? code : "en";
 }
 
-function makeT(lang?: string) {
+function makeT(lang?: string, overrides?: Partial<Record<UiKey, string>>) {
   const dict = UI_STRINGS[getLangKey(lang)];
-  return (key: UiKey) => dict[key];
+  return (key: UiKey) => {
+    const o = overrides?.[key];
+    if (o && o.trim()) return o;
+    return dict[key];
+  };
 }
 
 const ContactForm = ({
@@ -226,11 +230,12 @@ const ContactForm = ({
   siteId,
   showBookingNote,
   lang,
-}: ContactFormProps & { lang?: string }) => {
+  ui,
+}: ContactFormProps & { lang?: string; ui?: Partial<Record<UiKey, string>> }) => {
   const primary = `hsl(${theme.primary})`;
   const muted = `hsl(${theme.foreground} / 0.75)`;
   const border = `1px solid hsl(${theme.foreground} / 0.15)`;
-  const t = makeT(lang);
+  const t = makeT(lang, ui);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -749,7 +754,8 @@ export const SitePreview = ({
     `© ${new Date().getFullYear()} ${headerName}`;
 
   const lang = themedContent.lang;
-  const t = makeT(lang);
+  const ui = themedContent.ui;
+  const t = makeT(lang, ui);
 
   // Booking-style CTA anywhere on the page → show reservation reassurance in form.
   const hasBookingCta = themedContent.sections.some(
@@ -813,6 +819,7 @@ export const SitePreview = ({
             siteId={siteId}
             hasBookingCta={hasBookingCta}
             lang={lang}
+            ui={ui}
           />
         ))}
 
@@ -846,6 +853,7 @@ const Section = ({
   siteId,
   hasBookingCta,
   lang,
+  ui,
 }: {
   section: SiteSection;
   theme: SiteContent["theme"];
@@ -854,6 +862,7 @@ const Section = ({
   siteId?: string;
   hasBookingCta?: boolean;
   lang?: string;
+  ui?: Partial<Record<UiKey, string>>;
 }) => {
   const accentBg = `hsl(${theme.accent})`;
   const primary = `hsl(${theme.primary})`;
@@ -1123,6 +1132,7 @@ const Section = ({
       siteId={siteId}
       showBookingNote={!!hasBookingCta}
       lang={lang}
+      ui={ui}
     />
   );
 };
