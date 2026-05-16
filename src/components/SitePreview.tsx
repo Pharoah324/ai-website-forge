@@ -819,6 +819,7 @@ export const SitePreview = ({
             siteId={siteId}
             hasBookingCta={hasBookingCta}
             lang={lang}
+            ui={ui}
           />
         ))}
 
