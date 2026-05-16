@@ -754,7 +754,8 @@ export const SitePreview = ({
     `© ${new Date().getFullYear()} ${headerName}`;
 
   const lang = themedContent.lang;
-  const t = makeT(lang);
+  const ui = themedContent.ui;
+  const t = makeT(lang, ui);
 
   // Booking-style CTA anywhere on the page → show reservation reassurance in form.
   const hasBookingCta = themedContent.sections.some(
