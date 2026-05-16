@@ -69,5 +69,21 @@ export type SiteContent = {
   sections: SiteSection[];
   layoutVariant?: string;
   unsplash?: Record<string, string>;
+  ui?: Partial<Record<
+    | "get_started"
+    | "send"
+    | "sending"
+    | "name_placeholder"
+    | "email_placeholder"
+    | "phone_placeholder"
+    | "message_placeholder"
+    | "thank_you"
+    | "we_will_be_in_touch"
+    | "reservation_note"
+    | "support"
+    | "contact_heading"
+    | "contact_subheading",
+    string
+  >>;
 };
 
