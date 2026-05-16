@@ -507,8 +507,8 @@ Deno.serve(async (req) => {
       ? ` This is a right-to-left language; include "dir": "rtl" in the JSON.`
       : "";
     const langInstruction = langName
-      ? `\n\nIMPORTANT: Write ALL copy in ${langName}. (image_search_query fields stay in English.)${rtlNote}`
-      : "";
+      ? `\n\nIMPORTANT: Write ALL copy in ${langName}, including the "ui" object (contact form placeholders, "Send", "Sending…", "Thank you!", "We'll be in touch within 24 hours.", "We'll confirm your reservation by phone or email.", "Support", "Get in touch", "Tell us what you need…", "Get started"). Always populate "ui" with natural ${langName} translations of every label. (image_search_query fields stay in English.)${rtlNote}`
+      : `\n\nAlways populate the "ui" object with English labels for the contact form, footer, and CTAs.`;
 
     const funnelInstruction = funnelType && funnelType !== "website"
       ? `\n\nFUNNEL MODE: ${funnelType}. Apply the funnel rules from the system prompt strictly.`
