@@ -215,9 +215,13 @@ function getLangKey(lang?: string): string {
   return UI_STRINGS[code] ? code : "en";
 }
 
-function makeT(lang?: string) {
+function makeT(lang?: string, overrides?: Partial<Record<UiKey, string>>) {
   const dict = UI_STRINGS[getLangKey(lang)];
-  return (key: UiKey) => dict[key];
+  return (key: UiKey) => {
+    const o = overrides?.[key];
+    if (o && o.trim()) return o;
+    return dict[key];
+  };
 }
 
 const ContactForm = ({
