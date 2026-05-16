@@ -230,11 +230,12 @@ const ContactForm = ({
   siteId,
   showBookingNote,
   lang,
-}: ContactFormProps & { lang?: string }) => {
+  ui,
+}: ContactFormProps & { lang?: string; ui?: Partial<Record<UiKey, string>> }) => {
   const primary = `hsl(${theme.primary})`;
   const muted = `hsl(${theme.foreground} / 0.75)`;
   const border = `1px solid hsl(${theme.foreground} / 0.15)`;
-  const t = makeT(lang);
+  const t = makeT(lang, ui);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
