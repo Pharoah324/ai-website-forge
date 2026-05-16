@@ -223,6 +223,25 @@ const TOOL = {
         tagline: { type: "string" },
         lang: { type: "string" },
         dir: { type: "string", enum: ["ltr", "rtl"] },
+        ui: {
+          type: "object",
+          description: "Localized labels for static UI chrome (contact form, footer, etc.) in the site's language. ALL values must be in the same language as the rest of the copy.",
+          properties: {
+            get_started: { type: "string" },
+            send: { type: "string" },
+            sending: { type: "string" },
+            name_placeholder: { type: "string" },
+            email_placeholder: { type: "string" },
+            phone_placeholder: { type: "string" },
+            message_placeholder: { type: "string" },
+            thank_you: { type: "string" },
+            we_will_be_in_touch: { type: "string" },
+            reservation_note: { type: "string" },
+            support: { type: "string" },
+            contact_heading: { type: "string" },
+            contact_subheading: { type: "string" },
+          },
+        },
         theme: {
           type: "object",
           properties: {
