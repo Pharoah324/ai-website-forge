@@ -35,6 +35,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
       setSession(s);
       setUser(s?.user ?? null);
+      const postAuthPath = s ? getStoredPostAuthPath() : null;
+      if (postAuthPath && window.location.pathname === "/") {
+        window.history.replaceState(null, "", postAuthPath);
+        window.dispatchEvent(new PopStateEvent("popstate"));
+      }
       // Ensure a profile row exists for this user (OAuth or email signup).
       // Defer to avoid running inside the auth callback.
       if (s?.user && (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "USER_UPDATED")) {
