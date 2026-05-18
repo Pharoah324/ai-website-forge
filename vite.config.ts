@@ -27,8 +27,6 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   const supabaseProjectId = env.VITE_SUPABASE_PROJECT_ID || DEFAULT_SUPABASE_PROJECT_ID;
   const supabaseUrl = env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL;
-  const supabasePublishableKey =
-    getSupabasePublishableKey(env.VITE_SUPABASE_PUBLISHABLE_KEY) ?? "";
   const supabasePublishableKey = getSupabaseBrowserKey(env);
 
   return {
