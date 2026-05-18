@@ -17,17 +17,33 @@ const DEFAULT_SUPABASE_URL = `https://${DEFAULT_SUPABASE_PROJECT_ID}.supabase.co
 // Supabase projects may expose either the newer publishable key or the legacy
 // anon JWT key. Both are valid browser keys; prefer publishable when present.
 const getSupabaseBrowserKey = (env: Record<string, string>) => {
-  const publishableKey = env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
-  const anonKey = env.VITE_SUPABASE_ANON_KEY?.trim();
+  // Vite's loadEnv only reads .env files. On Vercel, env vars live in process.env,
+  // so we must check both sources to avoid an empty key during SSG pre-render.
+  const publishableKey =
+    env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim() ||
+    process.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
+  const anonKey =
+    env.VITE_SUPABASE_ANON_KEY?.trim() ||
+    process.env.VITE_SUPABASE_ANON_KEY?.trim();
   return publishableKey || anonKey || "";
 };
+
+const getSupabaseUrl = (env: Record<string, string>) =>
+  env.VITE_SUPABASE_URL?.trim() ||
+  process.env.VITE_SUPABASE_URL?.trim() ||
+  DEFAULT_SUPABASE_URL;
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
-  const supabaseProjectId = env.VITE_SUPABASE_PROJECT_ID || DEFAULT_SUPABASE_PROJECT_ID;
-  const supabaseUrl = env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL;
-  const supabasePublishableKey = getSupabaseBrowserKey(env);
+  const supabaseProjectId =
+    env.VITE_SUPABASE_PROJECT_ID || process.env.VITE_SUPABASE_PROJECT_ID || DEFAULT_SUPABASE_PROJECT_ID;
+  const supabaseUrl = getSupabaseUrl(env);
+  // Fallback placeholder prevents `supabaseKey is required` from crashing the SSG
+  // pre-render when env vars are missing in the build environment. The placeholder
+  // is harmless: pre-rendered marketing pages never make authenticated calls, and
+  // browser builds with the real env var override it at runtime.
+  const supabasePublishableKey = getSupabaseBrowserKey(env) || "ssg-placeholder-key";
 
   return {
     server: {
