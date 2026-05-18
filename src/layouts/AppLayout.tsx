@@ -34,7 +34,6 @@ export default function AppLayout() {
   const { t } = useI18n();
   const navigate = useNavigate();
   const location = useLocation();
-  useSessionTimeout();
 
   // Trigger welcome email + onboarding redirect once per session.
   const welcomeFiredRef = useRef(false);
