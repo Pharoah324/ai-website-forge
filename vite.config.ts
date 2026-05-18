@@ -14,12 +14,12 @@ const PRERENDER = new Set<string>([
 const DEFAULT_SUPABASE_PROJECT_ID = "idnyrmdhdfyxdrvyjirj";
 const DEFAULT_SUPABASE_URL = `https://${DEFAULT_SUPABASE_PROJECT_ID}.supabase.co`;
 
-// Reject legacy JWT keys (start with "eyJ"); otherwise pass the env value through
-// so a rotated publishable key in .env propagates without code changes.
-const getSupabasePublishableKey = (value?: string) => {
-  const key = value?.trim();
-  if (!key || key.startsWith("eyJ")) return undefined;
-  return key;
+// Supabase projects may expose either the newer publishable key or the legacy
+// anon JWT key. Both are valid browser keys; prefer publishable when present.
+const getSupabaseBrowserKey = (env: Record<string, string>) => {
+  const publishableKey = env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
+  const anonKey = env.VITE_SUPABASE_ANON_KEY?.trim();
+  return publishableKey || anonKey || "";
 };
 
 // https://vitejs.dev/config/
@@ -29,6 +29,7 @@ export default defineConfig(({ mode }) => {
   const supabaseUrl = env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL;
   const supabasePublishableKey =
     getSupabasePublishableKey(env.VITE_SUPABASE_PUBLISHABLE_KEY) ?? "";
+  const supabasePublishableKey = getSupabaseBrowserKey(env);
 
   return {
     server: {
