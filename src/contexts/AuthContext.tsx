@@ -2,6 +2,15 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { supabase } from "@/integrations/supabase/client";
 import type { Session, User } from "@supabase/supabase-js";
 
+const POST_AUTH_PATH_KEY = "veb_post_auth_path";
+
+const getStoredPostAuthPath = () => {
+  if (typeof window === "undefined") return null;
+  const path = window.sessionStorage.getItem(POST_AUTH_PATH_KEY);
+  window.sessionStorage.removeItem(POST_AUTH_PATH_KEY);
+  return path?.startsWith("/app") ? path : null;
+};
+
 type AuthCtx = {
   user: User | null;
   session: Session | null;
@@ -77,6 +86,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(data.session);
       setUser(data.session?.user ?? null);
       setLoading(false);
+      const postAuthPath = data.session ? getStoredPostAuthPath() : null;
+      if (postAuthPath && window.location.pathname === "/") {
+        window.history.replaceState(null, "", postAuthPath);
+        window.dispatchEvent(new PopStateEvent("popstate"));
+      }
     });
     return () => sub.subscription.unsubscribe();
   }, []);
