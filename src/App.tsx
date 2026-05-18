@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
+import AuthCallback from "./pages/AuthCallback";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import Contact from "./pages/Contact";
@@ -100,6 +101,7 @@ export const routes: RouteRecord[] = [
     children: [
       { index: true, Component: Landing },
       { path: "auth", Component: Auth },
+      { path: "auth/callback", Component: AuthCallback },
       { path: "privacy", Component: Privacy },
       { path: "terms", Component: Terms },
       { path: "contact", Component: Contact },
