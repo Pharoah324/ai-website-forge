@@ -13,6 +13,7 @@ const PRERENDER = new Set<string>([
 
 const DEFAULT_SUPABASE_PROJECT_ID = "idnyrmdhdfyxdrvyjirj";
 const DEFAULT_SUPABASE_URL = `https://${DEFAULT_SUPABASE_PROJECT_ID}.supabase.co`;
+const DEFAULT_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_f8lBo-kCp92l62IrjUHAWw_qUoWbPco";
 
 // Supabase projects may expose either the newer publishable key or the legacy
 // anon JWT key. Both are valid browser keys; prefer publishable when present.
@@ -39,11 +40,9 @@ export default defineConfig(({ mode }) => {
   const supabaseProjectId =
     env.VITE_SUPABASE_PROJECT_ID || process.env.VITE_SUPABASE_PROJECT_ID || DEFAULT_SUPABASE_PROJECT_ID;
   const supabaseUrl = getSupabaseUrl(env);
-  // Fallback placeholder prevents `supabaseKey is required` from crashing the SSG
-  // pre-render when env vars are missing in the build environment. The placeholder
-  // is harmless: pre-rendered marketing pages never make authenticated calls, and
-  // browser builds with the real env var override it at runtime.
-  const supabasePublishableKey = getSupabaseBrowserKey(env) || "ssg-placeholder-key";
+  // Fallback browser key prevents `supabaseKey is required` from crashing SSG and
+  // keeps auth working if the hosting build step doesn't expose Vite env vars.
+  const supabasePublishableKey = getSupabaseBrowserKey(env) || DEFAULT_SUPABASE_PUBLISHABLE_KEY;
 
   return {
     server: {
