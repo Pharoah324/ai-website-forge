@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -97,11 +96,14 @@ export default function Auth() {
     setOauthLoading(provider);
     try {
       window.sessionStorage.setItem("veb_post_auth_path", postAuthPath);
-      const result = await lovable.auth.signInWithOAuth(provider, {
-        redirect_uri: window.location.origin,
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: provider === "google" ? { prompt: "select_account" } : undefined,
+        },
       });
-      if (result.error) throw result.error;
-      if (!result.redirected) navigate(postAuthPath, { replace: true });
+      if (error) throw error;
     } catch (err) {
       window.sessionStorage.removeItem("veb_post_auth_path");
       const msg = err instanceof Error ? err.message : "Sign-in failed";
