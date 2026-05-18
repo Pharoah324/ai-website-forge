@@ -655,28 +655,31 @@ export default function NewSite() {
               {templateModal?.emoji} {templateModal?.name} template
             </DialogTitle>
             <DialogDescription>
-              What's your business name and city? We'll personalize the copy and
-              run it through AI.
+              {templateModal?.id === "family-legacy"
+                ? "What's your family name and home city? We'll weave them into the copy."
+                : "What's your business name and city? We'll personalize the copy and run it through AI."}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <div>
-              <Label htmlFor="biz-name">Business name</Label>
+              <Label htmlFor="biz-name">
+                {templateModal?.id === "family-legacy" ? "Family name" : "Business name"}
+              </Label>
               <Input
                 id="biz-name"
                 value={bizName}
                 onChange={(e) => setBizName(e.target.value)}
-                placeholder="e.g. Atlas Coffee"
+                placeholder={templateModal?.id === "family-legacy" ? "e.g. The Johnson Family" : "e.g. Atlas Coffee"}
                 autoFocus
               />
             </div>
             <div>
-              <Label htmlFor="biz-city">City</Label>
+              <Label htmlFor="biz-city">{templateModal?.id === "family-legacy" ? "Home city or hometown" : "City"}</Label>
               <Input
                 id="biz-city"
                 value={bizCity}
                 onChange={(e) => setBizCity(e.target.value)}
-                placeholder="e.g. Austin"
+                placeholder={templateModal?.id === "family-legacy" ? "e.g. Savannah" : "e.g. Austin"}
               />
             </div>
           </div>
