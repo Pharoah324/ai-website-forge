@@ -11,6 +11,13 @@ const getStoredPostAuthPath = () => {
   return path?.startsWith("/app") ? path : null;
 };
 
+const redirectToStoredPostAuthPath = () => {
+  const postAuthPath = getStoredPostAuthPath();
+  if (postAuthPath && window.location.pathname === "/") {
+    window.location.replace(postAuthPath);
+  }
+};
+
 type AuthCtx = {
   user: User | null;
   session: Session | null;
@@ -35,11 +42,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
       setSession(s);
       setUser(s?.user ?? null);
-      const postAuthPath = s ? getStoredPostAuthPath() : null;
-      if (postAuthPath && window.location.pathname === "/") {
-        window.history.replaceState(null, "", postAuthPath);
-        window.dispatchEvent(new PopStateEvent("popstate"));
-      }
+      if (s) redirectToStoredPostAuthPath();
       // Ensure a profile row exists for this user (OAuth or email signup).
       // Defer to avoid running inside the auth callback.
       if (s?.user && (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "USER_UPDATED")) {
@@ -91,11 +94,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(data.session);
       setUser(data.session?.user ?? null);
       setLoading(false);
-      const postAuthPath = data.session ? getStoredPostAuthPath() : null;
-      if (postAuthPath && window.location.pathname === "/") {
-        window.history.replaceState(null, "", postAuthPath);
-        window.dispatchEvent(new PopStateEvent("popstate"));
-      }
+      if (data.session) redirectToStoredPostAuthPath();
     });
     return () => sub.subscription.unsubscribe();
   }, []);
