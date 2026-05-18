@@ -30,19 +30,27 @@ const getSupabaseBrowserKey = (env: Record<string, string>) => {
 };
 
 const getSupabaseUrl = (env: Record<string, string>) =>
-  env.VITE_SUPABASE_URL?.trim() ||
-  process.env.VITE_SUPABASE_URL?.trim() ||
-  DEFAULT_SUPABASE_URL;
+  env.VITE_SUPABASE_URL?.trim() || process.env.VITE_SUPABASE_URL?.trim() || "";
+
+const getSupabaseProjectId = (env: Record<string, string>, supabaseUrl: string) => {
+  const configuredProjectId =
+    env.VITE_SUPABASE_PROJECT_ID?.trim() || process.env.VITE_SUPABASE_PROJECT_ID?.trim();
+  if (configuredProjectId) return configuredProjectId;
+  return supabaseUrl.match(/^https:\/\/([^.]+)\.supabase\.co/)?.[1] || "";
+};
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
-  const supabaseProjectId =
-    env.VITE_SUPABASE_PROJECT_ID || process.env.VITE_SUPABASE_PROJECT_ID || DEFAULT_SUPABASE_PROJECT_ID;
-  const supabaseUrl = getSupabaseUrl(env);
+  const configuredSupabaseUrl = getSupabaseUrl(env);
+  const configuredProjectId = getSupabaseProjectId(env, configuredSupabaseUrl);
+  const useConfiguredBackend = configuredProjectId === DEFAULT_SUPABASE_PROJECT_ID;
+  const supabaseProjectId = useConfiguredBackend ? configuredProjectId : DEFAULT_SUPABASE_PROJECT_ID;
+  const supabaseUrl = useConfiguredBackend ? configuredSupabaseUrl : DEFAULT_SUPABASE_URL;
   // Fallback browser key prevents `supabaseKey is required` from crashing SSG and
   // keeps auth working if the hosting build step doesn't expose Vite env vars.
-  const supabasePublishableKey = getSupabaseBrowserKey(env) || DEFAULT_SUPABASE_PUBLISHABLE_KEY;
+  const supabasePublishableKey =
+    useConfiguredBackend ? getSupabaseBrowserKey(env) || DEFAULT_SUPABASE_PUBLISHABLE_KEY : DEFAULT_SUPABASE_PUBLISHABLE_KEY;
 
   return {
     server: {
