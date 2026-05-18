@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
+
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -97,24 +97,19 @@ export default function Auth() {
     try {
       const ref = getStoredRef();
       window.sessionStorage.setItem("veb_post_auth_path", postAuthPath);
-      const result = await lovable.auth.signInWithOAuth(provider, {
-        redirect_uri: window.location.origin,
-        extraParams: ref ? { affiliate_ref: ref } : undefined,
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}${postAuthPath}`,
+          queryParams: ref ? { affiliate_ref: ref } : undefined,
+        },
       });
-      if (result.redirected) return; // browser is redirecting
-      if (result.error) throw result.error;
-      window.sessionStorage.removeItem("veb_post_auth_path");
-      navigate(postAuthPath);
+      if (error) throw error;
+      // browser is redirecting to provider
     } catch (err) {
       window.sessionStorage.removeItem("veb_post_auth_path");
       const msg = err instanceof Error ? err.message : "Sign-in failed";
-      const isFetchFailure = /failed to fetch/i.test(msg);
-      toast.error(
-        isFetchFailure
-          ? "Couldn't reach the authentication server. Check your internet connection — if this persists on the live site, the Supabase environment variables may be missing in your hosting provider."
-          : msg,
-      );
-    } finally {
+      toast.error(msg);
       setOauthLoading(null);
     }
   };
