@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable/index";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -95,17 +96,12 @@ export default function Auth() {
   const signInWithProvider = async (provider: "google" | "apple") => {
     setOauthLoading(provider);
     try {
-      const ref = getStoredRef();
       window.sessionStorage.setItem("veb_post_auth_path", postAuthPath);
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-          queryParams: ref ? { affiliate_ref: ref } : undefined,
-        },
+      const result = await lovable.auth.signInWithOAuth(provider, {
+        redirect_uri: window.location.origin,
       });
-      if (error) throw error;
-      // browser is redirecting to provider
+      if (result.error) throw result.error;
+      if (!result.redirected) navigate(postAuthPath, { replace: true });
     } catch (err) {
       window.sessionStorage.removeItem("veb_post_auth_path");
       const msg = err instanceof Error ? err.message : "Sign-in failed";
