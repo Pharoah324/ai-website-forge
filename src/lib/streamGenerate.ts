@@ -69,8 +69,10 @@ export async function streamGenerateSite(
   } catch (e) {
     signal?.removeEventListener("abort", onExternalAbort);
     if (signal?.aborted) return cbs.onError("Cancelled", "aborted");
+    const detail = e instanceof Error ? e.message : String(e);
+    console.error("[streamGenerateSite] fetch failed", { url, detail });
     cbs.onError(
-      e instanceof Error ? e.message : "Network error. Check your connection and retry.",
+      `Could not reach the site generator (${detail}). Check your connection and retry.`,
       "network",
     );
     return;
