@@ -181,7 +181,18 @@ const palettes = {
     headingFont: "Merriweather",
     bodyFont: "Source Sans Pro",
   },
+
+  // Deep forest green + antique gold — heirloom, warm, legacy
+  familyLegacy: {
+    primary: "148 35% 22%",
+    background: "38 35% 96%",
+    foreground: "150 25% 12%",
+    accent: "42 55% 88%",
+    headingFont: "Cormorant Garamond",
+    bodyFont: "Lora",
+  },
 };
+
 
 // ── Layout variant helpers ────────────────────────────────────────────────────
 // These give AI generation hints about which layout style to use.
@@ -880,6 +891,91 @@ export const TEMPLATES: Template[] = [
           ],
         },
         { type: "contact", heading: "New business", subheading: "We take on 4–6 new clients per quarter. Let's talk about your project.", cta: "Start a conversation" },
+      ],
+    },
+  },
+
+  // ── FAMILY LEGACY ──────────────────────────────────────────────────────────
+  {
+    id: "family-legacy",
+    name: "Family Legacy",
+    industry: "Family & Heritage",
+    description: "Preserve your family's story, photos, tree, and reunion details.",
+    emoji: "🌳",
+    draft: {
+      name: "{{BUSINESS_NAME}}",
+      tagline: "The story of our family, preserved for generations",
+      theme: palettes.familyLegacy,
+      layoutVariant: "editorial" as LayoutVariant,
+      unsplash: {
+        hero: "vintage family portrait sepia heritage",
+        features: "old family photo album heirloom",
+        about: "grandparents grandchildren together warm",
+      },
+      sections: [
+        {
+          type: "hero",
+          heading: "{{BUSINESS_NAME}}",
+          subheading: "A living record of our family's history, traditions, and the people who made us who we are. Rooted in {{CITY}}, carried by every generation.",
+          cta: "Explore our story",
+          image: { query: "vintage family portrait heritage warm", position: "full-bleed" },
+          overlay: true,
+        },
+        {
+          type: "about",
+          heading: "Our family crest",
+          subheading: "Every line and color in our crest carries meaning — passed down, reinterpreted, and honored by each generation. It reminds us where we come from and what we stand for.",
+          image: { query: "heraldic family crest emblem antique gold", position: "right" },
+        },
+        {
+          type: "about",
+          heading: "Our story",
+          subheading: "From the first {{BUSINESS_NAME}} who set roots in a new land to the children laughing at this year's reunion, our family's story is one of resilience, love, and quiet courage. These pages gather the moments, names, and memories worth keeping.",
+          image: { query: "old family photo album sepia memory", position: "left" },
+        },
+        {
+          type: "gallery",
+          heading: "Photo gallery",
+          subheading: "Generations of {{BUSINESS_NAME}} faces, gatherings, and milestones.",
+          columns: 3,
+          images: [
+            { query: "vintage black white family portrait", alt: "Family portrait" },
+            { query: "family reunion outdoor summer", alt: "Reunion gathering" },
+            { query: "grandmother grandchild candid moment", alt: "Generations together" },
+            { query: "wedding day vintage photograph", alt: "Wedding day" },
+            { query: "children playing backyard summer", alt: "Children at play" },
+            { query: "family dinner table holiday warm", alt: "Holiday dinner" },
+          ],
+        },
+        {
+          type: "features",
+          heading: "Annual reunion",
+          subheading: "Save the date — our next gathering of the {{BUSINESS_NAME}} family.",
+          layout: "cards-3",
+          items: [
+            { title: "When", body: "Saturday, July 12th. Gates open at 11 AM, dinner served at 5 PM, fireworks at dusk." },
+            { title: "Where", body: "The family homestead just outside {{CITY}}. Parking, shade, and plenty of room for the kids to run." },
+            { title: "Bring", body: "A favorite dish, a printed photo for the memory wall, and any stories worth retelling." },
+          ],
+        },
+        {
+          type: "features",
+          heading: "Family tree",
+          subheading: "The branches of {{BUSINESS_NAME}} — the people, partnerships, and little ones who keep our line growing.",
+          layout: "list-with-icons",
+          items: [
+            { title: "Founding generation", body: "The matriarchs and patriarchs whose choices set everything in motion." },
+            { title: "Parents & siblings", body: "The brothers, sisters, and cousins who grew up under the same roof — and the families they built." },
+            { title: "Children & grandchildren", body: "The newest leaves on the tree, carrying the name and the stories forward." },
+            { title: "Honored memory", body: "Loved ones no longer with us, whose place at the table is always kept." },
+          ],
+        },
+        {
+          type: "contact",
+          heading: "Stay connected",
+          subheading: "Share a photo, add a memory, or RSVP to the next reunion.",
+          cta: "Get in touch",
+        },
       ],
     },
   },

@@ -41,6 +41,7 @@ import OptimizeDashboard from "./pages/OptimizeDashboard";
 import Onboarding from "./pages/Onboarding";
 import Agency from "./pages/Agency";
 import InviteAccept from "./pages/InviteAccept";
+import FamilyLegacy from "./pages/FamilyLegacy";
 import { WorkspaceProvider } from "./contexts/WorkspaceContext";
 import { getCustomerSubdomain } from "./lib/subdomain";
 import { I18nProvider } from "./lib/i18n";
@@ -107,6 +108,7 @@ export const routes: RouteRecord[] = [
       { path: "contact", Component: Contact },
       { path: "help", Component: Help },
       { path: "invite/:token", Component: InviteAccept },
+      { path: "family-legacy", Component: FamilyLegacy },
       { path: "share/:token", Component: Share },
       { path: "affiliates", Component: Affiliates },
       { path: "affiliates/:lang", Component: Affiliates, getStaticPaths: () => ["affiliates/es", "affiliates/pt"] },
