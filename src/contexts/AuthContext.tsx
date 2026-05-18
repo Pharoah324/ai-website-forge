@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Session, User } from "@supabase/supabase-js";
 
 const POST_AUTH_PATH_KEY = "veb_post_auth_path";
+const AUTH_SESSION_READY_EVENT = "veb-auth-session-ready";
 
 const getStoredPostAuthPath = () => {
   if (typeof window === "undefined") return null;
@@ -38,10 +39,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Listener first
-    const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
+    let mounted = true;
+
+    const applySession = (s: Session | null) => {
+      if (!mounted) return;
       setSession(s);
       setUser(s?.user ?? null);
+      setLoading(false);
+    };
+
+    const refreshSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      applySession(data.session);
+      if (data.session) redirectToStoredPostAuthPath();
+    };
+
+    // Listener first
+    const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
+      applySession(s);
       if (s) redirectToStoredPostAuthPath();
       // Ensure a profile row exists for this user (OAuth or email signup).
       // Defer to avoid running inside the auth callback.
@@ -90,13 +105,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     });
     // Then existing session
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setUser(data.session?.user ?? null);
-      setLoading(false);
-      if (data.session) redirectToStoredPostAuthPath();
-    });
-    return () => sub.subscription.unsubscribe();
+    void refreshSession();
+    window.addEventListener(AUTH_SESSION_READY_EVENT, refreshSession);
+    return () => {
+      mounted = false;
+      window.removeEventListener(AUTH_SESSION_READY_EVENT, refreshSession);
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
   return (
