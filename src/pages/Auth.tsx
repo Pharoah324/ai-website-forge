@@ -96,14 +96,17 @@ export default function Auth() {
     setOauthLoading(provider);
     try {
       const ref = getStoredRef();
+      window.sessionStorage.setItem("veb_post_auth_path", postAuthPath);
       const result = await lovable.auth.signInWithOAuth(provider, {
-        redirect_uri: `${window.location.origin}${postAuthPath}`,
+        redirect_uri: window.location.origin,
         extraParams: ref ? { affiliate_ref: ref } : undefined,
       });
       if (result.redirected) return; // browser is redirecting
       if (result.error) throw result.error;
+      window.sessionStorage.removeItem("veb_post_auth_path");
       navigate(postAuthPath);
     } catch (err) {
+      window.sessionStorage.removeItem("veb_post_auth_path");
       const msg = err instanceof Error ? err.message : "Sign-in failed";
       const isFetchFailure = /failed to fetch/i.test(msg);
       toast.error(
