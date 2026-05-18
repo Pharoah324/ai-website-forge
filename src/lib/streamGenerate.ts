@@ -40,7 +40,14 @@ export async function streamGenerateSite(
     cbs.onError("Not authenticated. Please sign in again.", "auth");
     return;
   }
-  const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-site`;
+  // Derive the functions URL from the live supabase client so we always hit
+  // the same backend the auth session was issued from (avoids stale env vars
+  // in deployed bundles pointing at the wrong project → "Failed to fetch").
+  const clientUrl =
+    (supabase as unknown as { supabaseUrl?: string }).supabaseUrl ||
+    import.meta.env.VITE_SUPABASE_URL ||
+    "https://idnyrmdhdfyxdrvyjirj.supabase.co";
+  const url = `${clientUrl}/functions/v1/generate-site`;
 
   // Internal abort that combines external signal + stall watchdog.
   const ctrl = new AbortController();
