@@ -26,7 +26,6 @@ import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { BillingStatusBanner } from "@/components/BillingStatusBanner";
 import { useI18n } from "@/lib/i18n";
-import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 
 export default function AppLayout() {
   const { user, loading, signOut } = useAuth();
