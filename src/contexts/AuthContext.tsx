@@ -2,6 +2,22 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { supabase } from "@/integrations/supabase/client";
 import type { Session, User } from "@supabase/supabase-js";
 
+const POST_AUTH_PATH_KEY = "veb_post_auth_path";
+
+const getStoredPostAuthPath = () => {
+  if (typeof window === "undefined") return null;
+  const path = window.sessionStorage.getItem(POST_AUTH_PATH_KEY);
+  window.sessionStorage.removeItem(POST_AUTH_PATH_KEY);
+  return path?.startsWith("/app") ? path : null;
+};
+
+const redirectToStoredPostAuthPath = () => {
+  const postAuthPath = getStoredPostAuthPath();
+  if (postAuthPath && window.location.pathname === "/") {
+    window.location.replace(postAuthPath);
+  }
+};
+
 type AuthCtx = {
   user: User | null;
   session: Session | null;
@@ -26,6 +42,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
       setSession(s);
       setUser(s?.user ?? null);
+      if (s) redirectToStoredPostAuthPath();
       // Ensure a profile row exists for this user (OAuth or email signup).
       // Defer to avoid running inside the auth callback.
       if (s?.user && (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "USER_UPDATED")) {
@@ -77,6 +94,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(data.session);
       setUser(data.session?.user ?? null);
       setLoading(false);
+      if (data.session) redirectToStoredPostAuthPath();
     });
     return () => sub.subscription.unsubscribe();
   }, []);
