@@ -177,11 +177,6 @@ export default function Auth() {
             ? "Start with 20 free build credits."
             : "Sign in to continue building."}
         </p>
-        {params.get("reason") === "timeout" && (
-          <div className="mt-4 rounded-md border border-yellow-500/30 bg-yellow-500/10 px-3 py-2 text-sm text-yellow-200">
-            Your session expired after 24 hours of inactivity. Please sign in again.
-          </div>
-        )}
 
         <div className="mt-6 space-y-2">
           <Button

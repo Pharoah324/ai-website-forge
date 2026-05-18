@@ -26,7 +26,6 @@ import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { BillingStatusBanner } from "@/components/BillingStatusBanner";
 import { useI18n } from "@/lib/i18n";
-import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 
 export default function AppLayout() {
   const { user, loading, signOut } = useAuth();
@@ -35,7 +34,6 @@ export default function AppLayout() {
   const { t } = useI18n();
   const navigate = useNavigate();
   const location = useLocation();
-  useSessionTimeout();
 
   // Trigger welcome email + onboarding redirect once per session.
   const welcomeFiredRef = useRef(false);
