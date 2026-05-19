@@ -244,16 +244,19 @@ export default function Landing() {
     <div className="min-h-screen bg-background">
       {/* Nav */}
       <header className="absolute z-20 w-full">
-        <div className="container flex h-16 items-center justify-between">
-          <Link to="/" className="flex items-center">
-            <img src="/VEB_Navbar_Logo.png" alt="Virtual Engine Builder" className="h-9 w-auto" />
+        <div className="container flex h-16 items-center justify-between gap-2 px-4 sm:px-6">
+          <Link to="/" className="flex shrink-0 items-center">
+            <img src="/VEB_Navbar_Logo.png" alt="Virtual Engine Builder" className="h-7 w-auto sm:h-9" />
           </Link>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3">
             <LanguageSelector />
-            <Link to="/auth" className="text-sm text-navy-foreground/95 hover:text-navy-foreground">
+            <Link
+              to="/auth"
+              className="hidden whitespace-nowrap text-sm text-navy-foreground/95 hover:text-navy-foreground sm:inline"
+            >
               Sign in
             </Link>
-            <Button asChild size="sm" className="bg-cta text-cta-foreground hover:bg-cta/90">
+            <Button asChild size="sm" className="whitespace-nowrap bg-cta text-cta-foreground hover:bg-cta/90">
               <Link to="/auth?mode=signup">Get started</Link>
             </Button>
           </div>
@@ -261,24 +264,24 @@ export default function Landing() {
       </header>
 
       {/* HERO */}
-      <section className="relative overflow-hidden bg-gradient-hero pb-20 pt-36 text-navy-foreground">
+      <section className="relative overflow-hidden bg-gradient-hero pb-16 pt-28 text-navy-foreground sm:pb-20 sm:pt-36">
         <div className="container relative z-10 mx-auto max-w-5xl text-center">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary-glow">
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-[11px] font-medium text-primary-glow sm:text-xs">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
             </span>
             ✦ Now Live in the GoHighLevel Marketplace
           </div>
-          <h1 className="text-balance text-5xl font-bold leading-[1.02] tracking-tight md:text-7xl">
+          <h1 className="text-balance text-[2rem] font-bold leading-[1.08] tracking-tight sm:text-5xl md:text-7xl">
             Stop Paying $3,000 For a Website.
             <br />
             <span className="text-gradient">You Can Build It Yourself in 10 Minutes.</span>
           </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-balance text-xl leading-relaxed text-navy-foreground md:text-2xl">
+          <p className="mx-auto mt-5 max-w-2xl text-balance text-base leading-relaxed text-navy-foreground sm:mt-6 sm:text-xl md:text-2xl">
             Websites, funnels, and landing pages — powered by embedded AI and built to rank on Google. Live before lunch.
           </p>
-          <div className="mt-10 flex flex-wrap justify-center gap-3">
+          <div className="mt-8 flex flex-col items-stretch justify-center gap-3 sm:mt-10 sm:flex-row sm:flex-wrap sm:items-center">
             <Button asChild size="lg" className="bg-cta text-cta-foreground shadow-glow-cta hover:bg-cta/90">
               <Link to="/auth?mode=signup">
                 ✦ Build My Website Free <ArrowRight className="ml-1 h-4 w-4" />
