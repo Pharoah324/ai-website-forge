@@ -8,6 +8,10 @@
       "destination": "https://oauth.lovable.app/initiate?project_id=673536a3-867c-4ffd-9bd1-5a6b16cd2017&project_env=prod"
     },
     {
+      "source": "/~oauth/callback",
+      "destination": "https://oauth.lovable.app/callback?project_id=673536a3-867c-4ffd-9bd1-5a6b16cd2017&project_env=prod"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
