@@ -241,7 +241,7 @@ function FadeIn({ children, className = "" }: { children: React.ReactNode; class
 
 export default function Landing() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen overflow-x-hidden bg-background">
       {/* Nav */}
       <header className="absolute z-20 w-full">
         <div className="container flex h-16 items-center justify-between gap-2 px-4 sm:px-6">
@@ -545,26 +545,26 @@ export default function Landing() {
                     {r.feature}
                   </div>
                   <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                    <div className="rounded-lg border border-navy-foreground/10 bg-navy/40 p-2">
+                    <div className="min-w-0 rounded-lg border border-navy-foreground/10 bg-navy/40 p-2">
                       <div className="mb-1 text-[10px] uppercase tracking-wide text-navy-foreground/60">Base44</div>
                       <div className="flex items-center justify-center text-navy-foreground/85">
                         <Cell value={r.base} />
                       </div>
                     </div>
-                    <div className="rounded-lg border border-navy-foreground/10 bg-navy/40 p-2">
+                    <div className="min-w-0 rounded-lg border border-navy-foreground/10 bg-navy/40 p-2">
                       <div className="mb-1 text-[10px] uppercase tracking-wide text-navy-foreground/60">Lovable</div>
                       <div className="flex items-center justify-center text-navy-foreground/85">
                         <Cell value={r.lov} />
                       </div>
                     </div>
                     <div
-                      className="rounded-lg border border-primary/40 p-2"
+                      className="min-w-0 rounded-lg border border-primary/40 p-2"
                       style={{ background: "rgba(16,185,129,0.18)" }}
                     >
                       <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-primary-glow">VEB</div>
-                      <div className="flex items-center justify-center gap-1 text-[13px] font-semibold text-navy-foreground">
+                      <div className="flex flex-col items-center justify-center gap-1 text-[11px] font-semibold leading-tight text-navy-foreground sm:flex-row sm:text-[13px]">
                         <Check className="h-4 w-4 shrink-0 text-primary-glow" aria-hidden="true" />
-                        <span className="leading-tight">{r.veb}</span>
+                        <span className="break-words">{r.veb}</span>
                       </div>
                     </div>
                   </div>
