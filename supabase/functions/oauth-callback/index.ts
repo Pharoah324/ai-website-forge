@@ -5,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const APP_ORIGIN = "https://id-preview--673536a3-867c-4ffd-9bd1-5a6b16cd2017.lovable.app";
+const APP_ORIGIN = "https://builder.virtualengine.ai";
 
 function html(body: string, status = 200, title = "Connected") {
   return new Response(
