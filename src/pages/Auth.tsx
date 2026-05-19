@@ -18,6 +18,8 @@ const schema = z.object({
   password: z.string().min(6, "Min 6 characters").max(128),
 });
 
+const APP_ORIGIN = "https://builder.virtualengine.ai";
+
 function GoogleIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
@@ -98,7 +100,7 @@ export default function Auth() {
     try {
       window.sessionStorage.setItem("veb_post_auth_path", postAuthPath);
       const result = await lovable.auth.signInWithOAuth(provider, {
-        redirect_uri: "https://builder.virtualengine.ai",
+        redirect_uri: APP_ORIGIN,
         extraParams: provider === "google" ? { prompt: "select_account" } : undefined,
       });
       if (result.error) throw result.error;
@@ -126,7 +128,7 @@ export default function Auth() {
           email: parsed.data.email,
           password: parsed.data.password,
           options: {
-            emailRedirectTo: `${window.location.origin}${postAuthPath}`,
+            emailRedirectTo: `${APP_ORIGIN}${postAuthPath}`,
             data: ref ? { affiliate_ref: ref } : undefined,
           },
         });
