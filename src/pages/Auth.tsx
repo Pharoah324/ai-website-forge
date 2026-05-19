@@ -99,7 +99,7 @@ export default function Auth() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: "https://builder.virtualengine.ai/auth/callback",
           queryParams: provider === "google" ? { prompt: "select_account" } : undefined,
         },
       });
