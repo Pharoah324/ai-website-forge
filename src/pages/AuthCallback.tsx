@@ -48,9 +48,7 @@ export default function AuthCallback() {
 
         // PKCE code-exchange flow
         if (code) {
-          const { error } = await supabase.auth.exchangeCodeForSession(
-            window.location.href,
-          );
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
           if (error) throw error;
         }
 
