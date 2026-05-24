@@ -1,0 +1,185 @@
+# VIRTUAL ENGINE BUILDER — PROJECT BRAIN
+# Claude reads this at the start of every session. Stay within these rails.
+
+## PROJECT IDENTITY
+- **Product:** Virtual Engine Builder — AI-powered website/funnel builder SaaS
+- **Live URL:** https://builder.virtualengine.ai
+- **Stack:** React + Vite + TypeScript + Supabase + Vercel + Lovable
+- **AI Engine:** Claude Sonnet 4 (claude-sonnet-4-20250514)
+- **GitHub:** Pharoah324/ai-website-forge (PRIVATE)
+- **Supabase Project:** gcapzcjyfjwmyheeydvt
+- **Founder:** Pharoah Owens | support@virtualengine.ai
+
+---
+
+## TECH STACK — NEVER DEVIATE WITHOUT ASKING
+- **Frontend:** React + Vite + TypeScript + Tailwind CSS + shadcn/ui
+- **Backend/DB:** Supabase (Postgres + Auth + Edge Functions + RLS)
+- **Hosting:** Vercel (project: ai-website-forge)
+- **Payments:** Stripe LIVE MODE — handle with extreme care
+- **Email:** Resend (noreply@virtualengine.ai)
+- **SEO:** Search Atlas — integrated on every generated site
+- **GHL:** GoHighLevel native integration via form-submission-webhook
+- **Images:** Unsplash API (in review for production access)
+- **Status:** virtualengine.instatus.com
+
+---
+
+## ENVIRONMENT VARIABLES (Vercel — never hardcode these)
+- `VITE_SUPABASE_URL` → gcapzcjyfjwmyheeydvt.supabase.co
+- `VITE_SUPABASE_PUBLISHABLE_KEY` → anon public key
+- `SUPABASE_SERVICE_ROLE_KEY` → server-side only, never expose client-side
+- `VITE_STRIPE_PUBLISHABLE_KEY` → live mode
+- `STRIPE_SECRET_KEY` → server-side only
+- `STRIPE_WEBHOOK_SECRET` → webhook verification
+- `ANTHROPIC_API_KEY` → Claude Sonnet 4
+- `VITE_STRIPE_FREE_PRICE_ID` → price_1TYwYmBkYCVYS0BWOpd840Yh
+- `VITE_STRIPE_STARTER_PRICE_ID` → price_1TYwb6BkYCVYS0BW68vw2mFX
+- `VITE_STRIPE_BUILDER_PRICE_ID` → price_1TYwcIBkYCVYS0BWXbAn0Of8
+- `VITE_STRIPE_PRO_PRICE_ID` → price_1TYwdEBkYCVYS0BWoc9JW93b
+- `VITE_STRIPE_AGENCY_PRICE_ID` → price_1TYweSBkYCVYS0BWMS00m46W
+
+---
+
+## DATABASE — SUPABASE SCHEMA (20 tables, all with RLS enabled)
+Core: profiles, sites, site_versions, templates
+Billing: plans, subscriptions, credit_transactions, stripe_webhook_events
+Infrastructure: deploy_logs, domains, ai_generation_logs
+Product: site_feedback, integrations, integration_logs
+Growth: affiliates, affiliate_referrals, onboarding_steps, waitlist
+Content: announcements, announcement_reads
+
+**Always use RLS policies. Never bypass auth.uid() checks.**
+**Service role key is only for Edge Functions — never client-side.**
+
+---
+
+## PRICING PLANS
+| Plan | Price | Build Credits | Runtime Credits |
+|------|-------|--------------|----------------|
+| Free | $0 | 20 | 300 |
+| Starter | $19/mo | 100 | 2,500 |
+| Builder | $49/mo | 300 | 10,000 (50% rollover) |
+| Pro | $99/mo | 800 | 30,000 (50% rollover) |
+| Agency | $199/mo | 2,000 | 100,000 (white-label) |
+
+Affiliate commission: 30% recurring lifetime.
+
+---
+
+## CORE FEATURES (already built — do not rebuild)
+- AI site generation with Claude Sonnet 4
+- Voice input in any language
+- 6 funnel types: Business Website, Lead Capture, Sales Landing, Appointment, Coming Soon, Link in Bio
+- 15 industry-specific design systems
+- Unsplash photo queries with attribution
+- Contact forms → GoHighLevel via webhook
+- 50+ language support + RTL
+- Search Atlas SEO on every generated site
+- Stripe billing (LIVE MODE) — 5 plans
+- Credit system with 50% rollover
+- Affiliate program
+- Agency sub-accounts + white label
+- Admin dashboard + usage analytics
+- Emergency abuse cutoffs
+- Google/Apple/Facebook social login (OAuth via Supabase)
+
+---
+
+## PAGES (all exist — do not recreate)
+- / → Homepage (builder.virtualengine.ai)
+- /auth → Login/signup
+- /app → Main builder dashboard
+- /app/new → New site creation
+- /privacy → Privacy Policy
+- /terms → Terms of Service
+- /contact → Contact page
+- /help → Help Center / FAQ
+- /admin/pre-launch → Pre-launch checklist
+- /admin/launch-tests → Launch test suite
+
+---
+
+## STRICT RULES — ALWAYS FOLLOW
+
+### Security (non-negotiable)
+1. NEVER expose secret keys, service role keys, or API keys client-side
+2. NEVER bypass RLS policies — all data access must go through auth.uid()
+3. NEVER commit .env files — .env is in .gitignore
+4. All Stripe operations server-side only via Edge Functions
+5. Validate Stripe webhook signatures on every webhook event
+6. GHL webhook only fires on published sites
+
+### Code Quality
+1. Always use TypeScript — no `any` types unless absolutely necessary
+2. All Supabase queries must handle errors explicitly
+3. Never create duplicate components — check existing ones first
+4. Use shadcn/ui components before building custom ones
+5. Tailwind only — no inline styles, no custom CSS unless necessary
+
+### Deployment
+1. All env vars live in Vercel — never hardcode
+2. Test locally before pushing to main
+3. After any auth changes, verify login flow at builder.virtualengine.ai
+4. After Stripe changes, verify webhook fires in Stripe dashboard
+
+### Database
+1. Always run migrations through Supabase SQL editor
+2. Never drop tables or columns without explicit instruction
+3. Use `IF NOT EXISTS` and `IF EXISTS` for safe migrations
+4. Every new table needs RLS enabled + policies
+
+---
+
+## WORKFLOW — HOW TO BUILD ANYTHING
+
+### Before writing any code:
+1. Switch to **Plan Mode** — research first, build second
+2. Read relevant existing files before creating new ones
+3. Check if component/function already exists
+4. Identify which env vars are needed
+
+### Build loop:
+1. Plan → implement → screenshot/test → verify → iterate
+2. Never assume it worked — always verify output
+3. If something breaks, check Vercel logs + Supabase logs first
+
+### Context management:
+- Write concisely — high information density
+- Use /compact when context fills up
+- Start fresh sessions for unrelated tasks
+- Reference this CLAUDE.md instead of re-explaining the stack
+
+---
+
+## KNOWN ISSUES / RECENT FIXES
+- OAuth redirect was broken — fixed by hardcoding builder.virtualengine.ai as redirect URL
+- .env was accidentally tracked in git — removed May 19, 2026 (all keys already rotated)
+- Supabase project gcapzcjyfjwmyheeydvt created May 19, 2026 — replaces old project
+- Stripe products created May 19, 2026 in live mode — price IDs above are correct
+
+---
+
+## LAUNCH CHECKLIST STATUS
+- [x] Supabase schema (20 tables, RLS, triggers)
+- [x] Vercel ↔ Supabase integration connected
+- [x] Google OAuth working
+- [x] .env removed from git history
+- [x] All API keys rotated
+- [x] Stripe live mode products created
+- [x] Resend domain verified
+- [ ] Stripe end-to-end test (all 5 tiers)
+- [ ] GHL end-to-end test
+- [ ] Cookie consent banner (GDPR)
+- [ ] Private beta — 10 GHL power users
+
+---
+
+## WHAT NOT TO DO
+- Do not rebuild existing features from scratch
+- Do not change the tech stack without asking Pharoah
+- Do not use test Stripe keys on production
+- Do not skip RLS on any new tables
+- Do not dump entire API docs into context — ask for specific endpoints
+- Do not make design changes without a screenshot comparison loop
+- Do not create new Supabase projects — use gcapzcjyfjwmyheeydvt
