@@ -46,7 +46,7 @@ export async function streamGenerateSite(
   const clientUrl =
     (supabase as unknown as { supabaseUrl?: string }).supabaseUrl ||
     import.meta.env.VITE_SUPABASE_URL ||
-    "https://idnyrmdhdfyxdrvyjirj.supabase.co";
+    "https://gcapzcjyfjwmyheeydvt.supabase.co";
   const url = `${clientUrl}/functions/v1/generate-site`;
 
   // Internal abort that combines external signal + stall watchdog.

@@ -11,7 +11,7 @@ const PRERENDER = new Set<string>([
   "/affiliates/pt",
 ]);
 
-const DEFAULT_SUPABASE_PROJECT_ID = "idnyrmdhdfyxdrvyjirj";
+const DEFAULT_SUPABASE_PROJECT_ID = "gcapzcjyfjwmyheeydvt";
 const DEFAULT_SUPABASE_URL = `https://${DEFAULT_SUPABASE_PROJECT_ID}.supabase.co`;
 const DEFAULT_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_f8lBo-kCp92l62IrjUHAWw_qUoWbPco";
 
