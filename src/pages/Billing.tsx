@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useI18n } from "@/lib/i18n";
+import { useAuth } from "@/contexts/AuthContext";
 import { AccessCodeRedeem } from "@/components/AccessCodeRedeem";
 
 type Interval = "monthly" | "annual";
@@ -34,7 +35,26 @@ export default function Billing() {
     }
   }, [refetch]);
 
-  if (!profile) return null;
+  const { user, loading: authLoading } = useAuth();
+
+  if (authLoading) {
+    return (
+      <div className="container max-w-5xl py-8">
+        <div className="flex items-center justify-center">
+          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+          <span>Loading account…</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="container max-w-5xl py-8">
+        <p className="text-center">Please sign in to view billing.</p>
+      </div>
+    );
+  }
 
   const upgrade = async (tier: string) => {
     setBusyTier(tier);
