@@ -222,7 +222,7 @@ export default function Billing() {
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-primary" />
-                  {p.runtime.toLocaleString()} runtime credits
+                  {(p.runtime ?? 0).toLocaleString()} runtime credits
                 </li>
               </ul>
               <Button
@@ -308,7 +308,7 @@ const FX: Array<{ code: string; symbol: string; flag: string; rate: number; name
 
 function GlobalCurrencyNote() {
   const [country, setCountry] = useState("USD");
-  const fx = FX.find((f) => f.code === country)!;
+  const fx = FX.find((f) => f.code === country) || FX[0];
   const sample = (usd: number) => {
     const v = usd * fx.rate;
     if (fx.code === "JPY") return `${fx.symbol}${Math.round(v).toLocaleString()}`;

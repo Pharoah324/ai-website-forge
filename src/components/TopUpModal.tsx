@@ -70,7 +70,7 @@ export const TopUpModal = ({
               <p className="mt-1 text-2xl font-bold">${p.price}</p>
               <ul className="mt-3 space-y-1 text-xs text-muted-foreground">
                 <li>+{p.build} build credits</li>
-                <li>+{p.runtime.toLocaleString()} runtime credits</li>
+                <li>+{(p.runtime ?? 0).toLocaleString()} runtime credits</li>
               </ul>
               <Button
                 className="mt-4 w-full"
