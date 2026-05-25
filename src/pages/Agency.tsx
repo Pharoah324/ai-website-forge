@@ -124,7 +124,7 @@ export default function Agency() {
         />
         <Stat
           label="Agency shared pool"
-          value={profile.build_credits.toLocaleString()}
+          value={(profile?.build_credits ?? 0).toLocaleString()}
           sub="overflow available"
         />
       </div>
