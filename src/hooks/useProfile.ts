@@ -47,31 +47,41 @@ export const useProfile = () => {
     queryKey: ["profile", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      if (!user?.id) throw new Error("User ID not available");
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-      
-      // Handle 404 (profile doesn't exist yet - might be new user before trigger)
-      if (error?.code === "PGRST116") {
-        console.warn("Profile not found for user", user.id, "This may be a new user. Trigger should create it.");
-        // Return null instead of throwing - component should handle gracefully
+      if (!user?.id) {
+        console.warn("User ID not available, returning null");
         return null;
       }
       
-      // Handle other errors gracefully to prevent crashing header components
-      if (error) {
-        console.error("Error fetching profile:", error.code, error.message);
-        // Return null on all errors so components render safely while retrying
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+        
+        // Handle any error by returning null and logging
+        if (error) {
+          console.error("Error fetching profile:", error.code, error.message);
+          // Return a safe default instead of null to prevent crashes
+          return null;
+        }
+        
+        // Ensure data exists before returning
+        if (!data) {
+          console.warn("No profile data returned from query");
+          return null;
+        }
+        
+        return data as unknown as Profile;
+      } catch (err) {
+        console.error("Exception fetching profile:", err);
         return null;
       }
-      
-      return data as unknown as Profile;
     },
     // Enable retry logic for transient errors
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    // Return null as fallback to prevent throwing
+    throwOnError: false,
   });
 };
