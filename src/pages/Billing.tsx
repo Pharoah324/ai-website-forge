@@ -162,9 +162,9 @@ export default function Billing() {
             <p className="text-sm text-muted-foreground">
               {t("billing.totalCredits", { n: totalCredits })}
             </p>
-            {profile.top_up_build_credits > 0 && (
+            {(profile.top_up_build_credits ?? 0) > 0 && (
               <p className="mt-1 text-xs text-muted-foreground">
-                Includes {profile.top_up_build_credits} top-up credits
+                Includes {profile.top_up_build_credits ?? 0} top-up credits
               </p>
             )}
           </div>
@@ -198,9 +198,9 @@ export default function Billing() {
 
       <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {(Object.keys(PLAN_LIMITS) as Array<keyof typeof PLAN_LIMITS>).map((key) => {
-          const p = PLAN_LIMITS[key];
+          const p = PLAN_LIMITS[key] || { build: 0, runtime: 0, price: 0, label: key } as any;
           const current = profile.plan === key;
-          const price = interval === "annual" && p.price > 0 ? annualPrice(p.price) : p.price;
+          const price = interval === "annual" && (p.price ?? 0) > 0 ? annualPrice(p.price ?? 0) : (p.price ?? 0);
           return (
             <div key={key} className={`rounded-lg border bg-card p-5 ${current ? "border-primary" : ""}`}>
               <div className="flex items-center justify-between">
@@ -210,8 +210,8 @@ export default function Billing() {
                 )}
               </div>
               <p className="mt-2 text-2xl font-bold">
-                ${price}
-                {p.price > 0 && (
+                ${price ?? 0}
+                {(p.price ?? 0) > 0 && (
                   <span className="text-sm font-normal text-muted-foreground">/mo</span>
                 )}
               </p>
