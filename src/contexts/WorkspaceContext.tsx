@@ -57,12 +57,13 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["agency-workspaces", user?.id],
-    enabled: !!user,
+    enabled: !!user?.id,
     queryFn: async () => {
+      if (!user?.id) throw new Error("User ID not available");
       const { data, error } = await supabase
         .from("agency_workspaces" as never)
         .select("*")
-        .eq("agency_user_id", user!.id)
+        .eq("agency_user_id", user.id)
         .order("created_at", { ascending: true });
       if (error) throw error;
       return (data ?? []) as unknown as AgencyWorkspace[];

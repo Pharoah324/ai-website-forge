@@ -76,6 +76,13 @@ export default function AuthCallback() {
           }
         }
 
+        // Ensure session is persisted to storage before navigation to avoid race condition
+        if (!session) {
+          // Final attempt to verify storage has the session
+          const { data } = await supabase.auth.getSession();
+          session = data.session;
+        }
+
         const stored = window.sessionStorage.getItem(POST_AUTH_PATH_KEY);
         const dest = stored?.startsWith("/app") ? stored : "/app";
 

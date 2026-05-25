@@ -47,13 +47,31 @@ export const useProfile = () => {
     queryKey: ["profile", user?.id],
     enabled: !!user,
     queryFn: async () => {
+      if (!user?.id) throw new Error("User ID not available");
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
-        .eq("id", user!.id)
+        .eq("id", user.id)
         .single();
-      if (error) throw error;
+      
+      // Handle 404 (profile doesn't exist yet - might be new user before trigger)
+      if (error?.code === "PGRST116") {
+        console.warn("Profile not found for user", user.id, "This may be a new user. Trigger should create it.");
+        // Return null instead of throwing - component should handle gracefully
+        return null;
+      }
+      
+      // Handle other errors gracefully to prevent crashing header components
+      if (error) {
+        console.error("Error fetching profile:", error.code, error.message);
+        // Return null on all errors so components render safely while retrying
+        return null;
+      }
+      
       return data as unknown as Profile;
     },
+    // Enable retry logic for transient errors
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 };

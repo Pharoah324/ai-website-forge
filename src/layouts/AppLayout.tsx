@@ -29,7 +29,7 @@ import { useI18n } from "@/lib/i18n";
 
 export default function AppLayout() {
   const { user, loading, signOut } = useAuth();
-  const { data: profile } = useProfile();
+  const { data: profile, isLoading: profileLoading, error: profileError } = useProfile();
   const { data: admin } = useAdmin();
   const { t } = useI18n();
   const navigate = useNavigate();
@@ -77,6 +77,20 @@ export default function AppLayout() {
     return (
       <div className="flex min-h-screen items-center justify-center text-muted-foreground">
         Loading…
+      </div>
+    );
+  }
+
+  // If profile is still loading but user is logged in, show loading state
+  if (profileLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center text-muted-foreground">
+        <div className="text-center">
+          <div className="mb-4 inline-block">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-primary" />
+          </div>
+          <p>Loading your profile...</p>
+        </div>
       </div>
     );
   }
@@ -154,23 +168,25 @@ export default function AppLayout() {
                 <Plus className="mr-1 h-4 w-4" /> {t("nav.newsite")}
               </Link>
             </Button>
-            <Link
-              to="/app/settings"
-              className="flex items-center gap-2 rounded-full pl-1 pr-3 py-1 hover:bg-muted/40 transition-colors"
-              aria-label="Account"
-            >
-              <Avatar className="h-8 w-8">
-                {profile?.avatar_url ? (
-                  <AvatarImage src={profile.avatar_url} alt={profile?.display_name ?? "User"} />
-                ) : null}
-                <AvatarFallback className="bg-primary/15 text-primary text-xs font-semibold">
-                  {(profile?.display_name ?? user.email ?? "U").trim().slice(0, 1).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <span className="hidden sm:inline text-sm font-medium max-w-[140px] truncate">
-                {profile?.display_name ?? user.email}
-              </span>
-            </Link>
+            {user ? (
+              <Link
+                to="/app/settings"
+                className="flex items-center gap-2 rounded-full pl-1 pr-3 py-1 hover:bg-muted/40 transition-colors"
+                aria-label="Account"
+              >
+                <Avatar className="h-8 w-8">
+                  {profile?.avatar_url ? (
+                    <AvatarImage src={profile.avatar_url} alt={profile?.display_name ?? "User"} />
+                  ) : null}
+                  <AvatarFallback className="bg-primary/15 text-primary text-xs font-semibold">
+                    {(profile?.display_name ?? user?.email ?? "U").trim().slice(0, 1).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="hidden sm:inline text-sm font-medium max-w-[140px] truncate">
+                  {profile?.display_name ?? user?.email}
+                </span>
+              </Link>
+            ) : null}
           </div>
         </header>
         <AnnouncementBanner />

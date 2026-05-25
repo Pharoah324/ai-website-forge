@@ -10,7 +10,7 @@ import { format } from "date-fns";
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const { data: profile } = useProfile();
+  const { data: profile, isLoading: profileLoading, error: profileError } = useProfile();
   const { activeWorkspaceId, activeWorkspace } = useWorkspace();
   const workspaceFilterId = activeWorkspace ? activeWorkspaceId : null;
 
@@ -30,6 +30,41 @@ export default function Dashboard() {
     },
   });
 
+  // Show loading state while profile is being fetched
+  if (profileLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="mb-4 inline-block">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-primary" />
+          </div>
+          <p className="text-muted-foreground">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if profile fetch failed
+  if (profileError && !profile) {
+    return (
+      <div className="container max-w-2xl py-8">
+        <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-6">
+          <h2 className="text-lg font-semibold text-destructive">Unable to Load Dashboard</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            We encountered an error loading your profile. Please try refreshing the page.
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-primary/90"
+          >
+            Refresh Page
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Safety check: if profile is still null/undefined, show loading
   if (!profile) return null;
   const limits = PLAN_LIMITS[profile.plan];
   const isUnlimited = profile.plan === "agency";

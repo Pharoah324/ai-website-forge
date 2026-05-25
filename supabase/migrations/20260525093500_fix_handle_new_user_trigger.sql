@@ -21,8 +21,11 @@ BEGIN
       NEW.raw_user_meta_data->>'display_name',
       split_part(NEW.email, '@', 1)
     ),
-    -- avatar / picture if provided
-    NULLIF(NEW.raw_user_meta_data->>'avatar_url', '')::text,
+    -- avatar / picture if provided (check multiple OAuth provider keys)
+    NULLIF(COALESCE(
+      NEW.raw_user_meta_data->>'avatar_url',
+      NEW.raw_user_meta_data->>'picture'
+    ), '')::text,
     now(), now()
   )
   ON CONFLICT (id) DO NOTHING;
