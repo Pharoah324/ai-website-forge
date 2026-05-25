@@ -99,12 +99,16 @@ export default function Auth() {
     setOauthLoading(provider);
     try {
       window.sessionStorage.setItem("veb_post_auth_path", postAuthPath);
-      const result = await lovable.auth.signInWithOAuth(provider, {
-        redirect_uri: APP_ORIGIN,
-        extraParams: provider === "google" ? { prompt: "select_account" } : undefined,
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${APP_ORIGIN}/auth/callback`,
+          queryParams:
+            provider === "google" ? { prompt: "select_account" } : undefined,
+        },
       });
-      if (result.error) throw result.error;
-      if (!result.redirected) navigate(postAuthPath, { replace: true });
+      if (error) throw error;
+      // Browser will redirect to the OAuth provider.
     } catch (err) {
       window.sessionStorage.removeItem("veb_post_auth_path");
       const msg = err instanceof Error ? err.message : "Sign-in failed";
