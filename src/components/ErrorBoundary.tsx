@@ -19,20 +19,25 @@ export class ErrorBoundary extends Component<Props, State> {
     // anyway. Server-side error correlation will pick up the rest.)
     try {
       const { data } = await supabase.auth.getUser();
-      await supabase.from("admin_alerts" as any).insert({
-        alert_type: "frontend_crash",
-        severity: "warning",
-        affected_user_id: data?.user?.id ?? null,
-        affected_user_email: data?.user?.email ?? null,
-        description: `Frontend crash: ${error.message?.slice(0, 200) ?? "unknown"}`,
-        metadata: {
-          stack: error.stack?.slice(0, 2000),
-          componentStack: info.componentStack?.slice(0, 2000),
-          url: typeof window !== "undefined" ? window.location.href : null,
-        },
-      });
+      try {
+        await supabase.from("admin_alerts" as any).insert({
+          alert_type: "frontend_crash",
+          severity: "warning",
+          affected_user_id: data?.user?.id ?? null,
+          affected_user_email: data?.user?.email ?? null,
+          description: `Frontend crash: ${error.message?.slice(0, 200) ?? "unknown"}`,
+          metadata: {
+            stack: error.stack?.slice(0, 2000),
+            componentStack: info.componentStack?.slice(0, 2000),
+            url: typeof window !== "undefined" ? window.location.href : null,
+          },
+        });
+      } catch (dbErr) {
+        console.warn("Could not log alert (table may not exist):", dbErr);
+      }
     } catch {
       // RLS denial expected for non-admins — swallow.
+    }
     }
     // eslint-disable-next-line no-console
     console.error("ErrorBoundary caught:", error, info);

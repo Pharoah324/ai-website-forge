@@ -25,10 +25,20 @@ export function useIsAdmin() {
     queryKey: ["isAdmin", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      // is_admin function is service-role only; check via admin_users SELECT (RLS = is_admin)
-      const { data } = await supabase.from("admin_users").select("user_id").eq("user_id", user!.id).maybeSingle();
-      return !!data;
+      try {
+        // is_admin function is service-role only; check via admin_users SELECT (RLS = is_admin)
+        const { data, error } = await supabase.from("admin_users").select("user_id").eq("user_id", user!.id).maybeSingle();
+        if (error) {
+          console.warn("Error checking admin status:", error);
+          return false;
+        }
+        return !!data;
+      } catch (err) {
+        console.warn("Exception checking admin status:", err);
+        return false;
+      }
     },
+    throwOnError: false,
   });
 }
 

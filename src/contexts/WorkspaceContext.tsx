@@ -60,14 +60,25 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
     enabled: !!user?.id,
     queryFn: async () => {
       if (!user?.id) throw new Error("User ID not available");
-      const { data, error } = await supabase
-        .from("agency_workspaces" as never)
-        .select("*")
-        .eq("agency_user_id", user.id)
-        .order("created_at", { ascending: true });
-      if (error) throw error;
-      return (data ?? []) as unknown as AgencyWorkspace[];
+      try {
+        const { data, error } = await supabase
+          .from("agency_workspaces" as never)
+          .select("*")
+          .eq("agency_user_id", user.id)
+          .order("created_at", { ascending: true });
+        if (error) {
+          console.warn("Error fetching agency workspaces:", error);
+          // Table may not exist yet; return empty array
+          return [];
+        }
+        return (data ?? []) as unknown as AgencyWorkspace[];
+      } catch (err) {
+        console.warn("Exception fetching agency workspaces:", err);
+        // Return empty array if query fails (table may not exist)
+        return [];
+      }
     },
+    throwOnError: false,
   });
 
   const workspaces = data ?? [];
