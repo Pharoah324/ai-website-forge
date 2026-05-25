@@ -56,6 +56,15 @@ export default function Billing() {
     );
   }
 
+  // Defensive helpers: new project may have slightly different column names or missing values.
+  const safeNumber = (v: unknown, alt = 0) => (typeof v === "number" ? v : alt);
+  const totalCredits =
+    safeNumber(profile.build_credits) +
+    safeNumber((profile as any).rollover_build_credits ?? (profile as any).build_credits_rollover) +
+    safeNumber((profile as any).top_up_build_credits);
+
+  const currentPlan = (profile.plan && PLAN_LIMITS[profile.plan]) ? PLAN_LIMITS[profile.plan] : PLAN_LIMITS.free;
+
   const upgrade = async (tier: string) => {
     setBusyTier(tier);
     try {
@@ -138,9 +147,9 @@ export default function Billing() {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("billing.current")}</p>
-            <p className="mt-1 text-2xl font-bold">{PLAN_LIMITS[profile.plan].label}</p>
+            <p className="mt-1 text-2xl font-bold">{currentPlan.label}</p>
             <p className="text-sm text-muted-foreground">
-              {t("billing.totalCredits", { n: profile.build_credits + profile.rollover_build_credits + profile.top_up_build_credits })}
+              {t("billing.totalCredits", { n: totalCredits })}
             </p>
             {profile.top_up_build_credits > 0 && (
               <p className="mt-1 text-xs text-muted-foreground">
