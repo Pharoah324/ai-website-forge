@@ -15,7 +15,7 @@ type Interval = "monthly" | "annual";
 
 export default function Billing() {
   const { t } = useI18n();
-  const { data: profile, refetch } = useProfile();
+  const { data: profile, refetch, isLoading: profileLoading } = useProfile();
   const [topupOpen, setTopupOpen] = useState(false);
   const [interval, setInterval] = useState<Interval>("monthly");
   const [busyTier, setBusyTier] = useState<string | null>(null);
@@ -37,7 +37,8 @@ export default function Billing() {
 
   const { user, loading: authLoading } = useAuth();
 
-  if (authLoading) {
+  // Show loading while auth session or profile data is being fetched.
+  if (authLoading || profileLoading) {
     return (
       <div className="container max-w-5xl py-8">
         <div className="flex items-center justify-center">
@@ -48,10 +49,20 @@ export default function Billing() {
     );
   }
 
-  if (!profile) {
+  // If there's no authenticated user, prompt to sign in.
+  if (!user) {
     return (
       <div className="container max-w-5xl py-8">
         <p className="text-center">Please sign in to view billing.</p>
+      </div>
+    );
+  }
+
+  // If user is signed in but profile missing, show a friendly message.
+  if (!profile) {
+    return (
+      <div className="container max-w-5xl py-8">
+        <p className="text-center">Account not found. Contact support if this persists.</p>
       </div>
     );
   }
