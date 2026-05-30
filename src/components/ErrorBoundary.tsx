@@ -35,7 +35,9 @@ export class ErrorBoundary extends Component<Props, State> {
       } catch (dbErr) {
         console.warn("Could not log alert (table may not exist):", dbErr);
       }
-    
+    } catch {
+      // RLS denial expected for non-admins — swallow.
+    }
     // eslint-disable-next-line no-console
     console.error("ErrorBoundary caught:", error, info);
   }
