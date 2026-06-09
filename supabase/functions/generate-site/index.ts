@@ -6,7 +6,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const UNSPLASH_ACCESS_KEY = Deno.env.get("UNSPLASH_ACCESS_KEY") || "";
 
 const SYSTEM_PROMPT = `You are an expert UX/UI designer AND website copywriter combined, building conversion-focused sites for businesses worldwide. Use the build_site tool.
@@ -435,7 +435,15 @@ Deno.serve(async (req) => {
       });
     }
 
-    const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const _svcKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? SUPABASE_SERVICE_ROLE_KEY;
+    if (!_svcKey || _svcKey.trim() === "") {
+      console.error("[generate-site] SUPABASE_SERVICE_ROLE_KEY is not set — cannot save sites.");
+      return new Response(JSON.stringify({ error: "Server misconfiguration: service role key missing" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const admin = createClient(SUPABASE_URL, _svcKey);
     const { data: gate, error: gateErr } = await admin.rpc("check_and_consume", {
       _uid: user.id,
       _action: "site_generation",
@@ -1065,11 +1073,12 @@ async function persistSite(
     .single();
   if (siteErr) {
     const msg = siteErr.message || "";
+    console.error("[persistSite] insert error:", JSON.stringify(siteErr));
     if (msg.includes("storage_limit:sites")) {
       const parts = msg.split(":");
       throw new Error(`storage_limit:sites:${parts[2]}:${parts[3]}`);
     }
-    throw new Error("Failed to save site");
+    throw new Error("Failed to save site: " + msg);
   }
   return site;
 }
