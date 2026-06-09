@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   TrendingUp,
   Briefcase,
+  FolderOpen,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -60,6 +61,7 @@ export default function AppLayout() {
   const nav = [
     { to: "/app", label: t("nav.dashboard"), icon: LayoutDashboard, end: true },
     { to: "/app/new", label: t("nav.newsite"), icon: Plus },
+    { to: "/app/projects", label: "Projects", icon: FolderOpen },
     { to: "/app/optimize", label: "Optimize Site", icon: TrendingUp },
     { to: "/app/integrations", label: t("nav.integrations"), icon: Plug },
     ...(profile?.plan === "agency" ? [{ to: "/app/agency", label: "Client Workspaces", icon: Briefcase }] : []),
