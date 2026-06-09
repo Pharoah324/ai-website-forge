@@ -6,10 +6,13 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-// Supabase now provides secret keys as a JSON bundle in SUPABASE_SECRET_KEYS.
-// Fall back to the legacy direct env var if still present.
+// Supabase deprecated SUPABASE_ prefixed custom secrets.
+// We use SVC_ROLE_KEY as the custom secret name, with fallbacks.
 function getServiceRoleKey(): string {
-  // Try new format first: SUPABASE_SECRET_KEYS is a JSON object
+  // Primary: custom secret named SVC_ROLE_KEY
+  const custom = Deno.env.get("SVC_ROLE_KEY");
+  if (custom && custom.trim()) return custom.trim();
+  // Fallback: new JSON bundle format
   const secretsJson = Deno.env.get("SUPABASE_SECRET_KEYS");
   if (secretsJson) {
     try {
@@ -17,9 +20,9 @@ function getServiceRoleKey(): string {
       if (parsed?.service_role) return parsed.service_role;
     } catch { /* fall through */ }
   }
-  // Legacy direct env var (still works if manually set as custom secret)
-  const direct = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (direct && direct.trim()) return direct.trim();
+  // Legacy fallback (deprecated but may still work)
+  const legacy = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (legacy && legacy.trim()) return legacy.trim();
   return "";
 }
 const SUPABASE_SERVICE_ROLE_KEY = getServiceRoleKey();
