@@ -974,7 +974,7 @@ async function hydrateImages(siteJson: unknown, prompt = "") {
       case "about": return `${base} team office`;
       case "features": return `${base} ${h || "service"}`;
       case "pricing": return `${base} workspace modern`;
-      case "testimonials": return `happy customer portrait`;
+      case "testimonials": return `${base} satisfied client professional portrait`;
       case "cta": return `${base} lifestyle`;
       case "contact": return `${base} location storefront`;
       default: return `${base} ${h}`.trim();
@@ -1020,25 +1020,31 @@ async function hydrateImages(siteJson: unknown, prompt = "") {
 
     if (Array.isArray(sec.items) && sec.items.length) {
       const batchQuery = sec.image_search_query || fallbackForSection(sec, sIdx);
-      const itemOrient: "landscape" | "squarish" = sec.type === "testimonials" ? "squarish" : "landscape";
-      const itemCategory = sec.type === "testimonials" ? "generic" : category;
+      const isTestimonials = sec.type === "testimonials";
+      const itemOrient: "landscape" | "squarish" = isTestimonials ? "squarish" : "landscape";
+      const itemCategory = isTestimonials ? "generic" : category;
 
       tasks.push(
-        unsplashSearchMany(batchQuery, itemOrient, 10)
-          .catch(() => null)
+        // Only fetch a batch for non-testimonial sections (testimonials use per-item queries)
+        (isTestimonials ? Promise.resolve(null) : unsplashSearchMany(batchQuery, itemOrient, 10).catch(() => null))
           .then(async (batch) => {
             for (let iIdx = 0; iIdx < sec.items!.length; iIdx++) {
               const item = sec.items![iIdx];
               let photo: UnsplashPhoto | null = null;
-              // For luxury menswear galleries/features, rotate through a curated
-              // bank of Savile Row queries per item so each card shows a
-              // different facet of the craft (fabric, shoes, cufflinks, etc.).
+
+              // Build item-level query — testimonials MUST have contextual per-item queries
               let itemQuery = item.image_search_query;
-              if (!itemQuery && category === "fashion" && sec.type !== "testimonials") {
-                itemQuery = pick(FASHION_GALLERY, iIdx + sIdx);
-              } else if (!itemQuery && category === "fashion" && sec.type === "testimonials") {
-                itemQuery = pick(FASHION_TESTIMONIALS, iIdx);
+              if (!itemQuery) {
+                if (isTestimonials) {
+                  // Use business context for testimonial avatars — NOT generic portraits
+                  const personName = (item as { title?: string; author?: string }).title ||
+                    (item as { title?: string; author?: string }).author || "";
+                  itemQuery = `${bizContext || "professional"} client satisfied portrait`;
+                } else if (category === "fashion") {
+                  itemQuery = pick(FASHION_GALLERY, iIdx + sIdx);
+                }
               }
+
               if (itemQuery) {
                 photo = await unsplashSearch(itemQuery, itemOrient, iIdx).catch(() => null);
               }
