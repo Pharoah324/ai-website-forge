@@ -58,6 +58,16 @@ const SAMPLES = [
   "A yoga studio offering classes, teacher training, and a 7-day free trial.",
 ];
 
+
+const APP_TYPES = [
+  { id: "mobile_app", label: "Mobile App", desc: "iOS & Android ready", credits: 2 },
+  { id: "web_dashboard", label: "Web App Dashboard", desc: "SaaS / internal tool", credits: 2 },
+  { id: "client_portal", label: "Client Portal", desc: "Login-gated workspace", credits: 2 },
+  { id: "booking_app", label: "Booking App", desc: "Scheduling + payments", credits: 2 },
+  { id: "directory_app", label: "Directory App", desc: "Listings + search", credits: 3 },
+  { id: "saas_mvp", label: "SaaS MVP", desc: "Full product prototype", credits: 3 },
+] as const;
+
 function tryParsePartial(s: string): SiteContent | null {
   if (!s.trim().startsWith("{")) return null;
   // Best-effort: try the accumulated string, then close braces progressively.
@@ -91,6 +101,8 @@ export default function NewSite() {
   const [liveFinal, setLiveFinal] = useState("");
   const [liveInterim, setLiveInterim] = useState("");
   const [funnelType, setFunnelType] = useState<typeof FUNNEL_TYPES[number]["id"]>("website");
+  const [buildMode, setBuildMode] = useState<"website" | "app">("website");
+  const [appType, setAppType] = useState<typeof APP_TYPES[number]["id"]>("mobile_app");
   const SpeechRecognition =
     typeof window !== "undefined"
       ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
@@ -407,29 +419,64 @@ export default function NewSite() {
         )}
 
         <div>
+          {/* Website / App mode toggle */}
+          <div className="flex items-center gap-1 rounded-lg border bg-background p-1">
+            <button
+              type="button"
+              onClick={() => setBuildMode("website")}
+              disabled={generating}
+              className={"flex-1 rounded-md py-1.5 text-sm font-semibold transition-colors " + (buildMode === "website" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+            >
+              🌐 Website
+            </button>
+            <button
+              type="button"
+              onClick={() => setBuildMode("app")}
+              disabled={generating}
+              className={"flex-1 rounded-md py-1.5 text-sm font-semibold transition-colors " + (buildMode === "app" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+            >
+              📱 App
+            </button>
+          </div>
+
           <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            What are you building?
+            {buildMode === "website" ? "What are you building?" : "What type of app?"}
           </p>
           <div className="grid grid-cols-2 gap-1.5">
-            {FUNNEL_TYPES.map((f) => {
-              const active = funnelType === f.id;
-              return (
-                <button
-                  key={f.id}
-                  type="button"
-                  onClick={() => setFunnelType(f.id)}
-                  disabled={generating}
-                  className={`rounded-md border p-2 text-left text-xs transition-colors ${
-                    active
-                      ? "border-primary bg-primary/10 text-foreground"
-                      : "border-border bg-background text-muted-foreground hover:border-primary/50"
-                  }`}
-                >
-                  <div className="font-semibold">{f.label}</div>
-                  <div className="mt-0.5 text-[10px] opacity-80">{f.desc}</div>
-                </button>
-              );
-            })}
+            {buildMode === "website"
+              ? FUNNEL_TYPES.map((f) => {
+                  const active = funnelType === f.id;
+                  return (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() => setFunnelType(f.id)}
+                      disabled={generating}
+                      className={"rounded-md border p-2 text-left text-xs transition-colors " + (active ? "border-primary bg-primary/10 text-foreground" : "border-border bg-background text-muted-foreground hover:border-primary/50")}
+                    >
+                      <div className="font-semibold">{f.label}</div>
+                      <div className="mt-0.5 text-[10px] opacity-80">{f.desc}</div>
+                    </button>
+                  );
+                })
+              : APP_TYPES.map((a) => {
+                  const active = appType === a.id;
+                  return (
+                    <button
+                      key={a.id}
+                      type="button"
+                      onClick={() => setAppType(a.id)}
+                      disabled={generating}
+                      className={"rounded-md border p-2 text-left text-xs transition-colors " + (active ? "border-primary bg-primary/10 text-foreground" : "border-border bg-background text-muted-foreground hover:border-primary/50")}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold">{a.label}</span>
+                        <span className="rounded bg-primary/10 px-1 py-0.5 text-[9px] font-bold text-primary">{a.credits}cr</span>
+                      </div>
+                      <div className="mt-0.5 text-[10px] opacity-80">{a.desc}</div>
+                    </button>
+                  );
+                })}
           </div>
         </div>
 
