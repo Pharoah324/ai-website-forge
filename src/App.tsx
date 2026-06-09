@@ -40,6 +40,7 @@ import Optimize from "./pages/Optimize";
 import OptimizeDashboard from "./pages/OptimizeDashboard";
 import Onboarding from "./pages/Onboarding";
 import Agency from "./pages/Agency";
+import Projects from "./pages/Projects";
 import InviteAccept from "./pages/InviteAccept";
 import FamilyLegacy from "./pages/FamilyLegacy";
 import { WorkspaceProvider } from "./contexts/WorkspaceContext";
@@ -137,6 +138,7 @@ export const routes: RouteRecord[] = [
           { path: "optimize", Component: Optimize },
           { path: "optimize/:id", Component: OptimizeDashboard },
           { path: "new", Component: NewSite },
+          { path: "projects", Component: Projects },
           { path: "sites/:id", Component: SiteDetail },
           { path: "billing", Component: Billing },
           { path: "integrations", Component: Integrations },
