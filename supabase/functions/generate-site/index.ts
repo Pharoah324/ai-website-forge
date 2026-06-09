@@ -6,7 +6,23 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+// Supabase now provides secret keys as a JSON bundle in SUPABASE_SECRET_KEYS.
+// Fall back to the legacy direct env var if still present.
+function getServiceRoleKey(): string {
+  // Try new format first: SUPABASE_SECRET_KEYS is a JSON object
+  const secretsJson = Deno.env.get("SUPABASE_SECRET_KEYS");
+  if (secretsJson) {
+    try {
+      const parsed = JSON.parse(secretsJson);
+      if (parsed?.service_role) return parsed.service_role;
+    } catch { /* fall through */ }
+  }
+  // Legacy direct env var (still works if manually set as custom secret)
+  const direct = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (direct && direct.trim()) return direct.trim();
+  return "";
+}
+const SUPABASE_SERVICE_ROLE_KEY = getServiceRoleKey();
 const UNSPLASH_ACCESS_KEY = Deno.env.get("UNSPLASH_ACCESS_KEY") || "";
 
 const SYSTEM_PROMPT = `You are an expert UX/UI designer AND website copywriter combined, building conversion-focused sites for businesses worldwide. Use the build_site tool.
@@ -435,15 +451,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    const _svcKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? SUPABASE_SERVICE_ROLE_KEY;
-    if (!_svcKey || _svcKey.trim() === "") {
-      console.error("[generate-site] SUPABASE_SERVICE_ROLE_KEY is not set — cannot save sites.");
+    if (!SUPABASE_SERVICE_ROLE_KEY) {
+      console.error("[generate-site] Service role key is not set — cannot save sites. Check SUPABASE_SECRET_KEYS or SUPABASE_SERVICE_ROLE_KEY secret.");
       return new Response(JSON.stringify({ error: "Server misconfiguration: service role key missing" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const admin = createClient(SUPABASE_URL, _svcKey);
+    const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const { data: gate, error: gateErr } = await admin.rpc("check_and_consume", {
       _uid: user.id,
       _action: "site_generation",
