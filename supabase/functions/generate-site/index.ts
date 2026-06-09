@@ -592,7 +592,7 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
       const parsed: unknown = parsedInput;
       try { sanitizeMarkdownImages(parsed); } catch (e) { console.warn("sanitizeMarkdownImages failed:", e); }
       try { await hydrateImages(parsed, prompt); } catch (e) { console.warn("hydrateImages failed (continuing without images):", e); }
-      const site = await persistSite(supabase, user.id, prompt, parsed, profile, isUnlimited, isAdmin, effectiveWorkspaceId);
+      const site = await persistSite(admin, user.id, prompt, parsed, profile, isUnlimited, isAdmin, effectiveWorkspaceId);
       return new Response(JSON.stringify({ site }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -670,7 +670,7 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
           try { await hydrateImages(parsed, prompt); } catch (e) { console.warn("hydrateImages failed (continuing without images):", e); }
 
           const site = await persistSite(
-            supabase,
+            admin,
             user.id,
             prompt || (templateDraft ? `Template: ${businessName || "Untitled"}` : ""),
             parsed,
