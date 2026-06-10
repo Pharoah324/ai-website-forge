@@ -1148,6 +1148,15 @@ async function persistSite(
   workspaceId?: string | null,
 ) {
   const name = (siteJson as { name?: string }).name || "Untitled Site";
+
+  // Never persist an empty site. A site with no sections renders as a blank
+  // shell (header + fallback contact) that can't be scrolled or refined back to
+  // life — exactly the broken state we don't want to save.
+  const secs = (siteJson as { sections?: unknown[] }).sections;
+  if (!Array.isArray(secs) || secs.length === 0) {
+    throw new Error("Generation produced no sections — not saved. Please try again.");
+  }
+
   const { data: site, error: siteErr } = await supabase
     .from("sites")
     .insert({
@@ -1169,5 +1178,17 @@ async function persistSite(
     }
     throw new Error("Failed to save site: " + msg);
   }
+
+  // Snapshot the original as version 1 so every site always has a restore point
+  // (refinements add v2, v3, …; users can always return to the first build).
+  const { error: verErr } = await supabase.from("site_versions").insert({
+    site_id: site.id,
+    user_id: userId,
+    version_number: 1,
+    label: "Original",
+    content: siteJson,
+  });
+  if (verErr) console.warn("[persistSite] initial version snapshot failed (non-fatal):", verErr.message);
+
   return site;
 }

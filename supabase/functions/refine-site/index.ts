@@ -297,6 +297,16 @@ Deno.serve(async (req) => {
     // loses imagery or blanks a section even if the model omits fields.
     preserveExisting(currentContent, updatedContent);
 
+    // Guard: never overwrite a populated site with an empty/degenerate result.
+    // If the model returned no sections but the site had them, treat it as a
+    // failed refine and keep the existing content intact.
+    const newSecs = Array.isArray(updatedContent.sections) ? updatedContent.sections : [];
+    const oldSecs = Array.isArray(currentContent?.sections) ? currentContent!.sections : [];
+    if (newSecs.length === 0 && oldSecs.length > 0) {
+      console.error("[refine-site] refusing to save empty result (had", oldSecs.length, "sections)");
+      return json({ error: "The refinement came back incomplete and was not applied. Your site is unchanged — please try again." }, 502);
+    }
+
     // Persist user message.
     await supabase.from("site_chat_messages").insert({
       site_id: siteId, user_id: user.id, role: "user", content: message, credits_used: 0,
