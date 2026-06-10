@@ -233,7 +233,13 @@ function cleanTextNode<T extends Record<string, unknown>>(node: T): T {
 function sanitizeContent(content: SiteContent): SiteContent {
   const sections = (content.sections || []).map((sec) => {
     const s = cleanTextNode(sec as unknown as Record<string, unknown>) as unknown as SiteSection;
-    if (Array.isArray(s.items)) s.items = s.items.map((it) => cleanTextNode(it as unknown as Record<string, unknown>) as unknown as SiteSectionItem);
+    // Always normalize items to an array. The type-specific renderers call
+    // section.items.map(...) directly, so a section that omits items (e.g. an
+    // AI refine that dropped the field) must not leave it undefined or the
+    // whole preview white-screens with "Cannot read properties of undefined".
+    s.items = Array.isArray(s.items)
+      ? s.items.map((it) => cleanTextNode(it as unknown as Record<string, unknown>) as unknown as SiteSectionItem)
+      : [];
     return s;
   });
   return { ...content, sections };

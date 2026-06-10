@@ -110,10 +110,11 @@ const TOOL = {
 // deno-lint-ignore no-explicit-any
 type AnyObj = Record<string, any>;
 
-// Carry image fields forward from the previous content so a refine never drops
-// images, even if the model omits them. Matches sections/items by position
-// first, then by heading/title. New sections (no match) keep their own values.
-function preserveImages(oldContent: AnyObj | null, next: AnyObj) {
+// Carry unchanged structure/media forward from the previous content so a refine
+// never drops images OR whole item lists, even if the model omits them. Matches
+// sections/items by position first, then by heading/title. New sections (no
+// match) keep their own values.
+function preserveExisting(oldContent: AnyObj | null, next: AnyObj) {
   const oldSections: AnyObj[] = Array.isArray(oldContent?.sections) ? oldContent!.sections : [];
   const nextSections: AnyObj[] = Array.isArray(next?.sections) ? next.sections : [];
   const IMG = ["image_url", "image_thumb", "image_alt", "image_credit"];
@@ -126,6 +127,10 @@ function preserveImages(oldContent: AnyObj | null, next: AnyObj) {
         : oldSections.find((o) => norm(o.heading) === norm(s.heading) && o.type === s.type);
     if (!old) return;
     for (const f of IMG) if (!s[f] && old[f]) s[f] = old[f];
+    // If the model omitted items entirely (undefined) on a section that had
+    // them, carry them forward so the section doesn't come back empty. An
+    // explicit empty array is treated as an intentional clear and left alone.
+    if (s.items === undefined && Array.isArray(old.items)) s.items = old.items;
     if (Array.isArray(s.items) && Array.isArray(old.items)) {
       s.items.forEach((it: AnyObj, j: number) => {
         const oit = old.items[j] && norm(old.items[j].title) === norm(it.title)
@@ -269,9 +274,9 @@ Deno.serve(async (req) => {
     const updatedContent: AnyObj = { ...parsed };
     delete updatedContent.summary;
 
-    // Safety net: carry image fields forward so a refine never loses imagery
-    // even if the model omits them despite the instructions.
-    preserveImages(currentContent, updatedContent);
+    // Safety net: carry images and omitted item lists forward so a refine never
+    // loses imagery or blanks a section even if the model omits fields.
+    preserveExisting(currentContent, updatedContent);
 
     // Persist user message.
     await supabase.from("site_chat_messages").insert({

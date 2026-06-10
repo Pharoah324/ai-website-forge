@@ -394,7 +394,7 @@ export default function SiteDetail() {
               Quick rewrite (free)
             </p>
             <ul className="max-h-40 space-y-0.5 overflow-y-auto">
-              {content.sections.map((s, i) => (
+              {(content.sections || []).map((s, i) => (
                 <li key={i} className="group flex items-center justify-between rounded p-1.5 text-xs hover:bg-muted">
                   <span className="truncate">
                     <span className="text-[9px] uppercase text-muted-foreground">{s.type}</span> · {s.heading}
