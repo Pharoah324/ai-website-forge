@@ -47,7 +47,7 @@ Rules:
 - Use the URL's apparent industry to tailor recommendations.
 - Output JSON ONLY.`;
 
-async function callLovableAI(url: string, integrations: Record<string, boolean>) {
+async function callAI(url: string, integrations: Record<string, boolean>) {
   const userMsg = `Website: ${url}\nConnected: ${Object.entries(integrations)
     .filter(([, v]) => v)
     .map(([k]) => k)
@@ -154,7 +154,7 @@ Deno.serve(async (req) => {
       .update({ status: "analyzing" })
       .eq("id", projectId);
 
-    const report = await callLovableAI(project.website_url, project.integrations || {});
+    const report = await callAI(project.website_url, project.integrations || {});
 
     await supa.from("optimization_reports").insert({
       project_id: projectId,
