@@ -385,7 +385,15 @@ export default function SiteDetail() {
           <RefinementChat
             siteId={id!}
             originalPrompt={site.prompt}
-            onContentUpdated={() => qc.invalidateQueries({ queryKey: ["site", id] })}
+            onContentUpdated={(c) => {
+              // Apply the refined content to the cache immediately so the preview
+              // reflects the change right away (don't wait on a refetch, which can
+              // no-op via structural sharing and leave the preview looking unchanged).
+              qc.setQueryData(["site", id], (old) =>
+                old ? { ...(old as Record<string, unknown>), site_data: c, content: c } : old,
+              );
+              qc.invalidateQueries({ queryKey: ["site", id] });
+            }}
             onTopUp={() => setTopUpOpen(true)}
           />
           {/* Per-section rewrite (free) */}
