@@ -10,7 +10,7 @@ const corsHeaders = {
 };
 
 const SEARCH_ATLAS_API_KEY = Deno.env.get("SEARCH_ATLAS_API_KEY");
-const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
+const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 
@@ -67,22 +67,24 @@ Original prompt: ${payload.prompt}
 Top keywords from Search Atlas: ${kwList}
 
 Return JSON only.`;
-  const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  const r = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
-    headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+    headers: { "x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
+      model: "claude-sonnet-4-5-20250929",
+      max_tokens: 1024,
+      system: sys,
       messages: [
-        { role: "system", content: sys },
         { role: "user", content: user },
       ],
-      response_format: { type: "json_object" },
     }),
   });
   if (!r.ok) throw new Error(`AI ${r.status}`);
   const j = await r.json();
-  const txt = j.choices?.[0]?.message?.content || "{}";
-  try { return JSON.parse(txt); } catch { return {}; }
+  const txt = (Array.isArray(j.content) ? j.content.find((b: { type?: string }) => b?.type === "text")?.text : "") || "{}";
+  // Claude may wrap JSON in ```json fences — strip before parsing.
+  const cleaned = txt.replace(/^```(?:json)?/i, "").replace(/```\s*$/i, "").trim();
+  try { return JSON.parse(cleaned); } catch { return {}; }
 }
 
 function computeScore(args: {

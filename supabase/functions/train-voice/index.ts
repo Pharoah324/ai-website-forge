@@ -7,22 +7,19 @@ const corsHeaders = {
 };
 
 const TOOL = {
-  type: "function" as const,
-  function: {
-    name: "voice_rules",
-    description: "Return 5 specific brand-voice rules describing the writer's style.",
-    parameters: {
-      type: "object",
-      properties: {
-        voice_rules: {
-          type: "array",
-          minItems: 5,
-          maxItems: 5,
-          items: { type: "string" },
-        },
+  name: "voice_rules",
+  description: "Return 5 specific brand-voice rules describing the writer's style.",
+  input_schema: {
+    type: "object",
+    properties: {
+      voice_rules: {
+        type: "array",
+        minItems: 5,
+        maxItems: 5,
+        items: { type: "string" },
       },
-      required: ["voice_rules"],
     },
+    required: ["voice_rules"],
   },
 };
 
@@ -30,8 +27,8 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY not configured");
 
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -63,44 +60,42 @@ Deno.serve(async (req) => {
       });
     }
 
-    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const aiResp = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-pro",
+        model: "claude-sonnet-4-5-20250929",
+        max_tokens: 1024,
+        system:
+          "Analyze the writing samples and describe the writer's style in exactly 5 specific, actionable rules. Examples: 'Uses short sentences', 'Friendly and casual tone', 'Uses you and we a lot', 'Avoids corporate jargon', 'Ends with action-oriented sentences'. Return via the voice_rules tool.",
         messages: [
-          {
-            role: "system",
-            content:
-              "Analyze the writing samples and describe the writer's style in exactly 5 specific, actionable rules. Examples: 'Uses short sentences', 'Friendly and casual tone', 'Uses you and we a lot', 'Avoids corporate jargon', 'Ends with action-oriented sentences'. Return via the voice_rules tool.",
-          },
           { role: "user", content: `Writing samples:\n\n${text}` },
         ],
         tools: [TOOL],
-        tool_choice: { type: "function", function: { name: "voice_rules" } },
+        tool_choice: { type: "tool", name: "voice_rules" },
       }),
     });
 
     if (!aiResp.ok) {
       const t = await aiResp.text();
-      console.error("lovable ai", aiResp.status, t);
-      const status = aiResp.status === 429 ? 429 : aiResp.status === 402 ? 402 : 500;
-      const msg = aiResp.status === 402
-        ? "Lovable AI credits exhausted. Add funds in Settings → Workspace → Usage."
-        : "AI provider error";
-      return new Response(JSON.stringify({ error: msg }), {
+      console.error("anthropic", aiResp.status, t);
+      const status = aiResp.status === 429 ? 429 : 500;
+      return new Response(JSON.stringify({ error: "AI provider error" }), {
         status,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
     const data = await aiResp.json();
-    const argStr = data.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+    const toolBlock = Array.isArray(data.content)
+      ? data.content.find((b: { type?: string }) => b?.type === "tool_use")
+      : null;
     let rules: string[] = [];
-    if (argStr) {
-      try { rules = JSON.parse(argStr).voice_rules ?? []; } catch { /* noop */ }
+    if (toolBlock?.input) {
+      rules = (toolBlock.input as { voice_rules?: string[] }).voice_rules ?? [];
     }
     if (!rules.length) {
       return new Response(JSON.stringify({ error: "Could not extract voice rules" }), {

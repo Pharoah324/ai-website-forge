@@ -157,7 +157,7 @@ async function test_abuse_detection(): Promise<TestResult> {
 }
 
 async function test_secrets_present(): Promise<TestResult> {
-  const required = ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "LOVABLE_API_KEY", "SUPABASE_SERVICE_ROLE_KEY"];
+  const required = ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "ANTHROPIC_API_KEY", "SUPABASE_SERVICE_ROLE_KEY"];
   const missing = required.filter((k) => !Deno.env.get(k));
   return missing.length
     ? { status: "fail", details: { missing }, error: `Missing secrets: ${missing.join(",")}` }

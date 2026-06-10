@@ -1,5 +1,5 @@
 // Translate an array of short UI strings into a target language using
-// Lovable AI Gateway (google/gemini-2.5-flash). Public, no JWT required.
+// Anthropic Claude. Public, no JWT required.
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -23,9 +23,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    const apiKey = Deno.env.get("LOVABLE_API_KEY");
+    const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
     if (!apiKey) {
-      return new Response(JSON.stringify({ error: "Missing LOVABLE_API_KEY" }), {
+      return new Response(JSON.stringify({ error: "Missing ANTHROPIC_API_KEY" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -37,19 +37,21 @@ Deno.serve(async (req) => {
       `Keep brand names ("Virtual Engine Builder", "Lovable", "GoHighLevel", "Search Atlas", "Base44") in English. ` +
       `Return ONLY a JSON array of strings, same length and order, no commentary.`;
 
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "claude-sonnet-4-5-20250929",
+        max_tokens: 4096,
+        temperature: 0.1,
+        system: sys,
         messages: [
-          { role: "system", content: sys },
           { role: "user", content: JSON.stringify(texts) },
         ],
-        temperature: 0.1,
       }),
     });
     if (!res.ok) {
@@ -60,7 +62,9 @@ Deno.serve(async (req) => {
       });
     }
     const data = await res.json();
-    const content: string = data.choices?.[0]?.message?.content ?? "[]";
+    const content: string = (Array.isArray(data.content)
+      ? data.content.find((b: { type?: string }) => b?.type === "text")?.text
+      : "") ?? "[]";
     let translations: string[] = texts;
     try {
       const cleaned = content.replace(/^```(?:json)?/i, "").replace(/```$/i, "").trim();

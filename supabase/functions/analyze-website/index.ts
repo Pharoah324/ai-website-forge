@@ -9,7 +9,7 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
+const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY")!;
 
 const SYSTEM = `You are an expert SEO + growth analyst for "Virtual Engine Builder", an AI business growth infrastructure platform.
 
@@ -53,29 +53,32 @@ async function callLovableAI(url: string, integrations: Record<string, boolean>)
     .map(([k]) => k)
     .join(", ") || "none yet"}`;
 
-  const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  const resp = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${LOVABLE_API_KEY}`,
+      "x-api-key": ANTHROPIC_API_KEY,
+      "anthropic-version": "2023-06-01",
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "google/gemini-2.5-pro",
+      model: "claude-sonnet-4-5-20250929",
+      max_tokens: 2048,
+      system: SYSTEM,
       messages: [
-        { role: "system", content: SYSTEM },
         { role: "user", content: userMsg },
       ],
-      response_format: { type: "json_object" },
     }),
   });
 
   if (!resp.ok) {
     const t = await resp.text();
-    throw new Error(`AI gateway ${resp.status}: ${t}`);
+    throw new Error(`AI provider ${resp.status}: ${t}`);
   }
   const data = await resp.json();
-  const text = data.choices?.[0]?.message?.content ?? "{}";
-  return JSON.parse(text);
+  const text = (Array.isArray(data.content) ? data.content.find((b: { type?: string }) => b?.type === "text")?.text : "") ?? "{}";
+  // Claude may wrap JSON in ```json fences — strip before parsing.
+  const cleaned = text.replace(/^```(?:json)?/i, "").replace(/```\s*$/i, "").trim();
+  return JSON.parse(cleaned);
 }
 
 Deno.serve(async (req) => {

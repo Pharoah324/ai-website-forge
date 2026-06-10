@@ -7,42 +7,39 @@ const corsHeaders = {
 };
 
 const TOOL = {
-  type: "function" as const,
-  function: {
-    name: "rewrite_variations",
-    description: "Return 3 rewritten variations of a website section.",
-    parameters: {
-      type: "object",
-      properties: {
-        variations: {
-          type: "array",
-          minItems: 3,
-          maxItems: 3,
-          items: {
-            type: "object",
-            properties: {
-              heading: { type: "string" },
-              subheading: { type: "string" },
-              cta: { type: "string" },
+  name: "rewrite_variations",
+  description: "Return 3 rewritten variations of a website section.",
+  input_schema: {
+    type: "object",
+    properties: {
+      variations: {
+        type: "array",
+        minItems: 3,
+        maxItems: 3,
+        items: {
+          type: "object",
+          properties: {
+            heading: { type: "string" },
+            subheading: { type: "string" },
+            cta: { type: "string" },
+            items: {
+              type: "array",
               items: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    title: { type: "string" },
-                    body: { type: "string" },
-                    price: { type: "string" },
-                    author: { type: "string" },
-                  },
+                type: "object",
+                properties: {
+                  title: { type: "string" },
+                  body: { type: "string" },
+                  price: { type: "string" },
+                  author: { type: "string" },
                 },
               },
             },
-            required: ["heading"],
           },
+          required: ["heading"],
         },
       },
-      required: ["variations"],
     },
+    required: ["variations"],
   },
 };
 
@@ -54,8 +51,8 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY not configured");
 
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -130,47 +127,44 @@ Deno.serve(async (req) => {
       }
     }
 
-    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const aiResp = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-pro",
+        model: "claude-sonnet-4-5-20250929",
+        max_tokens: 4096,
+        system: `You rewrite a single website section. Produce 3 distinct, conversion-focused variations. Keep the same section type, similar length, and same number of items.${voiceAddon}`,
         messages: [
-          {
-            role: "system",
-            content:
-              `You rewrite a single website section. Produce 3 distinct, conversion-focused variations. Keep the same section type, similar length, and same number of items.${voiceAddon}`,
-          },
           {
             role: "user",
             content: `Business context: ${business_context || "(general)"}\n\nOriginal section JSON:\n${JSON.stringify(section)}\n\nReturn 3 variations via the rewrite_variations tool.`,
           },
         ],
         tools: [TOOL],
-        tool_choice: { type: "function", function: { name: "rewrite_variations" } },
+        tool_choice: { type: "tool", name: "rewrite_variations" },
       }),
     });
 
     if (!aiResp.ok) {
       const t = await aiResp.text();
-      console.error("lovable ai", aiResp.status, t);
-      const status = aiResp.status === 429 ? 429 : aiResp.status === 402 ? 402 : 500;
-      const msg = aiResp.status === 402
-        ? "Lovable AI credits exhausted. Add funds in Settings → Workspace → Usage."
-        : "AI provider error";
-      return new Response(JSON.stringify({ error: msg }), {
+      console.error("anthropic", aiResp.status, t);
+      const status = aiResp.status === 429 ? 429 : 500;
+      return new Response(JSON.stringify({ error: "AI provider error" }), {
         status,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
     const data = await aiResp.json();
-    const argStr = data.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+    const toolBlock = Array.isArray(data.content)
+      ? data.content.find((b: { type?: string }) => b?.type === "tool_use")
+      : null;
     let variations: unknown[] = [];
-    if (argStr) {
-      try { variations = JSON.parse(argStr).variations ?? []; } catch { /* noop */ }
+    if (toolBlock?.input) {
+      variations = (toolBlock.input as { variations?: unknown[] }).variations ?? [];
     }
     return new Response(JSON.stringify({ variations }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
