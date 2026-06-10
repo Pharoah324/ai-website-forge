@@ -2,7 +2,8 @@
 # Claude reads this at the start of every session. Stay within these rails.
 
 ## PROJECT IDENTITY
-- **Product:** Virtual Engine Builder — AI-powered website/funnel builder SaaS
+- **Product:** Virtual Engine Builder — AI-powered website/funnel builder SaaS (competes with Lovable)
+- **Scope:** Must generate BOTH websites AND apps — mobile apps, web app dashboards, client portals, booking apps, directory apps, SaaS MVPs — not just websites
 - **Live URL:** https://builder.virtualengine.ai
 - **Stack:** React + Vite + TypeScript + Supabase + Vercel + Lovable
 - **AI Engine:** Claude Sonnet 4 (claude-sonnet-4-20250514)
@@ -51,6 +52,15 @@ Content: announcements, announcement_reads
 
 **Always use RLS policies. Never bypass auth.uid() checks.**
 **Service role key is only for Edge Functions — never client-side.**
+
+---
+
+## REPO LAYOUT (KEY FILES)
+- `src/pages/NewSite.tsx` — generation UI, Website/App toggle + app types
+- `src/pages/Projects.tsx` — persistent site library (/app/projects)
+- `src/App.tsx` — routes
+- `src/layouts/AppLayout.tsx` — sidebar nav
+- `supabase/functions/generate-site/index.ts` — edge function (generation + persistSite)
 
 ---
 
@@ -123,6 +133,17 @@ Affiliate commission: 30% recurring lifetime.
 3. After any auth changes, verify login flow at builder.virtualengine.ai
 4. After Stripe changes, verify webhook fires in Stripe dashboard
 
+#### Edge function deploys (do this, NOT the dashboard button)
+The Supabase dashboard "Deploy updates" button does NOT reliably deploy the latest
+GitHub code. Always deploy from the local repo via CLI:
+
+    git pull origin main
+    supabase functions deploy generate-site --project-ref gcapzcjyfjwmyheeydvt --no-verify-jwt
+
+Verify endpoint (should return `{"ok": true}` with all keys present):
+
+    https://gcapzcjyfjwmyheeydvt.supabase.co/functions/v1/generate-site?verify=1
+
 ### Database
 1. Always run migrations through Supabase SQL editor
 2. Never drop tables or columns without explicit instruction
@@ -160,6 +181,22 @@ Affiliate commission: 30% recurring lifetime.
 
 ---
 
+## PROJECT-SPECIFIC LESSONS (hard-won — read before debugging)
+- Missing tables/columns (agency_workspaces, admin_users, admin_alerts, sites.content)
+  have repeatedly looked like auth bugs. Check the schema FIRST.
+- Edge functions must use the Supabase ADMIN client (service role key), never the
+  anon client, to write data — otherwise RLS silently blocks inserts.
+- Service role key is read from `SUPABASE_SERVICE_ROLE_KEY` (injected default secret).
+  Custom secrets cannot be named with a `SUPABASE_` prefix in the Secrets UI.
+- vite-react-ssg build crashes SILENTLY on: emoji literals in JSX, and nested ternaries
+  with template literals in className. Use plain text + string concat instead.
+- Vercel "Staged" deploys: an active manual rollback silently overrides new deployments
+  — click "Undo Rollback" in the Overview banner. Also confirm "Auto-assign Custom
+  Production Domains" is enabled (Settings → Git).
+- Unsplash: generic queries return wrong images; enrich queries per industry/context.
+
+---
+
 ## LAUNCH CHECKLIST STATUS
 - [x] Supabase schema (20 tables, RLS, triggers)
 - [x] Vercel ↔ Supabase integration connected
@@ -172,6 +209,16 @@ Affiliate commission: 30% recurring lifetime.
 - [ ] GHL end-to-end test
 - [ ] Cookie consent banner (GDPR)
 - [ ] Private beta — 10 GHL power users
+
+---
+
+## OPEN ITEMS / IN PROGRESS
+- [ ] Validate site persistence end-to-end (sites.content column was the last blocker)
+- [ ] Layout variation system (per-industry skeletons; see layout_variation_prompt.txt)
+- [ ] Spanish/multilingual end-to-end verification
+- [ ] GHL Marketplace listing (doc done; pending end-to-end GHL test + Stripe live confirm)
+- [ ] Resend DNS verification + Supabase SMTP (noreply@virtualengine.ai)
+- [ ] Google OAuth redirect URI fix in Google Cloud Console
 
 ---
 
