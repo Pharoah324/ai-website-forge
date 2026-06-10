@@ -306,6 +306,21 @@ const TOOL = {
   },
 };
 
+// Rotating visual directions so generated sites don't all converge on the same
+// skeleton. One is chosen at random per build and layered on top of the industry
+// architecture — it shifts palette mood, typography, hero treatment, section
+// rhythm and shape language. It does NOT lower the copy/quality bar.
+const DESIGN_DIRECTIONS: string[] = [
+  "MINIMAL & AIRY: lots of negative space, thin-to-regular type weights, near-monochrome palette + ONE restrained accent, a centered or simple split hero, mostly 'stacked' and 'list' layouts, square or barely-rounded corners, no heavy card shadows.",
+  "BOLD EDITORIAL: oversized magazine headlines with strong size contrast, an 'image-background' hero, asymmetric composition, alternating image-left/image-right feature rows instead of card grids, one vivid accent used confidently.",
+  "WARM & ORGANIC: earthy/natural palette, soft large corner radius, friendly rounded sans, gentle alternating image-left/right sections, soft shadows, unhurried spacing — approachable rather than corporate.",
+  "MODERN PRODUCT/TECH: crisp neutral base with a cool accent, tight grid, an 'image-right' product-style hero, alternating feature rows, a clean stats strip, medium-rounded cards.",
+  "VIBRANT & PLAYFUL: saturated colors and/or a gradient accent, big rounded shapes, energetic 'cards-3' feature grids, bold buttons — high energy but still legible.",
+  "ELEGANT & LUXE: deep/dark or muted sophisticated palette, serif or high-contrast display headings with a refined sans body, a gallery-forward layout, a metallic/muted accent, restrained spacing and thin dividers.",
+  "CONFIDENT & TYPE-FORWARD: type dominates — prefer a hero with image_placement 'none' where the headline carries the page, high contrast, big blocks, minimal decoration, imagery only where it adds meaning.",
+  "STRUCTURED & TRUSTWORTHY: classic professional layout, blue/neutral palette, clear hierarchy, a visible stats/trust bar, 'cards-3' features, predictable rhythm — built to reassure.",
+];
+
 async function verifySecrets() {
   const required = [
     "ANTHROPIC_API_KEY",
@@ -544,6 +559,10 @@ Existing template JSON:
 ${JSON.stringify(templateDraft).slice(0, 6000)}`;
     }
 
+    // Pick a random visual direction so no two builds feel identical.
+    const designDirection = DESIGN_DIRECTIONS[Math.floor(Math.random() * DESIGN_DIRECTIONS.length)];
+    userMessage += `\n\nDESIGN DIRECTION FOR THIS BUILD — make this site look visually distinct from other generated sites by applying this aesthetic:\n${designDirection}\nAdapt it to suit the business: where the industry has strong conventions (e.g. law = gravitas, medical = clinical) keep the palette/mood appropriate, but ALWAYS vary the structural treatment — hero style, section ordering, feature presentation (cards vs list vs alternating rows vs steps), spacing and shape language — so the result does not default to the same generic skeleton. Honor all quality, language and funnel rules.`;
+
     const aiBody = {
       model: "claude-sonnet-4-5-20250929",
       max_tokens: 8192,
@@ -763,10 +782,36 @@ const FALLBACK_PHOTOS: Record<string, string[]> = {
   generic:    ["1497366216548-37526070297c","1497366754035-f200968a6e72","1486406146926-c627a92ad1ab","1454165804606-c3d57bc86b40","1542744173-8e7e53415bb0","1517048676732-d65bc937f952","1556761175-b413da4baf72","1507003211169-0a1dd7228f2d"],
 };
 
+// Industry anchor phrases prepended to vague/auto-built image queries so Unsplash
+// returns on-topic photos even when the AI omits a per-item image_search_query.
+// Keeps the business-specific terms but guarantees the *industry* is in the query.
+const CATEGORY_QUERY_HINT: Record<string, string> = {
+  medical:    "medical clinic",
+  restaurant: "restaurant food",
+  realestate: "real estate home",
+  fitness:    "fitness gym",
+  legal:      "law office professional",
+  contractor: "home construction contractor",
+  beauty:     "beauty salon",
+  coaching:   "professional business",
+  tech:       "technology software",
+  fashion:    "luxury menswear tailoring",
+  retail:     "retail product",
+  travel:     "travel destination",
+  education:  "education learning",
+  finance:    "finance office",
+  garden:     "gardening lush plants vegetable garden",
+  generic:    "",
+};
+
 function categorizeSite(site: { name?: string; tagline?: string }, prompt = ""): string {
   const text = `${site.name || ""} ${site.tagline || ""} ${prompt}`.toLowerCase();
   const buckets: Array<[string, RegExp]> = [
     ["medical",    /\b(medspa|medical|clinic|doctor|dental|dentist|health|wellness|chiro|therapy|botox|aesthetic|skincare|derma)\b/],
+    // Garden/agriculture MUST be tested before restaurant — gardening apps routinely
+    // say "grow your own food" / "kitchen garden", which the restaurant regex below
+    // greedily matches on "food"/"kitchen", mislabeling them as restaurants.
+    ["garden",     /\b(garden|gardening|gardener|grower|growers|grow your own|nursery|horticultur|landscap|lawn care|greenhouse|vegetable|veggie|orchard|permacultur|homestead|agricultur|botanical|seedling|houseplant|hydroponic)\b/],
     ["restaurant", /\b(restaurant|cafe|coffee|bar|bistro|food|pizza|sushi|kitchen|bakery|catering|chef|dining)\b/],
     ["realestate", /\b(real estate|realtor|property|properties|homes|housing|apartment|broker|mortgage|rental)\b/],
     ["fitness",    /\b(gym|fitness|yoga|pilates|crossfit|trainer|workout|athletic|sports|martial)\b/],
@@ -833,11 +878,6 @@ async function unsplashSearchMany(
   }
 }
 
-async function unsplashSearch(query: string, orientation: "landscape" | "portrait" | "squarish" = "landscape", pickIndex = 0): Promise<UnsplashPhoto | null> {
-  const photos = await unsplashSearchMany(query, orientation, 10);
-  if (!photos || !photos.length) return null;
-  return photos[pickIndex % photos.length];
-}
 
 // Strip markdown image syntax from text fields. If a field contains
 // `![alt](url)` and no image_url is set on the parent, promote the URL.
@@ -891,6 +931,7 @@ async function hydrateImages(siteJson: unknown, prompt = "") {
   const site = siteJson as any;
   const sections = Array.isArray(site.sections) ? site.sections : [];
   const category = categorizeSite(site, prompt);
+  const hint = CATEGORY_QUERY_HINT[category] || "";
   const apiAvailable = !!UNSPLASH_ACCESS_KEY;
   if (!apiAvailable) {
     console.log(`hydrateImages: UNSPLASH_ACCESS_KEY not set — using curated fallback (category=${category})`);
@@ -951,7 +992,10 @@ async function hydrateImages(siteJson: unknown, prompt = "") {
 
   const fallbackForSection = (sec: { type?: string; heading?: string }, sIdx = 0) => {
     const h = (sec.heading || "").replace(/[^\p{L}\p{N}\s]/gu, " ").trim().split(/\s+/).slice(0, 4).join(" ");
-    const base = bizContext || h;
+    // Anchor with the industry hint so business names/taglines that contain
+    // misleading words (e.g. a gardening tagline mentioning "food") don't pull
+    // off-topic stock. Hint is "" for generic, so this is a no-op there.
+    const base = [hint, bizContext || h].filter(Boolean).join(" ").trim();
     if (category === "fashion") {
       switch (sec.type) {
         case "hero": return pick(FASHION_HERO, sIdx);
@@ -979,6 +1023,10 @@ async function hydrateImages(siteJson: unknown, prompt = "") {
   // Models routinely hallucinate Unsplash photo IDs that don't exist (returning broken images
   // that render as alt text). We CANNOT trust any AI-supplied image URL — even if it points at
   // images.unsplash.com — so we always overwrite with verified search results / curated fallbacks.
+  // Track every photo we've placed so the same image never repeats across
+  // sections/items. The old code re-picked popular results by index, so one
+  // hot shot could show up 4-5 times on a single site.
+  const usedUrls = new Set<string>();
   const applyPhoto = (
     target: { image_url?: string; image_thumb?: string; image_alt?: string; image_credit?: string },
     photo: UnsplashPhoto,
@@ -987,16 +1035,30 @@ async function hydrateImages(siteJson: unknown, prompt = "") {
     target.image_thumb = photo.thumb;
     target.image_alt = photo.alt;
     target.image_credit = photo.credit;
+    usedUrls.add(photo.regular);
+  };
+  // Pick the first not-yet-used photo from a result set (wrapping from the
+  // preferred index). All picks are synchronous, so the shared used-set has no
+  // races even though hydration tasks run concurrently.
+  const pickUnused = (photos: UnsplashPhoto[], preferredIdx = 0): UnsplashPhoto => {
+    const n = photos.length;
+    for (let k = 0; k < n; k++) {
+      const p = photos[(preferredIdx + k) % n];
+      if (!usedUrls.has(p.regular)) return p;
+    }
+    return photos[preferredIdx % n];
   };
 
   const tasks: Array<Promise<void>> = [];
   let fallbackCounter = 0;
 
   sections.forEach((sec: { type?: string; heading?: string; image_search_query?: string; image_placement?: string; layout?: string; image_url?: string; image_thumb?: string; image_alt?: string; image_credit?: string; items?: Array<{ image_search_query?: string; image_url?: string; image_thumb?: string; image_alt?: string; image_credit?: string; title?: string }> }, sIdx: number) => {
-    // Force hero to have an image and use background layout if not specified
     if (sec.type === "hero") {
-      if (!sec.image_placement || sec.image_placement === "none") sec.image_placement = "background";
-      if (!sec.layout) sec.layout = "image-background";
+      // Only default a hero image when the model gave no placement. Respect an
+      // explicit "none" so type-dominant / minimal heroes (a key part of design
+      // variety) aren't forced into a background photo.
+      if (!sec.image_placement) sec.image_placement = "background";
+      if (!sec.layout) sec.layout = sec.image_placement === "none" ? "stacked" : "image-background";
     }
 
     if (sec.image_placement !== "none") {
@@ -1004,9 +1066,9 @@ async function hydrateImages(siteJson: unknown, prompt = "") {
       const orientation: "landscape" | "portrait" | "squarish" = "landscape";
       const fbIdx = fallbackCounter++;
       tasks.push(
-        unsplashSearch(query, orientation, sIdx)
-          .then((r) => {
-            if (r) applyPhoto(sec, r);
+        unsplashSearchMany(query, orientation, 10)
+          .then((photos) => {
+            if (photos && photos.length) applyPhoto(sec, pickUnused(photos, sIdx));
             else applyPhoto(sec, buildFallbackPhoto(category, sIdx + fbIdx, query, orientation));
           })
           .catch(() => applyPhoto(sec, buildFallbackPhoto(category, sIdx + fbIdx, query, orientation))),
@@ -1032,19 +1094,27 @@ async function hydrateImages(siteJson: unknown, prompt = "") {
               if (!itemQuery) {
                 if (isTestimonials) {
                   // Use business context for testimonial avatars — NOT generic portraits
-                  const personName = (item as { title?: string; author?: string }).title ||
-                    (item as { title?: string; author?: string }).author || "";
                   itemQuery = `${bizContext || "professional"} client satisfied portrait`;
                 } else if (category === "fashion") {
                   itemQuery = pick(FASHION_GALLERY, iIdx + sIdx);
+                } else {
+                  // Gallery/results items with no AI-supplied query previously fell through
+                  // to a vague batch query, then to off-topic fallback stock (e.g. a
+                  // gardening "results" gallery showing restaurant food). Anchor the query
+                  // to the site's industry (hint) + the item's own title (or the section
+                  // heading) so each photo matches the actual subject.
+                  const cleanTitle = (item.title || "").replace(/[^\p{L}\p{N}\s]/gu, " ").trim();
+                  const cleanHeading = (sec.heading || "").replace(/[^\p{L}\p{N}\s]/gu, " ").trim().split(/\s+/).slice(0, 5).join(" ");
+                  itemQuery = [hint, cleanTitle || cleanHeading].filter(Boolean).join(" ").trim() || batchQuery;
                 }
               }
 
               if (itemQuery) {
-                photo = await unsplashSearch(itemQuery, itemOrient, iIdx).catch(() => null);
+                const photos = await unsplashSearchMany(itemQuery, itemOrient, 10).catch(() => null);
+                if (photos && photos.length) photo = pickUnused(photos, iIdx);
               }
               if (!photo && batch && batch.length) {
-                photo = batch[iIdx % batch.length];
+                photo = pickUnused(batch, iIdx);
               }
               if (!photo) {
                 photo = buildFallbackPhoto(itemCategory, iIdx + sIdx * 7, itemQuery || batchQuery, itemOrient);
