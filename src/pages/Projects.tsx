@@ -109,8 +109,9 @@ export default function Projects() {
               const siteData = s.site_data as { primaryColor?: string; name?: string } | null;
               const accent = siteData?.primaryColor ?? null;
               return (
-                <div
+                <Link
                   key={s.id}
+                  to={"/app/sites/" + s.id}
                   className="group relative flex flex-col rounded-xl border bg-card shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5"
                 >
                   {/* Color bar */}
@@ -136,15 +137,13 @@ export default function Projects() {
                         <Calendar className="h-3.5 w-3.5" />
                         {format(new Date(s.created_at), "MMM d, yyyy")}
                       </span>
-                      <Button asChild size="sm" variant="outline" className="h-8 gap-1.5 text-xs">
-                        <Link to={"/app/sites/" + s.id}>
-                          <Wand2 className="h-3.5 w-3.5" />
-                          Edit
-                        </Link>
-                      </Button>
+                      <span className="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors group-hover:border-primary/50 group-hover:text-primary">
+                        <Wand2 className="h-3.5 w-3.5" />
+                        Open &amp; edit
+                      </span>
                     </div>
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>

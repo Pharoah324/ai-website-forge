@@ -8,9 +8,8 @@ const corsHeaders = {
 const SYSTEM_PROMPT = `You are refining an EXISTING website based on the user's instruction. Use the build_site tool.
 Rules for refinement:
 - Only change what the user asked to change. Keep everything else byte-for-byte identical.
-- Always return the COMPLETE updated site JSON via the build_site tool, not just the changed parts — every section that exists now must still be present (hero, features, about, testimonials, pricing, faq, cta, contact, gallery, stats).
-- PRESERVE every image field exactly as given — image_url, image_thumb, image_alt, image_credit, and icon_name — UNLESS the user explicitly asks to change the imagery. Do not blank them, do not invent new URLs.
-- If the user adds a new section or item, set a descriptive English "image_search_query" for it (the system adds the actual photo); leave image_url empty for those.
+- Always return the COMPLETE updated site JSON via the build_site tool, not just the changed parts. EVERY section present in the input MUST appear in your output, in the same order, unless the user explicitly asks to add or remove one. Never silently drop sections or items.
+- Image photos are managed by the system and have been REMOVED from the JSON you see — do NOT add, invent, or blank image_url/image_thumb/image_alt/image_credit fields; the correct photos are reattached automatically after you respond. You MAY set icon_name and a descriptive English image_search_query for new items.
 - Provide a short plain-English "summary" field describing exactly what changed.
 - If the instruction is vague, interpret it generously and make the most likely desired improvement.
 - Never start from scratch unless the user explicitly asks to start over.
@@ -109,6 +108,22 @@ const TOOL = {
 
 // deno-lint-ignore no-explicit-any
 type AnyObj = Record<string, any>;
+
+const IMG_FIELDS = ["image_url", "image_thumb", "image_alt", "image_credit"];
+
+// Remove image URLs before sending the site to the model. They're long (Unsplash
+// URLs bloat the payload), the model doesn't need them to edit copy/structure,
+// and forcing it to echo them back invites truncation and dropped sections.
+// preserveExisting() reattaches them afterward by matching sections/items.
+function stripImages(content: AnyObj | null): AnyObj {
+  const clone = JSON.parse(JSON.stringify(content ?? {}));
+  const secs: AnyObj[] = Array.isArray(clone.sections) ? clone.sections : [];
+  for (const s of secs) {
+    for (const f of IMG_FIELDS) delete s[f];
+    if (Array.isArray(s.items)) for (const it of s.items) for (const f of IMG_FIELDS) delete it[f];
+  }
+  return clone;
+}
 
 // Carry unchanged structure/media forward from the previous content so a refine
 // never drops images OR whole item lists, even if the model omits them. Matches
@@ -232,8 +247,12 @@ Deno.serve(async (req) => {
       return json({ error: g.reason || "blocked" }, status);
     }
 
+    const slim = stripImages(currentContent);
+    const sectionTypes: string[] = (Array.isArray(slim.sections) ? slim.sections : []).map((s: AnyObj) => s.type);
     const userMessage = [
-      `Current site JSON:\n${JSON.stringify(currentContent).slice(0, 14000)}`,
+      `Current site JSON (image fields removed — managed separately, reattached automatically):`,
+      JSON.stringify(slim).slice(0, 30000),
+      `\nThis site has ${sectionTypes.length} sections in this order: ${sectionTypes.join(", ")}. Your output MUST contain ALL ${sectionTypes.length} of them in the same order unless the instruction explicitly asks to add or remove a section.`,
       transcript ? `\nConversation so far:\n${transcript}` : "",
       `\nNew instruction: ${message}`,
     ].join("\n");
@@ -247,7 +266,7 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-5-20250929",
-        max_tokens: 8192,
+        max_tokens: 16384,
         system: SYSTEM_PROMPT + voiceAddon,
         messages: [{ role: "user", content: userMessage }],
         tools: [{ name: TOOL.name, description: TOOL.description, input_schema: TOOL.input_schema }],
