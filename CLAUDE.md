@@ -55,6 +55,22 @@ Content: announcements, announcement_reads
 
 ---
 
+## ⚠️ SCHEMA DRIFT — READ BEFORE DEBUGGING "BROKEN" FEATURES
+The live Supabase DB (gcapzcjyfjwmyheeydvt) was **never built from the repo migrations**. The code routinely references tables/columns/functions that don't exist live — this is what caused the refine, version-history, Optimize, and "missing table" failures (June 2026).
+
+**RULE: when a feature throws "failed to fetch" or fails silently, check whether its table/columns/RPC actually exist in the live DB BEFORE assuming a code bug.** Verify columns too, not just table existence (e.g. `affiliates` exists but has drifted columns). Query the live DB via the Supabase Management API using the CLI's keychain token.
+
+**Backfilled June 11, 2026** (migration `20260611_schema_drift_backfill.sql`):
+- **11 tables:** access_codes, account_flags, affiliate_payouts, credit_ledger, launch_test_results, plan_caps, referral_conversions, site_seo, stripe_events, stripe_products, workspace_invites (+ supporting access_code_redemptions)
+- **3 functions:** is_admin, set_updated_at, get_site_branding
+- Earlier fixes: created site_chat_messages, optimization_projects/optimization_reports; added content/label cols to site_versions
+
+**STILL OPEN (do NOT assume these work):**
+- **`affiliates` table schema drift** — live has is_active/referral_code/total_earned; code expects status/affiliate_code/paypal_email/pending_payout. Affiliate dashboard is likely broken until reconciled.
+- **5 deferred billing/credit functions** (mutate profiles/credits/billing — validate against live schema before deploying): redeem_access_code, refund_credits, detect_abuse_and_pause, resume_account, downgrade_past_due_users
+
+---
+
 ## REPO LAYOUT (KEY FILES)
 - `src/pages/NewSite.tsx` — generation UI, Website/App toggle + app types
 - `src/pages/Projects.tsx` — persistent site library (/app/projects)
