@@ -65,9 +65,13 @@ The live Supabase DB (gcapzcjyfjwmyheeydvt) was **never built from the repo migr
 - **3 functions:** is_admin, set_updated_at, get_site_branding
 - Earlier fixes: created site_chat_messages, optimization_projects/optimization_reports; added content/label cols to site_versions
 
-**STILL OPEN (do NOT assume these work):**
-- **`affiliates` table schema drift** — live has is_active/referral_code/total_earned; code expects status/affiliate_code/paypal_email/pending_payout. Affiliate dashboard is likely broken until reconciled.
-- **5 deferred billing/credit functions** (mutate profiles/credits/billing — validate against live schema before deploying): redeem_access_code, refund_credits, detect_abuse_and_pause, resume_account, downgrade_past_due_users
+**Resolved June 14, 2026:**
+- **`affiliates` schema reconciled** (migration `20260614_affiliates_reconcile.sql`) — added the 10 code-expected columns (affiliate_code, status, tier, paypal_email, pending_payout, paid_out_total, total_earnings, full_name, email, active_subscribers), defaulted the legacy NOT-NULL `referral_code`, and added the missing apply-insert + admin view/manage RLS policies. Table was empty so no backfill. Untested end-to-end (no affiliate data yet) — verify the apply → dashboard → admin payout flow.
+- **4 of 5 deferred functions deployed** (migration `20260614_deferred_functions.sql`), validated against live schema: redeem_access_code, resume_account, downgrade_past_due_users (verbatim); refund_credits (rewritten to live conventions — adjusts profiles.build_credits only, since the deployed check_and_consume doesn't use credit_transactions).
+
+**STILL OPEN:**
+- **`detect_abuse_and_pause`** — still deferred; needs an abuse subsystem that doesn't exist live (`rate_limits` table, `pause_account`/`is_account_paused` functions, `plan_caps.monthly_runtime_credits`). Only the admin launch-test calls it.
+- The deployed `check_and_consume` is a minimal stub (no admin bypass, no rate limiting, no credit_transactions logging) — much simpler than the migrations imply.
 
 ---
 
