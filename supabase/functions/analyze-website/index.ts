@@ -42,10 +42,10 @@ Given a website URL and the connectors the customer has connected, return ONE JS
 }
 
 Rules:
-- Return 5-10 items per array (3-6 for clusters/automations).
+- Return 3-6 items per array (3-4 for clusters/automations) — be concise so the full JSON fits.
 - trafficTrend: 6 months ending current month.
 - Use the URL's apparent industry to tailor recommendations.
-- Output JSON ONLY.`;
+- Output JSON ONLY — start your response with { and end with }. No prose, no markdown fences.`;
 
 async function callAI(url: string, integrations: Record<string, boolean>) {
   const userMsg = `Website: ${url}\nConnected: ${Object.entries(integrations)
@@ -62,7 +62,7 @@ async function callAI(url: string, integrations: Record<string, boolean>) {
     },
     body: JSON.stringify({
       model: "claude-sonnet-4-5-20250929",
-      max_tokens: 2048,
+      max_tokens: 8192,
       system: SYSTEM,
       messages: [
         { role: "user", content: userMsg },
@@ -72,13 +72,23 @@ async function callAI(url: string, integrations: Record<string, boolean>) {
 
   if (!resp.ok) {
     const t = await resp.text();
-    throw new Error(`AI provider ${resp.status}: ${t}`);
+    throw new Error(`AI provider ${resp.status}: ${t.slice(0, 300)}`);
   }
   const data = await resp.json();
-  const text = (Array.isArray(data.content) ? data.content.find((b: { type?: string }) => b?.type === "text")?.text : "") ?? "{}";
-  // Claude may wrap JSON in ```json fences — strip before parsing.
-  const cleaned = text.replace(/^```(?:json)?/i, "").replace(/```\s*$/i, "").trim();
-  return JSON.parse(cleaned);
+  const text = (Array.isArray(data.content) ? data.content.find((b: { type?: string }) => b?.type === "text")?.text : "") ?? "";
+  if (!text.trim()) throw new Error("AI returned an empty response");
+  // Extract the JSON object even if wrapped in prose/fences, and guard against
+  // truncated output (which would throw an opaque parse error).
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+  if (start === -1 || end <= start) {
+    throw new Error("AI did not return JSON: " + text.slice(0, 200));
+  }
+  try {
+    return JSON.parse(text.slice(start, end + 1));
+  } catch {
+    throw new Error("Failed to parse AI JSON (likely truncated — try again)");
+  }
 }
 
 Deno.serve(async (req) => {
