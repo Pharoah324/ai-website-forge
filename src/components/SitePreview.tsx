@@ -1,5 +1,5 @@
 import * as LucideIcons from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useState, useRef, useEffect, type ReactNode } from "react";
 import type { SiteContent, SiteSection, SiteSectionItem } from "@/types/site";
 import { useValidatedImage, type ImageOrientation } from "@/hooks/useValidatedImage";
 
@@ -280,6 +280,61 @@ export function computeDesignScore(content: SiteContent | null) {
 function hsl(val: string) { return `hsl(${val})`; }
 function hsla(val: string, alpha: number) { return `hsl(${val} / ${alpha})`; }
 
+// ---------------------------------------------------------------------------
+// Style system — the AI picks theme.style ("vibrant" | "glass" | "editorial")
+// per prompt; this maps it to a coherent set of modern design tokens (gradient
+// meshes, glass/elevated cards, display fonts, depth) exposed as CSS variables
+// on the root so every section upgrades from one place.
+// ---------------------------------------------------------------------------
+type StyleName = "vibrant" | "glass" | "editorial";
+type StyleSystem = {
+  style: StyleName; fontImport: string; displayFont: string; bodyFont: string;
+  radius: string; heroBg: string; ctaBg: string; ctaShadow: string;
+  cardBg: string; cardBorder: string; cardShadow: string; cardBackdrop: string; sectionTint: string;
+};
+function getStyleSystem(theme: SiteContent["theme"]): StyleSystem {
+  const t = theme as SiteContent["theme"] & { style?: string; accent2?: string };
+  const p = theme.primary, a = theme.accent, fg = theme.foreground, bg = theme.background;
+  const a2 = t.accent2 || a;
+  const style: StyleName = (t.style === "glass" || t.style === "editorial" || t.style === "vibrant") ? t.style : "vibrant";
+
+  if (style === "glass") {
+    return {
+      style, displayFont: "'Sora', 'Inter', sans-serif", bodyFont: "'Inter', system-ui, sans-serif",
+      fontImport: "https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap",
+      radius: "1rem",
+      heroBg: `radial-gradient(120% 120% at 50% -10%, ${hsla(p, 0.20)} 0%, transparent 55%), radial-gradient(90% 90% at 88% 15%, ${hsla(a2, 0.18)} 0%, transparent 60%)`,
+      ctaBg: `linear-gradient(135deg, ${hsl(p)}, ${hsl(a2)})`, ctaShadow: `0 8px 30px ${hsla(p, 0.4)}`,
+      cardBg: hsla(fg, 0.04), cardBorder: `1px solid ${hsla(fg, 0.1)}`,
+      cardShadow: `0 1px 2px ${hsla(fg, 0.06)}`, cardBackdrop: "blur(10px)",
+      sectionTint: `linear-gradient(180deg, ${hsla(fg, 0.02)}, ${hsla(p, 0.035)})`,
+    };
+  }
+  if (style === "editorial") {
+    return {
+      style, displayFont: "'Fraunces', Georgia, serif", bodyFont: "'Inter', system-ui, sans-serif",
+      fontImport: "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500&display=swap",
+      radius: "0.5rem",
+      heroBg: `radial-gradient(100% 80% at 50% 0%, ${hsla(p, 0.07)} 0%, transparent 60%)`,
+      ctaBg: hsl(p), ctaShadow: `0 6px 22px ${hsla(p, 0.22)}`,
+      cardBg: hsl(bg), cardBorder: `1px solid ${hsla(fg, 0.1)}`,
+      cardShadow: `0 18px 50px -18px ${hsla(fg, 0.2)}`, cardBackdrop: "none",
+      sectionTint: hsla(fg, 0.03),
+    };
+  }
+  // vibrant (default)
+  return {
+    style, displayFont: "'Space Grotesk', 'Inter', sans-serif", bodyFont: "'Inter', system-ui, sans-serif",
+    fontImport: "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap",
+    radius: "1.5rem",
+    heroBg: `radial-gradient(110% 110% at 12% 8%, ${hsla(p, 0.30)} 0%, transparent 50%), radial-gradient(100% 100% at 92% 22%, ${hsla(a2, 0.26)} 0%, transparent 55%), linear-gradient(180deg, ${hsla(a, 0.05)}, transparent)`,
+    ctaBg: `linear-gradient(135deg, ${hsl(p)}, ${hsl(a2)})`, ctaShadow: `0 10px 34px ${hsla(p, 0.45)}`,
+    cardBg: hsl(bg), cardBorder: `1px solid ${hsla(fg, 0.08)}`,
+    cardShadow: `0 14px 44px -16px ${hsla(p, 0.3)}`, cardBackdrop: "none",
+    sectionTint: `linear-gradient(180deg, transparent, ${hsla(p, 0.045)})`,
+  };
+}
+
 // Derive a "dark" version of a background for alternating sections
 function altBg(bg: string, fg: string, alpha = 0.04) {
   return `hsl(${fg} / ${alpha})`;
@@ -303,7 +358,7 @@ const CTAButton = ({ label, primary, accent, className, style, variant = "filled
   const base = `inline-flex items-center gap-2 rounded-full font-semibold transition-all duration-200 hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] ${padding}`;
 
   let styleResolved: React.CSSProperties = {};
-  if (variant === "filled") styleResolved = { background: hsl(primary), color: "white", boxShadow: `0 4px 20px ${hsla(primary, 0.35)}`, ...style };
+  if (variant === "filled") styleResolved = { background: `var(--ve-cta-bg, ${hsl(primary)})`, color: "white", boxShadow: `var(--ve-cta-shadow, 0 4px 20px ${hsla(primary, 0.35)})`, ...style };
   else if (variant === "inverse") styleResolved = { background: "white", color: hsl(primary), ...style };
   else if (variant === "outline") styleResolved = { background: "transparent", color: hsl(primary), border: `2px solid ${hsl(primary)}`, ...style };
   else styleResolved = { background: "transparent", color: hsl(primary), ...style };
@@ -490,11 +545,39 @@ export const SitePreview = ({
     theme: { ...cleanedContent.theme, primary: branding.primary_color || cleanedContent.theme.primary, accent: branding.accent_color || cleanedContent.theme.accent },
   } : cleanedContent;
 
+  const S = getStyleSystem(themedContent.theme);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  // Scroll-reveal: fade/slide sections in as they enter the viewport. Applied
+  // centrally (no per-section edits); respects prefers-reduced-motion via CSS.
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const els = Array.from(root.querySelectorAll("section")) as HTMLElement[];
+    els.forEach((el) => el.classList.add("ve-reveal"));
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("ve-in"); io.unobserve(e.target); } });
+    }, { threshold: 0.12, rootMargin: "0px 0px -8% 0px" });
+    els.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, [content]);
+
   const cssVars = {
     "--site-primary": themedContent.theme.primary,
     "--site-bg": themedContent.theme.background,
     "--site-fg": themedContent.theme.foreground,
     "--site-accent": themedContent.theme.accent,
+    "--ve-display": S.displayFont,
+    "--ve-body": S.bodyFont,
+    "--ve-radius": S.radius,
+    "--ve-cta-bg": S.ctaBg,
+    "--ve-cta-shadow": S.ctaShadow,
+    "--ve-card-bg": S.cardBg,
+    "--ve-card-border": S.cardBorder,
+    "--ve-card-shadow": S.cardShadow,
+    "--ve-card-backdrop": S.cardBackdrop,
+    "--ve-hero-bg": S.heroBg,
+    "--ve-section-tint": S.sectionTint,
   } as React.CSSProperties;
 
   const headerName = branding?.brand_name || themedContent.name;
@@ -502,7 +585,6 @@ export const SitePreview = ({
   const lang = themedContent.lang;
   const ui = themedContent.ui;
   const t = makeT(lang, ui);
-  const primary = hsl(themedContent.theme.primary);
   const fg = themedContent.theme.foreground;
   const bg = themedContent.theme.background;
 
@@ -520,8 +602,17 @@ export const SitePreview = ({
     .slice(0, 5);
 
   return (
-    <div style={cssVars} className="min-h-full" dir={themedContent.dir || "ltr"} lang={lang}>
-      <div style={{ background: hsl(bg), color: hsl(fg), fontFamily: "'Inter', system-ui, sans-serif" }}>
+    <div ref={rootRef} style={cssVars} className="ve-root min-h-full" dir={themedContent.dir || "ltr"} lang={lang}>
+      <style>{`
+        @import url('${S.fontImport}');
+        .ve-root :is(h1,h2,h3) { font-family: var(--ve-display) !important; }
+        .ve-root .ve-reveal { opacity: 0; transform: translateY(26px); transition: opacity .7s cubic-bezier(.16,1,.3,1), transform .7s cubic-bezier(.16,1,.3,1); }
+        .ve-root .ve-reveal.ve-in { opacity: 1; transform: none; }
+        .ve-root .ve-card { border-radius: var(--ve-radius); background: var(--ve-card-bg); border: var(--ve-card-border); box-shadow: var(--ve-card-shadow); backdrop-filter: var(--ve-card-backdrop); transition: transform .3s cubic-bezier(.16,1,.3,1), box-shadow .3s ease; }
+        .ve-root .ve-card:hover { transform: translateY(-6px); box-shadow: 0 24px 60px -20px ${hsla(themedContent.theme.primary, 0.4)}; }
+        @media (prefers-reduced-motion: reduce) { .ve-root .ve-reveal { opacity: 1 !important; transform: none !important; transition: none !important; } }
+      `}</style>
+      <div style={{ background: hsl(bg), color: hsl(fg), fontFamily: "var(--ve-body)" }}>
 
         {/* ── Modern header ─────────────────────────────────────────────── */}
         <header style={{
@@ -557,7 +648,7 @@ export const SitePreview = ({
             {/* CTA */}
             <a href="#contact" onClick={scrollToContact}
               className="rounded-full px-5 py-2 text-sm font-semibold transition-all hover:opacity-90 hover:scale-[1.02]"
-              style={{ background: primary, color: "white", boxShadow: `0 2px 12px ${hsla(themedContent.theme.primary, 0.3)}` }}>
+              style={{ background: "var(--ve-cta-bg)", color: "white", boxShadow: "var(--ve-cta-shadow)" }}>
               {t("get_started")}
             </a>
           </div>
@@ -600,12 +691,11 @@ const SectionRenderer = ({
   const primary = theme.primary;
   const fg = theme.foreground;
   const bg = theme.background;
-  const accent = theme.accent;
   const sectionQuery = buildSectionQuery(section, brand);
 
   // Alternating background system — every other content section gets a very subtle tint
   const isAlt = index % 2 === 1;
-  const altBackground = isAlt ? hsla(fg, 0.03) : hsl(bg);
+  const altBackground = isAlt ? "var(--ve-section-tint)" : hsl(bg);
 
   // ── HERO ──────────────────────────────────────────────────────────────
   if (section.type === "hero") {
@@ -615,8 +705,8 @@ const SectionRenderer = ({
     // Full-bleed background hero
     if (!hasSplitLayout) {
       const overlayColor = section.image_url
-        ? "linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.4) 100%)"
-        : `linear-gradient(135deg, ${hsla(primary, 0.15)}, ${hsla(accent, 0.08)})`;
+        ? "linear-gradient(to bottom, rgba(0,0,0,0.62) 0%, rgba(0,0,0,0.42) 100%)"
+        : "var(--ve-hero-bg)";
 
       return (
         <ValidatedBgSection
@@ -1114,12 +1204,10 @@ const FeatureCard = ({
   const Icon = getIcon(item.icon_name);
   const primary = theme.primary;
   const fg = theme.foreground;
-  const bg = theme.background;
   const hasItemImage = Boolean(item.image_url || item.image_search_query);
 
   return (
-    <div className="group overflow-hidden rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
-      style={{ background: hsl(bg), border: `1px solid hsl(${fg} / 0.08)`, boxShadow: `0 1px 3px hsl(${fg} / 0.04)` }}>
+    <div className="ve-card group overflow-hidden">
       {hasItemImage && (
         <div className="overflow-hidden">
           <ValidatedImg initial={item.image_url} query={buildItemQuery(item, section, brand)}

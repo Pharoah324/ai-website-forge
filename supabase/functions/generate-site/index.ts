@@ -49,6 +49,13 @@ COLOR USAGE:
 - Mix: 60% neutral, 30% primary, 10% accent.
 - Max 2 font styles.
 
+VISUAL STYLE (REQUIRED — set theme.style + theme.accent2):
+Pick the ONE style that best matches the business so the site feels best-in-class and instantly relatable to what the client wants:
+- "vibrant" — bold gradient/mesh hero, glowing gradient CTAs, big rounded cards. Best for: tech/SaaS/apps, startups, creative, fitness, e-commerce, anything energetic or youthful.
+- "glass" — frosted glassmorphism, subtle gradients, crisp depth, sleek. Best for: software, fintech, modern services, B2B, "techy" or premium-modern brands.
+- "editorial" — large serif display type, generous whitespace, refined soft shadows, restrained palette, photography-forward. Best for: luxury, restaurants, hospitality, wellness, beauty, law, real estate, high-end personal brands.
+Also ALWAYS set theme.accent2: a second HSL triple (complementary or analogous to primary) used for gradient CTAs and the hero mesh — pick one that harmonizes with primary.
+
 TYPOGRAPHY:
 - Headlines: bold, large, max 8 words.
 - Subheadlines: medium weight, conversational.
@@ -263,8 +270,10 @@ const TOOL = {
             background: { type: "string" },
             foreground: { type: "string" },
             accent: { type: "string" },
+            accent2: { type: "string", description: "Second accent as a raw HSL triple, complementary/analogous to primary — used for gradient CTAs and hero meshes. e.g. '280 70% 55%'." },
+            style: { type: "string", enum: ["vibrant", "glass", "editorial"], description: "Overall visual style chosen to best fit the business (see VISUAL STYLE rules)." },
           },
-          required: ["primary", "background", "foreground", "accent"],
+          required: ["primary", "background", "foreground", "accent", "style", "accent2"],
         },
         sections: {
           type: "array",
