@@ -62,7 +62,7 @@ async function callAI(url: string, integrations: Record<string, boolean>) {
     },
     body: JSON.stringify({
       model: "claude-sonnet-4-5-20250929",
-      max_tokens: 8192,
+      max_tokens: 16000,
       system: SYSTEM,
       messages: [
         { role: "user", content: userMsg },
@@ -164,22 +164,30 @@ Deno.serve(async (req) => {
       .update({ status: "analyzing" })
       .eq("id", projectId);
 
-    const report = await callAI(project.website_url, project.integrations || {});
+    // If anything below fails, reset status to 'error' so the UI doesn't hang on
+    // the "analyzing" spinner forever (and the user can re-run).
+    let report;
+    try {
+      report = await callAI(project.website_url, project.integrations || {});
 
-    await supa.from("optimization_reports").insert({
-      project_id: projectId,
-      user_id: user.id,
-      report,
-    });
+      await supa.from("optimization_reports").insert({
+        project_id: projectId,
+        user_id: user.id,
+        report,
+      });
 
-    await supa
-      .from("optimization_projects")
-      .update({
-        status: "ready",
-        latest_report: report,
-        last_analyzed_at: new Date().toISOString(),
-      })
-      .eq("id", projectId);
+      await supa
+        .from("optimization_projects")
+        .update({
+          status: "ready",
+          latest_report: report,
+          last_analyzed_at: new Date().toISOString(),
+        })
+        .eq("id", projectId);
+    } catch (inner) {
+      await supa.from("optimization_projects").update({ status: "error" }).eq("id", projectId);
+      throw inner;
+    }
 
     return new Response(JSON.stringify({ ok: true, report }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
