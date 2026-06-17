@@ -15,7 +15,7 @@ export function linkifyPhones(text: string | undefined | null): ReactNode {
   let lastIndex = 0;
   let match: RegExpExecArray | null;
   PHONE_RE.lastIndex = 0;
-  while ((match = PHONE_RE.exec(text)) !== null) {
+  while ((match = PHO NE_RE.exec(text)) !== null) {
     const raw = match[0];
     const digits = raw.replace(/[^\d+]/g, "");
     if (digits.replace(/\+/g, "").length < 7) continue;
@@ -547,6 +547,7 @@ export const SitePreview = ({
 
   const S = getStyleSystem(themedContent.theme);
   const rootRef = useRef<HTMLDivElement>(null);
+  const [scrolled, setScrolled] = useState(false);
 
   // Scroll-reveal: fade/slide sections in as they enter the viewport. Applied
   // centrally (no per-section edits); respects prefers-reduced-motion via CSS.
@@ -559,6 +560,22 @@ export const SitePreview = ({
       entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("ve-in"); io.unobserve(e.target); } });
     }, { threshold: 0.12, rootMargin: "0px 0px -8% 0px" });
     els.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, [content]);
+
+  // Header treatment: transparent while over the hero, frosted once scrolled
+  // past it. Observing the hero section keeps this correct whether the page
+  // scrolls in the editor pane or the published window.
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const hero = root.querySelector("section");
+    if (!hero) { setScrolled(true); return; }
+    const io = new IntersectionObserver(
+      ([e]) => setScrolled(e.intersectionRatio < 0.15),
+      { threshold: [0, 0.15, 0.5] },
+    );
+    io.observe(hero);
     return () => io.disconnect();
   }, [content]);
 
@@ -601,6 +618,15 @@ export const SitePreview = ({
     .filter((s) => !["hero", "contact"].includes(s.type || "") && s.heading)
     .slice(0, 5);
 
+  // A full-bleed image hero renders dark with white text, so the transparent
+  // header over it needs light text until the user scrolls past the hero.
+  const firstHero = themedContent.sections.find((s) => s.type === "hero");
+  const heroIsDark = !!firstHero && !!(firstHero.image_url || firstHero.image_search_query)
+    && firstHero.layout !== "image-left" && firstHero.layout !== "image-right";
+  const overDarkHero = heroIsDark && !scrolled;
+  const headerText = overDarkHero ? "rgba(255,255,255,0.95)" : hsl(fg);
+  const headerNavText = overDarkHero ? "rgba(255,255,255,0.8)" : hsla(fg, 0.7);
+
   return (
     <div ref={rootRef} style={cssVars} className="ve-root min-h-full" dir={themedContent.dir || "ltr"} lang={lang}>
       <style>{`
@@ -616,18 +642,19 @@ export const SitePreview = ({
 
         {/* ── Modern header ─────────────────────────────────────────────── */}
         <header style={{
-          borderBottom: `1px solid ${hsla(fg, 0.07)}`,
-          background: `${hsl(bg)}f0`,
-          backdropFilter: "blur(12px)",
           position: "sticky", top: 0, zIndex: 50,
-        }} className="px-6 py-4 md:px-10">
+          background: scrolled ? hsla(bg, 0.82) : "transparent",
+          backdropFilter: scrolled ? "blur(14px)" : "none",
+          borderBottom: `1px solid ${scrolled ? hsla(fg, 0.08) : "transparent"}`,
+          transition: "background .35s ease, backdrop-filter .35s ease, border-color .35s ease",
+        }} className="px-6 py-5 md:px-10">
           <div className="mx-auto flex max-w-6xl items-center justify-between">
             {/* Logo + name */}
             <div className="flex items-center gap-3">
               {branding?.logo_url && (
                 <img src={branding.logo_url} alt={headerName} className="h-8 w-auto object-contain" />
               )}
-              <span className="text-base font-bold tracking-tight" style={{ fontFamily: "'Geist', 'Inter', sans-serif", letterSpacing: "-0.02em" }}>
+              <span className="text-base font-bold tracking-tight" style={{ fontFamily: "var(--ve-display)", letterSpacing: "-0.02em", color: headerText, transition: "color .35s ease" }}>
                 {headerName}
               </span>
             </div>
@@ -638,7 +665,7 @@ export const SitePreview = ({
                 {navSections.map((s, i) => (
                   <a key={i} href="#contact" onClick={scrollToContact}
                     className="text-sm font-medium transition-opacity hover:opacity-70"
-                    style={{ color: hsla(fg, 0.7) }}>
+                    style={{ color: headerNavText, transition: "color .35s ease" }}>
                     {s.heading?.split(" ").slice(0, 3).join(" ")}
                   </a>
                 ))}
