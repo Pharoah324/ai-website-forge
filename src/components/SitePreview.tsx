@@ -363,8 +363,9 @@ const CTAButton = ({ label, primary, accent, className, style, variant = "filled
   else if (variant === "outline") styleResolved = { background: "transparent", color: hsl(primary), border: `2px solid ${hsl(primary)}`, ...style };
   else styleResolved = { background: "transparent", color: hsl(primary), ...style };
 
+  const cls = `${className ?? base}${variant === "filled" ? " ve-cta-sheen" : ""}`;
   return (
-    <a href="#contact" onClick={scrollToContact} className={className ?? base} style={styleResolved}>
+    <a href="#contact" onClick={scrollToContact} className={cls} style={styleResolved}>
       {label}
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="opacity-70">
         <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
@@ -579,6 +580,30 @@ export const SitePreview = ({
     return () => io.disconnect();
   }, [content]);
 
+  // Subtle 3D tilt on cards as the pointer moves across them (skipped for
+  // reduced-motion / touch). Inline transform overrides the CSS hover lift.
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    const cards = Array.from(root.querySelectorAll(".ve-card")) as HTMLElement[];
+    const cleanups: Array<() => void> = [];
+    cards.forEach((el) => {
+      const move = (ev: PointerEvent) => {
+        if (ev.pointerType === "touch") return;
+        const r = el.getBoundingClientRect();
+        const px = (ev.clientX - r.left) / r.width - 0.5;
+        const py = (ev.clientY - r.top) / r.height - 0.5;
+        el.style.transform = `perspective(900px) rotateX(${(-py * 5).toFixed(2)}deg) rotateY(${(px * 5).toFixed(2)}deg) translateY(-8px)`;
+      };
+      const leave = () => { el.style.transform = ""; };
+      el.addEventListener("pointermove", move);
+      el.addEventListener("pointerleave", leave);
+      cleanups.push(() => { el.removeEventListener("pointermove", move); el.removeEventListener("pointerleave", leave); });
+    });
+    return () => cleanups.forEach((c) => c());
+  }, [content]);
+
   const cssVars = {
     "--site-primary": themedContent.theme.primary,
     "--site-bg": themedContent.theme.background,
@@ -634,9 +659,13 @@ export const SitePreview = ({
         .ve-root :is(h1,h2,h3) { font-family: var(--ve-display) !important; }
         .ve-root .ve-reveal { opacity: 0; transform: translateY(26px); transition: opacity .7s cubic-bezier(.16,1,.3,1), transform .7s cubic-bezier(.16,1,.3,1); }
         .ve-root .ve-reveal.ve-in { opacity: 1; transform: none; }
-        .ve-root .ve-card { border-radius: var(--ve-radius); background: var(--ve-card-bg); border: var(--ve-card-border); box-shadow: var(--ve-card-shadow); backdrop-filter: var(--ve-card-backdrop); transition: transform .3s cubic-bezier(.16,1,.3,1), box-shadow .3s ease; }
+        .ve-root .ve-card { border-radius: var(--ve-radius); background: var(--ve-card-bg); border: var(--ve-card-border); box-shadow: var(--ve-card-shadow); backdrop-filter: var(--ve-card-backdrop); transition: transform .3s cubic-bezier(.16,1,.3,1), box-shadow .3s ease; transform-style: preserve-3d; will-change: transform; }
         .ve-root .ve-card:hover { transform: translateY(-6px); box-shadow: 0 24px 60px -20px ${hsla(themedContent.theme.primary, 0.4)}; }
-        @media (prefers-reduced-motion: reduce) { .ve-root .ve-reveal { opacity: 1 !important; transform: none !important; transition: none !important; } }
+        @keyframes ve-float { 0%,100% { transform: translate(0,0) } 50% { transform: translate(0,-22px) } }
+        .ve-root .ve-cta-sheen { position: relative; overflow: hidden; }
+        .ve-root .ve-cta-sheen::after { content: ''; position: absolute; inset: 0; background: linear-gradient(120deg, transparent 32%, rgba(255,255,255,.38) 50%, transparent 68%); transform: translateX(-130%); transition: transform .65s ease; }
+        .ve-root .ve-cta-sheen:hover::after { transform: translateX(130%); }
+        @media (prefers-reduced-motion: reduce) { .ve-root .ve-reveal { opacity: 1 !important; transform: none !important; transition: none !important; } .ve-root .ve-blob { animation: none; } }
       `}</style>
       <div style={{ background: hsl(bg), color: hsl(fg), fontFamily: "var(--ve-body)" }}>
 
@@ -810,7 +839,7 @@ const SectionRenderer = ({
             )}
           </div>
           <div className="relative">
-            <div className="absolute -inset-4 rounded-3xl opacity-20 blur-2xl" style={{ background: hsl(primary) }} />
+            <div className="absolute -inset-4 rounded-3xl opacity-25 blur-2xl" style={{ background: `linear-gradient(135deg, ${hsl(primary)}, ${hsl(theme.accent)})`, animation: "ve-float 11s ease-in-out infinite" }} />
             <ValidatedImg initial={section.image_url} query={sectionQuery} orientation="landscape"
               fallbackIndex={index} alt={section.image_alt || section.heading}
               className="relative aspect-[4/3] w-full rounded-2xl object-cover shadow-2xl"
