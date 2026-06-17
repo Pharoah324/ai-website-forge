@@ -75,6 +75,19 @@ The live Supabase DB (gcapzcjyfjwmyheeydvt) was **never built from the repo migr
 
 ---
 
+## ⚠️ AFFILIATE PROGRAM — TRACKS REFERRALS, DOES NOT YET PAY (verified June 17, 2026)
+Stage-by-stage verification result. **Stages 1-3 work; Stage 4 (earnings/payout) is UNBUILT.**
+- **Apply** ✅ — must be logged in (apply form gates logged-out → signup; `affiliates.user_id` is NOT NULL). RLS: user sees own row, admin sees all.
+- **Attribution** ✅ — `attribute_affiliate_referral()` trigger on `auth.users` (migration `20260617_affiliate_referral_attribution.sql`) records a `pending` `referral_conversions` row from the new user's `affiliate_ref` metadata and bumps `total_referrals`. Safe (can't block signup), self-referral guarded.
+- **Dashboard** ✅ — reads/displays own data under RLS, cross-user isolated.
+- **Earnings/Payout** ❌ **NOT BUILT.** Nothing computes commission or aggregates earnings: conversions stay `monthly_value=0 / commission_amount=0 / status='pending'`, and `total_earnings`/`pending_payout`/`active_subscribers` are never populated. So a real affiliate sees referrals climb but **$0 earnings forever** and can never reach the $50 payout threshold.
+
+**To finish:** wire the **Stripe webhook** to, on a referred user's subscription becoming active, confirm the conversion + set `monthly_value`/`commission_amount` (30%) + roll up to the affiliate totals. Payout disbursement itself stays a **manual admin action** (request → `affiliate_payouts` row → admin marks paid) — no auto-PayPal. This depends on the Stripe billing flow being verified first.
+
+**Launch rule:** GHL Marketplace launch does NOT require this (affiliate is an internal growth channel, not part of the installed app). But the landing page publicly promises "30% recurring," so **if earnings aren't finished by launch, gate the affiliate Apply CTA as "coming soon"** rather than advertise an unfulfillable payout.
+
+---
+
 ## REPO LAYOUT (KEY FILES)
 - `src/pages/NewSite.tsx` — generation UI, Website/App toggle + app types
 - `src/pages/Projects.tsx` — persistent site library (/app/projects)
