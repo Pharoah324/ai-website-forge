@@ -128,6 +128,13 @@ export default function Affiliates() {
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Must be logged in to apply: affiliates.user_id is NOT NULL, so a logged-out
+    // submission would hit a constraint violation. Redirect to sign up/in first.
+    if (!user) {
+      toast.message("Create an account or sign in to apply.");
+      navigate("/auth?mode=signup");
+      return;
+    }
     if (!agreed) return toast.error("Please agree to the affiliate terms.");
     const parsed = schema.safeParse(form);
     if (!parsed.success) return toast.error(parsed.error.issues[0].message);
@@ -140,15 +147,14 @@ export default function Affiliates() {
       website_url: parsed.data.website_url || null,
       promotion_plan: parsed.data.promotion_plan || null,
       expected_referrals: parsed.data.expected_referrals || null,
-      user_id: user?.id ?? null,
+      user_id: user.id,
       affiliate_code: "VEB-PEND" + Math.random().toString(36).slice(2, 6).toUpperCase(),
     };
     const { error } = await supabase.from("affiliates").insert(row);
     setSubmitting(false);
     if (error) return toast.error(error.message);
     toast.success(t.success);
-    if (user) navigate("/app/affiliate");
-    else navigate("/auth?mode=signup");
+    navigate("/app/affiliate");
   };
 
   return (
