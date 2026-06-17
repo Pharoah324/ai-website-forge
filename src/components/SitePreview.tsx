@@ -1,5 +1,5 @@
 import * as LucideIcons from "lucide-react";
-import { useState, useRef, useEffect, type ReactNode } from "react";
+import { useState, useRef, useEffect, createElement, type ReactNode } from "react";
 import type { SiteContent, SiteSection, SiteSectionItem } from "@/types/site";
 import { useValidatedImage, type ImageOrientation } from "@/hooks/useValidatedImage";
 
@@ -373,6 +373,43 @@ const CTAButton = ({ label, primary, accent, className, style, variant = "filled
     </a>
   );
 };
+
+// ---------------------------------------------------------------------------
+// Interactive 3D scene (Spline) — loaded from CDN as a web component (no npm
+// dep, no build impact), client-only (SSG-safe), renders nothing until ready so
+// the hero's gradient + scrim act as the graceful fallback if it can't load.
+// ---------------------------------------------------------------------------
+const SPLINE_VIEWER_SRC = "https://unpkg.com/@splinetool/viewer@1.9.48/build/spline-viewer.js";
+function Scene3D({ url, className }: { url: string; className?: string }) {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    if (typeof document === "undefined" || !url) return;
+    // WebGL gate — skip entirely on unsupported devices (fallback shows instead).
+    try {
+      const c = document.createElement("canvas");
+      if (!(c.getContext("webgl2") || c.getContext("webgl"))) return;
+    } catch { return; }
+    if ((window as unknown as { customElements?: CustomElementRegistry }).customElements?.get("spline-viewer")) {
+      setReady(true); return;
+    }
+    if (document.querySelector("script[data-spline-viewer]")) {
+      const t = setInterval(() => {
+        if (window.customElements?.get("spline-viewer")) { setReady(true); clearInterval(t); }
+      }, 200);
+      return () => clearInterval(t);
+    }
+    const s = document.createElement("script");
+    s.type = "module"; s.src = SPLINE_VIEWER_SRC; s.setAttribute("data-spline-viewer", "1");
+    s.onload = () => setReady(true);
+    document.head.appendChild(s);
+  }, [url]);
+  if (!ready || !url) return null;
+  return (
+    <div className={className} aria-hidden>
+      {createElement("spline-viewer", { url, style: { width: "100%", height: "100%", display: "block", pointerEvents: "none" } })}
+    </div>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Section label pill (like "SUSTAINABLE HOME GROWING" in Lovable example)
@@ -755,6 +792,42 @@ const SectionRenderer = ({
 
   // ── HERO ──────────────────────────────────────────────────────────────
   if (section.type === "hero") {
+    // Interactive 3D hero (Spline scene). Falls back to the gradient + scrim if
+    // the scene can't load (WebGL unsupported, network, etc.).
+    const scene3dUrl = (section as { scene_url?: string }).scene_url;
+    if (scene3dUrl) {
+      return (
+        <section className="relative overflow-hidden px-6 py-36 text-center md:px-10 md:py-52"
+          style={{ background: "var(--ve-hero-bg)", color: "white" }}>
+          <Scene3D url={scene3dUrl} className="absolute inset-0 z-0" />
+          <div className="absolute inset-0 z-0" style={{ background: "linear-gradient(180deg, rgba(0,0,0,.35) 0%, rgba(0,0,0,.6) 100%)" }} />
+          <div className="relative z-10 mx-auto max-w-4xl">
+            {brand && (
+              <div className="mb-5">
+                <span className="inline-block rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-widest"
+                  style={{ background: "rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.92)", backdropFilter: "blur(8px)" }}>
+                  {brand}
+                </span>
+              </div>
+            )}
+            <h1 className="font-bold leading-[1.05] tracking-tight" style={{ fontSize: "clamp(2.5rem, 6vw, 5rem)", letterSpacing: "-0.03em" }}>
+              {section.heading}
+            </h1>
+            {section.subheading && (
+              <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed" style={{ color: "rgba(255,255,255,0.85)", fontSize: "clamp(1rem, 2vw, 1.2rem)" }}>
+                {section.subheading}
+              </p>
+            )}
+            {section.cta && (
+              <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                <CTAButton label={section.cta} primary={primary} size="lg" />
+                {section.cta_urgency && <span className="text-sm font-medium" style={{ color: "rgba(255,255,255,0.75)" }}>✦ {section.cta_urgency}</span>}
+              </div>
+            )}
+          </div>
+        </section>
+      );
+    }
     const layout = section.layout || (section.image_url ? "image-background" : "stacked");
     const hasSplitLayout = layout === "image-right" || layout === "image-left";
 

@@ -803,7 +803,7 @@ const CATEGORY_QUERY_HINT: Record<string, string> = {
   contractor: "home construction contractor",
   beauty:     "beauty salon",
   coaching:   "professional business",
-  tech:       "technology software",
+  tech:       "modern technology abstract gradient",
   fashion:    "luxury menswear tailoring",
   retail:     "retail product",
   travel:     "travel destination",
@@ -997,6 +997,19 @@ async function hydrateImages(siteJson: unknown, prompt = "") {
     "tailor shop interior luxury menswear boutique",
     "haberdashery shop wood interior suits",
   ];
+  // Clean, on-brand abstract/product imagery for tech/SaaS feature cards —
+  // avoids the literal "type the feature title into Unsplash" trap that returns
+  // random code screenshots, glasses, or photos with foreign on-screen text.
+  const TECH_GALLERY = [
+    "abstract 3d render gradient shapes",
+    "minimal saas dashboard interface clean",
+    "futuristic technology abstract blue purple",
+    "modern app ui on laptop minimal desk",
+    "data visualization abstract glowing",
+    "geometric abstract tech gradient background",
+    "cloud computing abstract minimal render",
+    "soft 3d glass shapes gradient studio",
+  ];
   const pick = (arr: string[], idx: number) => arr[Math.abs(idx) % arr.length];
 
   const fallbackForSection = (sec: { type?: string; heading?: string }, sIdx = 0) => {
@@ -1100,6 +1113,12 @@ async function hydrateImages(siteJson: unknown, prompt = "") {
 
               // Build item-level query — testimonials MUST have contextual per-item queries
               let itemQuery = item.image_search_query;
+              // Tech/SaaS feature & gallery cards: literal per-feature queries
+              // reliably return poor stock (code screenshots, photos with foreign
+              // on-screen text). Override with curated clean-abstract imagery.
+              if (!isTestimonials && category === "tech") {
+                itemQuery = pick(TECH_GALLERY, iIdx + sIdx);
+              }
               if (!itemQuery) {
                 if (isTestimonials) {
                   // Use business context for testimonial avatars — NOT generic portraits

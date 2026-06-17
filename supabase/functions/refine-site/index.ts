@@ -55,6 +55,8 @@ const TOOL = {
           background: { type: "string" },
           foreground: { type: "string" },
           accent: { type: "string" },
+          accent2: { type: "string", description: "Preserve existing value unless asked to restyle." },
+          style: { type: "string", enum: ["vibrant", "glass", "editorial"], description: "Preserve existing visual style unless the user asks to change it." },
         },
         required: ["primary", "background", "foreground", "accent"],
       },
@@ -135,6 +137,14 @@ function preserveExisting(oldContent: AnyObj | null, next: AnyObj) {
   const IMG = ["image_url", "image_thumb", "image_alt", "image_credit"];
   const norm = (s: string) => (s || "").toLowerCase().trim();
 
+  // Preserve visual-style tokens if the refine omitted them (so a refine never
+  // downgrades the look back to the default vibrant/accent).
+  if (oldContent?.theme && next.theme) {
+    for (const k of ["style", "accent2"]) {
+      if (!next.theme[k] && oldContent.theme[k]) next.theme[k] = oldContent.theme[k];
+    }
+  }
+
   nextSections.forEach((s, i) => {
     const old =
       oldSections[i] && oldSections[i].type === s.type
@@ -142,6 +152,8 @@ function preserveExisting(oldContent: AnyObj | null, next: AnyObj) {
         : oldSections.find((o) => norm(o.heading) === norm(s.heading) && o.type === s.type);
     if (!old) return;
     for (const f of IMG) if (!s[f] && old[f]) s[f] = old[f];
+    // Preserve an interactive 3D scene set out-of-band if the model dropped it.
+    if (!s.scene_url && old.scene_url) s.scene_url = old.scene_url;
     // If the model omitted items entirely (undefined) on a section that had
     // them, carry them forward so the section doesn't come back empty. An
     // explicit empty array is treated as an intentional clear and left alone.
