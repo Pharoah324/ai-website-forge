@@ -88,6 +88,18 @@ Stage-by-stage verification result. **Stages 1-3 work; Stage 4 (earnings/payout)
 
 ---
 
+## ⚠️ STRIPE BILLING — NOT LAUNCH-READY (status June 17, 2026)
+Verified read-only. **Billing is currently non-functional server-side:**
+- `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` are **NOT set** as edge-function secrets → webhook 400s, checkout can't create sessions.
+- `stripe_products` catalog is **empty (0 rows)** → `create-checkout` finds no price.
+- Schema-drift check **CLEAR**: every table/column/enum the webhook writes exists.
+
+**Canonical pricing (confirmed):** monthly-only at launch. Free $0 (NO Stripe sub — free users just sit at free limits), Starter $19, Builder $49, Pro $99, Agency $199. Credits per webhook `PLAN_LIMITS` (build/runtime): 20/300 · 100/2500 · 300/10000 · 800/30000 · 2000/100000. Build-credit rollover (50% unused, ≤1mo) on Builder/Pro/Agency; runtime never rolls. **No annual prices** (add clean numbers post-launch). The live `plans` table is **STALE** (free/starter/pro/enterprise, $29/$79, single credits) — reconcile/remove later; the billing flow uses `stripe_products`, not `plans`.
+
+**🔴 REQUIRED before launch (test/prod share `stripe_products`):** verification is being done in Stripe TEST mode (test secrets + test price IDs seeded into `stripe_products`). Because that table is shared test/prod, **before launch you MUST re-seed the LIVE price IDs into `stripe_products` AND set the LIVE `STRIPE_SECRET_KEY`/`STRIPE_WEBHOOK_SECRET`** — otherwise checkout stays stuck in test mode and no real charges occur.
+
+---
+
 ## REPO LAYOUT (KEY FILES)
 - `src/pages/NewSite.tsx` — generation UI, Website/App toggle + app types
 - `src/pages/Projects.tsx` — persistent site library (/app/projects)
