@@ -145,15 +145,17 @@ Deno.serve(async (req) => {
       case "customer.subscription.updated": {
         const sub = event.data.object as Stripe.Subscription;
         const customerId = sub.customer as string;
+        // current_period_end is top-level in older API versions but moved onto the
+        // subscription item in newer ones. Webhook events arrive in the account's
+        // API version, so read both to avoid nulling the value.
+        const cpe = sub.current_period_end ?? (sub as any).items?.data?.[0]?.current_period_end ?? null;
         const update: Record<string, unknown> = {
           subscription_status: sub.status,
           stripe_subscription_id: sub.id,
           // Reflect a pending cancellation (cancel-at-period-end) so the UI can
           // show "cancels on <date>" + offer Resume. Cleared on reactivation.
           cancel_at_period_end: sub.cancel_at_period_end ?? false,
-          current_period_end: sub.current_period_end
-            ? new Date(sub.current_period_end * 1000).toISOString()
-            : null,
+          current_period_end: cpe ? new Date(cpe * 1000).toISOString() : null,
         };
         // If Stripe says status active and we'd been past_due, recover.
         if (sub.status === "active") {

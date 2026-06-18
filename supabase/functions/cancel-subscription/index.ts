@@ -60,19 +60,20 @@ Deno.serve(async (req) => {
       cancel_at_period_end: action === "cancel",
     });
 
+    // current_period_end is top-level in older API versions, on the item in newer.
+    const cpe = sub.current_period_end ?? (sub as any).items?.data?.[0]?.current_period_end ?? null;
+
     // Reflect immediately so the UI updates without waiting for the webhook.
     await admin.from("profiles").update({
       cancel_at_period_end: sub.cancel_at_period_end ?? (action === "cancel"),
-      current_period_end: sub.current_period_end
-        ? new Date(sub.current_period_end * 1000).toISOString()
-        : null,
+      current_period_end: cpe ? new Date(cpe * 1000).toISOString() : null,
     }).eq("id", user.id);
 
     return json({
       ok: true,
       action,
       cancel_at_period_end: sub.cancel_at_period_end ?? (action === "cancel"),
-      current_period_end: sub.current_period_end ?? null,
+      current_period_end: cpe,
     });
   } catch (err: any) {
     console.error("cancel-subscription error", err);
