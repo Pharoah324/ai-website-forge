@@ -15,7 +15,7 @@ export function linkifyPhones(text: string | undefined | null): ReactNode {
   let lastIndex = 0;
   let match: RegExpExecArray | null;
   PHONE_RE.lastIndex = 0;
-  while ((match = PHO NE_RE.exec(text)) !== null) {
+  while ((match = PHONE_RE.exec(text)) !== null) {
     const raw = match[0];
     const digits = raw.replace(/[^\d+]/g, "");
     if (digits.replace(/\+/g, "").length < 7) continue;
