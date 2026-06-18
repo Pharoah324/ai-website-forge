@@ -64,9 +64,33 @@ Deno.serve(async (req) => {
     // Get or create Stripe customer
     const { data: profile } = await admin
       .from("profiles")
-      .select("stripe_customer_id")
+      .select("stripe_customer_id, stripe_subscription_id")
       .eq("id", user.id)
       .maybeSingle();
+
+    // Guard: a customer must only ever have ONE subscription. If the caller
+    // already has a live subscription, refuse to create a second one here —
+    // plan changes go through the change-subscription function, which modifies
+    // the existing subscription. This prevents the duplicate-subscription /
+    // double-billing bug at the source even if the frontend misroutes.
+    if (kind === "subscription" && profile?.stripe_subscription_id) {
+      try {
+        const existing = await stripe.subscriptions.retrieve(profile.stripe_subscription_id);
+        if (["active", "trialing", "past_due", "unpaid", "paused"].includes(existing.status)) {
+          return new Response(JSON.stringify({
+            error: "active_subscription_exists",
+            message: "You already have an active subscription. Use change-subscription to switch plans.",
+          }), {
+            status: 409,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        // Otherwise (canceled / incomplete_expired) fall through and allow re-subscribe.
+      } catch (_e) {
+        // Subscription not found in Stripe — stale id; allow checkout to proceed.
+      }
+    }
+
     let customerId = profile?.stripe_customer_id ?? null;
     if (!customerId) {
       const customer = await stripe.customers.create({

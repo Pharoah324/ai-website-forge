@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
   const findProfileByCustomer = async (customerId: string) => {
     const { data } = await admin
       .from("profiles")
-      .select("id, email, plan, billing_status, monthly_build_limit, monthly_runtime_limit, build_credits, runtime_credits")
+      .select("id, email, plan, scheduled_plan, billing_status, monthly_build_limit, monthly_runtime_limit, build_credits, runtime_credits")
       .eq("stripe_customer_id", customerId)
       .maybeSingle();
     return data;
@@ -222,25 +222,43 @@ Deno.serve(async (req) => {
 
         if (invoice.billing_reason === "subscription_cycle") {
           // Renewal — refresh credits.
-          // Rollover: BUILD credits only, 50% of unused, only on Builder/Pro/Agency,
-          // capped so total never exceeds 2× the monthly limit. Runtime never rolls over.
-          const planKey = (prof.plan ?? "free") as string;
-          const planCfg = PLAN_LIMITS[planKey] ?? PLAN_LIMITS.free;
+          //
+          // Deferred downgrade: if scheduled_plan is set, this cycle is the one
+          // where the downgrade takes effect. The plan/limits/rollover for this
+          // renewal MUST use the DESTINATION tier (not the origin) — so e.g. a
+          // Builder->Starter downgrade rolls over using Starter's rule (none),
+          // and no rollover credits leak into a non-rollover tier.
+          const effectivePlan = (prof.scheduled_plan ?? prof.plan ?? "free") as string;
+          const planCfg = PLAN_LIMITS[effectivePlan] ?? PLAN_LIMITS.free;
+          const monthlyBuild = planCfg.build;       // destination-tier monthly grant
+          const monthlyRuntime = planCfg.runtime;
+
+          // Rollover: BUILD credits only, 50% of unused, only on rollover tiers,
+          // capped at one full (destination) month. Runtime never rolls over.
           const buildUnused = Math.max(0, prof.build_credits ?? 0);
           let buildRollover = 0;
           if (planCfg.rollover) {
             buildRollover = Math.min(
-              prof.monthly_build_limit,            // ≤ one full month
-              Math.floor(buildUnused / 2),         // 50% of unused
+              monthlyBuild,                          // ≤ one full (destination) month
+              Math.floor(buildUnused / 2),           // 50% of unused
             );
           }
           Object.assign(baseUpdate, {
-            build_credits: prof.monthly_build_limit + buildRollover,
-            runtime_credits: prof.monthly_runtime_limit,
+            build_credits: monthlyBuild + buildRollover,
+            runtime_credits: monthlyRuntime,
             rollover_build_credits: buildRollover,
             rollover_runtime_credits: 0,
             billing_cycle_start: new Date().toISOString(),
           });
+          // If a downgrade was pending, commit the plan switch now and clear it.
+          if (prof.scheduled_plan) {
+            Object.assign(baseUpdate, {
+              plan: effectivePlan,
+              monthly_build_limit: monthlyBuild,
+              monthly_runtime_limit: monthlyRuntime,
+              scheduled_plan: null,
+            });
+          }
         }
         await admin.from("profiles").update(baseUpdate).eq("id", prof.id);
         break;

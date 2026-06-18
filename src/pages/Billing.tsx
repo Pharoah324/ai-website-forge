@@ -22,6 +22,11 @@ export default function Billing() {
   const [setupBusy, setSetupBusy] = useState(false);
   const [webhookBusy, setWebhookBusy] = useState(false);
   const [webhookResult, setWebhookResult] = useState<{ secret?: string; url?: string; alreadyExists?: boolean; message?: string } | null>(null);
+  // Plan-change confirmation (existing subscribers). preview holds the result of
+  // change-subscription's `preview` action so we can show the exact prorated
+  // charge BEFORE an immediate upgrade hits the card.
+  const [changeDialog, setChangeDialog] = useState<{ tier: string; preview: any } | null>(null);
+  const [applying, setApplying] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -76,7 +81,13 @@ export default function Billing() {
 
   const currentPlan = (profile.plan && PLAN_LIMITS[profile.plan]) ? PLAN_LIMITS[profile.plan] : PLAN_LIMITS.free;
 
-  const upgrade = async (tier: string) => {
+  // Does the user already have a live subscription? If so, plan clicks must
+  // MODIFY that subscription (change-subscription), not create a new one.
+  const isSubscriber = !!(profile as any).stripe_subscription_id && !!profile.plan && profile.plan !== "free";
+
+  // New customer, first paid plan → Stripe Checkout (collects payment method,
+  // creates the single subscription).
+  const subscribeCheckout = async (tier: string) => {
     setBusyTier(tier);
     try {
       const { data, error } = await supabase.functions.invoke("create-checkout", {
@@ -95,6 +106,53 @@ export default function Billing() {
         description: err?.message ?? "Make sure Stripe products are set up first.",
       });
       setBusyTier(null);
+    }
+  };
+
+  // Plan click handler — routes new vs existing subscriber.
+  const onPlanClick = async (tier: string) => {
+    if (!isSubscriber) {
+      await subscribeCheckout(tier);
+      return;
+    }
+    // Existing subscriber → preview the change, then require explicit confirmation.
+    setBusyTier(tier);
+    try {
+      const { data, error } = await supabase.functions.invoke("change-subscription", {
+        body: { planTier: tier, interval, action: "preview" },
+      });
+      if (error) throw error;
+      setChangeDialog({ tier, preview: data });
+    } catch (err: any) {
+      toast.error("Couldn't load plan change", { description: err?.message });
+    } finally {
+      setBusyTier(null);
+    }
+  };
+
+  // Confirmed by the user in the dialog → actually apply the change (this is
+  // where an upgrade charge fires).
+  const confirmChange = async () => {
+    if (!changeDialog) return;
+    setApplying(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("change-subscription", {
+        body: { planTier: changeDialog.tier, interval, action: "apply" },
+      });
+      if (error) throw error;
+      if (data?.applied === "immediate") {
+        toast.success("Plan upgraded", { description: "Your new plan and credits are active." });
+      } else if (data?.applied === "period_end") {
+        toast.success("Downgrade scheduled", { description: "Your plan changes at the end of this billing period." });
+      } else if (data?.applied === "downgrade_cancelled") {
+        toast.success("Downgrade cancelled", { description: "You'll stay on your current plan." });
+      }
+      setChangeDialog(null);
+      refetch();
+    } catch (err: any) {
+      toast.error("Plan change failed", { description: err?.message });
+    } finally {
+      setApplying(false);
     }
   };
 
@@ -229,7 +287,7 @@ export default function Billing() {
                 className="mt-4 w-full"
                 variant={current ? "outline" : "default"}
                 disabled={current || busyTier !== null || key === "free"}
-                onClick={() => upgrade(key)}
+                onClick={() => onPlanClick(key)}
               >
                 {busyTier === key ? (
                   <Loader2 className="mr-1 h-4 w-4 animate-spin" />
@@ -252,6 +310,99 @@ export default function Billing() {
       </p>
 
       <TopUpModal open={topupOpen} onOpenChange={setTopupOpen} />
+
+      {/* Plan-change confirmation. For upgrades this shows the exact prorated
+          amount charged TODAY before the user confirms — no silent charge. */}
+      <Dialog open={!!changeDialog} onOpenChange={(o) => !o && !applying && setChangeDialog(null)}>
+        <DialogContent>
+          {(() => {
+            if (!changeDialog) return null;
+            const pv = changeDialog.preview ?? {};
+            const targetLabel = PLAN_LIMITS[changeDialog.tier as keyof typeof PLAN_LIMITS]?.label ?? changeDialog.tier;
+            const money = (cents: number) => `$${((cents ?? 0) / 100).toFixed(2)}`;
+            const monthly = money(pv.new_monthly_amount);
+
+            // Re-selecting current tier while a downgrade is pending → cancel it.
+            if (pv.sameTier) {
+              return (
+                <>
+                  <DialogHeader>
+                    <DialogTitle>Keep your {targetLabel} plan</DialogTitle>
+                    <DialogDescription>
+                      {pv.hasPendingDowngrade
+                        ? `You have a downgrade scheduled for the end of this billing period. Confirm to cancel it and stay on ${targetLabel}.`
+                        : `You're already on the ${targetLabel} plan.`}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => setChangeDialog(null)} disabled={applying}>Close</Button>
+                    {pv.hasPendingDowngrade && (
+                      <Button onClick={confirmChange} disabled={applying}>
+                        {applying && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+                        Cancel downgrade
+                      </Button>
+                    )}
+                  </div>
+                </>
+              );
+            }
+
+            if (pv.isUpgrade) {
+              return (
+                <>
+                  <DialogHeader>
+                    <DialogTitle>Upgrade to {targetLabel}</DialogTitle>
+                    <DialogDescription>
+                      Your plan upgrades immediately and you get {targetLabel}'s full monthly credits right away.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="rounded-lg border bg-muted/40 p-4 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">Charged today (prorated)</span>
+                      <span className="text-lg font-bold">{money(pv.amount_due_today)}</span>
+                    </div>
+                    <div className="mt-1 flex items-center justify-between">
+                      <span className="text-muted-foreground">New monthly price</span>
+                      <span className="font-medium">{monthly}/mo</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => setChangeDialog(null)} disabled={applying}>Cancel</Button>
+                    <Button onClick={confirmChange} disabled={applying}>
+                      {applying && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+                      Confirm &amp; pay {money(pv.amount_due_today)}
+                    </Button>
+                  </div>
+                </>
+              );
+            }
+
+            // Downgrade — applies at period end, no charge today.
+            const periodEnd = pv.current_period_end
+              ? new Date(pv.current_period_end * 1000).toLocaleDateString()
+              : "the end of your billing period";
+            return (
+              <>
+                <DialogHeader>
+                  <DialogTitle>Downgrade to {targetLabel}</DialogTitle>
+                  <DialogDescription>
+                    No charge today. You keep your current plan and credits until {periodEnd},
+                    then switch to {targetLabel} at {monthly}/mo. Your credit allowance changes to
+                    the new plan starting next cycle.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setChangeDialog(null)} disabled={applying}>Cancel</Button>
+                  <Button onClick={confirmChange} disabled={applying}>
+                    {applying && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+                    Schedule downgrade
+                  </Button>
+                </div>
+              </>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!webhookResult} onOpenChange={(o) => !o && setWebhookResult(null)}>
         <DialogContent>
