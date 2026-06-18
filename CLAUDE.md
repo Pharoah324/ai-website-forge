@@ -98,6 +98,10 @@ Verified read-only. **Billing is currently non-functional server-side:**
 
 **🔴 REQUIRED before launch (test/prod share `stripe_products`):** verification is being done in Stripe TEST mode (test secrets + test price IDs seeded into `stripe_products`). Because that table is shared test/prod, **before launch you MUST re-seed the LIVE price IDs into `stripe_products` AND set the LIVE `STRIPE_SECRET_KEY`/`STRIPE_WEBHOOK_SECRET`** — otherwise checkout stays stuck in test mode and no real charges occur.
 
+**🚨 BILLING LAUNCH-BLOCKERS found in test-mode verification (June 17, 2026) — do NOT promote billing until fixed:**
+1. **[HIGH] Plan change creates duplicate/orphaned subscriptions → double-billing in live mode.** Changing plans goes through `create-checkout` → a NEW Stripe Checkout → a NEW subscription; nothing cancels the prior sub, and `stripe-webhook` `checkout.session.completed` just overwrites `profiles.stripe_subscription_id`. Verified: switching Builder→Starter left two active subs on the same customer (`customer.subscription.deleted` never fired). In live mode the customer is charged for BOTH. **Fix:** change-plan must `subscriptions.update` the existing sub (with proration), OR cancel the old sub when the new one activates. MUST fix before launch.
+2. **[Launch concern] No in-app cancellation / downgrade-to-free.** Billing page only upgrades; there is no cancel button / Stripe customer portal, and the "Free" button targets a `free` subscription price that doesn't exist (free = no Stripe sub). Users can't stop or lower their plan from VEB. **Fix before promoting billing:** add Stripe Customer Portal link or a cancel/downgrade flow.
+
 ---
 
 ## REPO LAYOUT (KEY FILES)
