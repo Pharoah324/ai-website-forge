@@ -32,8 +32,20 @@ export default function Billing() {
     const params = new URLSearchParams(window.location.search);
     if (params.get("checkout") === "success") {
       toast.success("Payment successful", { description: "Your credits/plan have been updated." });
-      refetch();
       window.history.replaceState({}, "", window.location.pathname);
+      // The subscription webhook (checkout.session.completed) is async and can
+      // land AFTER we get back here. A single refetch races it and may cache the
+      // stale free-state profile — which then misroutes the next plan click.
+      // Poll a few times until the profile reflects the new paid plan.
+      let tries = 0;
+      const poll = async () => {
+        const res = await refetch();
+        const p = res.data as { plan?: string } | null;
+        tries++;
+        if (p?.plan && p.plan !== "free") return; // webhook landed, cache fresh
+        if (tries < 6) setTimeout(poll, 1500);
+      };
+      poll();
     } else if (params.get("checkout") === "cancelled") {
       toast.info("Checkout cancelled");
       window.history.replaceState({}, "", window.location.pathname);
@@ -81,50 +93,70 @@ export default function Billing() {
 
   const currentPlan = (profile.plan && PLAN_LIMITS[profile.plan]) ? PLAN_LIMITS[profile.plan] : PLAN_LIMITS.free;
 
-  // Does the user already have a live subscription? If so, plan clicks must
-  // MODIFY that subscription (change-subscription), not create a new one.
-  const isSubscriber = !!(profile as any).stripe_subscription_id && !!profile.plan && profile.plan !== "free";
+  // Best-guess from client state of whether the user already subscribes. This
+  // can be momentarily stale (webhook lag), so routing below SELF-CORRECTS on
+  // the functions' 409s rather than trusting this alone.
+  const isSubscriber = !!profile.plan && profile.plan !== "free";
 
-  // New customer, first paid plan → Stripe Checkout (collects payment method,
-  // creates the single subscription).
-  const subscribeCheckout = async (tier: string) => {
-    setBusyTier(tier);
+  // supabase.functions.invoke puts the non-2xx body on error.context (a Response).
+  // Read our { error: "<code>" } payload so routing can react to it.
+  const readFnErrorCode = async (error: any): Promise<{ code?: string; message?: string }> => {
     try {
-      const { data, error } = await supabase.functions.invoke("create-checkout", {
-        body: {
-          kind: "subscription",
-          planTier: tier,
-          interval,
-          returnUrl: window.location.origin,
-        },
-      });
-      if (error) throw error;
-      if (data?.url) window.location.href = data.url;
-      else throw new Error("No checkout URL returned");
-    } catch (err: any) {
-      toast.error("Checkout failed", {
-        description: err?.message ?? "Make sure Stripe products are set up first.",
-      });
-      setBusyTier(null);
-    }
+      const ctx = error?.context;
+      if (ctx && typeof ctx.json === "function") {
+        const body = await ctx.json();
+        return { code: body?.error, message: body?.message };
+      }
+    } catch (_) { /* ignore parse errors */ }
+    return {};
   };
 
-  // Plan click handler — routes new vs existing subscriber.
-  const onPlanClick = async (tier: string) => {
-    if (!isSubscriber) {
-      await subscribeCheckout(tier);
-      return;
+  // New customer, first paid plan → Stripe Checkout (collects payment method,
+  // creates the single subscription). Returns false if the server says a
+  // subscription already exists (→ caller should switch to change-subscription).
+  const startCheckout = async (tier: string): Promise<boolean> => {
+    const { data, error } = await supabase.functions.invoke("create-checkout", {
+      body: { kind: "subscription", planTier: tier, interval, returnUrl: window.location.origin },
+    });
+    if (!error) {
+      if (data?.url) { window.location.href = data.url; return true; }
+      throw new Error("No checkout URL returned");
     }
-    // Existing subscriber → preview the change, then require explicit confirmation.
+    const { code, message } = await readFnErrorCode(error);
+    if (code === "active_subscription_exists") return false; // self-correct → change plan
+    throw new Error(message ?? error.message ?? "Couldn't start checkout. Are Stripe products set up?");
+  };
+
+  // Existing subscriber → preview the change, then require explicit confirmation.
+  // Returns false if the server says there's no active subscription
+  // (→ caller should switch to create-checkout).
+  const openChangeDialog = async (tier: string): Promise<boolean> => {
+    const { data, error } = await supabase.functions.invoke("change-subscription", {
+      body: { planTier: tier, interval, action: "preview" },
+    });
+    if (!error) { setChangeDialog({ tier, preview: data }); return true; }
+    const { code, message } = await readFnErrorCode(error);
+    if (code === "no_active_subscription") return false; // self-correct → checkout
+    throw new Error(message ?? error.message ?? "Couldn't load the plan change.");
+  };
+
+  // Plan click handler — routes new vs existing subscriber, self-correcting on 409
+  // so a stale cache can never strand the user on the wrong path.
+  const onPlanClick = async (tier: string) => {
     setBusyTier(tier);
     try {
-      const { data, error } = await supabase.functions.invoke("change-subscription", {
-        body: { planTier: tier, interval, action: "preview" },
-      });
-      if (error) throw error;
-      setChangeDialog({ tier, preview: data });
+      if (isSubscriber) {
+        const handled = await openChangeDialog(tier);
+        if (!handled) await startCheckout(tier);
+      } else {
+        const redirected = await startCheckout(tier);
+        if (!redirected) {
+          const handled = await openChangeDialog(tier);
+          if (!handled) throw new Error("Unable to route this plan change.");
+        }
+      }
     } catch (err: any) {
-      toast.error("Couldn't load plan change", { description: err?.message });
+      toast.error("Couldn't update your plan", { description: err?.message });
     } finally {
       setBusyTier(null);
     }
