@@ -27,6 +27,7 @@ export default function Billing() {
   // charge BEFORE an immediate upgrade hits the card.
   const [changeDialog, setChangeDialog] = useState<{ tier: string; preview: any } | null>(null);
   const [applying, setApplying] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -188,6 +189,45 @@ export default function Billing() {
     }
   };
 
+  // Cancel state (cancel-at-period-end) for the banner + Resume.
+  const isCanceling = !!(profile as any).cancel_at_period_end;
+  const periodEndStr = (profile as any).current_period_end
+    ? new Date((profile as any).current_period_end).toLocaleDateString()
+    : null;
+
+  // Cancel = at period end (keep paid plan until then; webhook drops to free).
+  const doCancel = async () => {
+    setApplying(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("cancel-subscription", { body: { action: "cancel" } });
+      if (error) throw error;
+      const end = data?.current_period_end ? new Date(data.current_period_end * 1000).toLocaleDateString() : null;
+      toast.success("Plan canceled", {
+        description: end ? `You keep your plan until ${end}, then move to Free.` : "Your plan moves to Free at the end of this period.",
+      });
+      setCancelOpen(false);
+      refetch();
+    } catch (err: any) {
+      toast.error("Couldn't cancel your plan", { description: err?.message });
+    } finally {
+      setApplying(false);
+    }
+  };
+
+  const doResume = async () => {
+    setApplying(true);
+    try {
+      const { error } = await supabase.functions.invoke("cancel-subscription", { body: { action: "resume" } });
+      if (error) throw error;
+      toast.success("Plan resumed", { description: "Your subscription will continue." });
+      refetch();
+    } catch (err: any) {
+      toast.error("Couldn't resume your plan", { description: err?.message });
+    } finally {
+      setApplying(false);
+    }
+  };
+
   const setupProducts = async () => {
     setSetupBusy(true);
     try {
@@ -264,6 +304,18 @@ export default function Billing() {
         </div>
       </div>
 
+      {isCanceling && (
+        <div className="mt-4 flex items-center justify-between gap-4 rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-sm">
+          <span>
+            Your plan cancels{periodEndStr ? ` on ${periodEndStr}` : " at the end of this period"} and moves to Free.
+          </span>
+          <Button size="sm" variant="outline" onClick={doResume} disabled={applying}>
+            {applying && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+            Resume plan
+          </Button>
+        </div>
+      )}
+
       <div className="mt-10 flex items-center justify-between">
         <h2 className="text-xl font-bold">{t("billing.plans")}</h2>
         <div className="inline-flex rounded-md border bg-card p-1 text-xs">
@@ -318,13 +370,21 @@ export default function Billing() {
               <Button
                 className="mt-4 w-full"
                 variant={current ? "outline" : "default"}
-                disabled={current || busyTier !== null || key === "free"}
-                onClick={() => onPlanClick(key)}
+                // Free card doubles as "cancel/downgrade to Free" for subscribers.
+                disabled={
+                  current || busyTier !== null ||
+                  (key === "free" && (!isSubscriber || isCanceling))
+                }
+                onClick={() => (key === "free" ? setCancelOpen(true) : onPlanClick(key))}
               >
                 {busyTier === key ? (
                   <Loader2 className="mr-1 h-4 w-4 animate-spin" />
                 ) : null}
-                {current ? t("billing.currentBtn") : key === "free" ? t("billing.free") : t("billing.upgrade")}
+                {current
+                  ? t("billing.currentBtn")
+                  : key === "free"
+                    ? (isSubscriber ? "Cancel plan" : t("billing.free"))
+                    : t("billing.upgrade")}
               </Button>
             </div>
           );
@@ -342,6 +402,27 @@ export default function Billing() {
       </p>
 
       <TopUpModal open={topupOpen} onOpenChange={setTopupOpen} />
+
+      {/* Cancel confirmation — cancel at period end (no charge, reversible). */}
+      <Dialog open={cancelOpen} onOpenChange={(o) => !o && !applying && setCancelOpen(false)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cancel your plan?</DialogTitle>
+            <DialogDescription>
+              You'll keep {currentPlan.label} and your credits until the end of your current billing
+              period{periodEndStr ? ` (${periodEndStr})` : ""}, then move to the Free plan. No charge
+              today, and you can resume anytime before it takes effect.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setCancelOpen(false)} disabled={applying}>Keep plan</Button>
+            <Button variant="destructive" onClick={doCancel} disabled={applying}>
+              {applying && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+              Cancel plan
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Plan-change confirmation. For upgrades this shows the exact prorated
           amount charged TODAY before the user confirms — no silent charge. */}

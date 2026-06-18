@@ -148,6 +148,12 @@ Deno.serve(async (req) => {
         const update: Record<string, unknown> = {
           subscription_status: sub.status,
           stripe_subscription_id: sub.id,
+          // Reflect a pending cancellation (cancel-at-period-end) so the UI can
+          // show "cancels on <date>" + offer Resume. Cleared on reactivation.
+          cancel_at_period_end: sub.cancel_at_period_end ?? false,
+          current_period_end: sub.current_period_end
+            ? new Date(sub.current_period_end * 1000).toISOString()
+            : null,
         };
         // If Stripe says status active and we'd been past_due, recover.
         if (sub.status === "active") {
@@ -175,6 +181,14 @@ Deno.serve(async (req) => {
           plan: "free",
           monthly_build_limit: PLAN_LIMITS.free.build,
           monthly_runtime_limit: PLAN_LIMITS.free.runtime,
+          // Bug #3: cap the monthly balance down to free limits so a canceled
+          // user can't keep a paid balance. min() never raises credits; top-up
+          // credits (separately purchased) are intentionally left untouched.
+          build_credits: Math.min(prof?.build_credits ?? 0, PLAN_LIMITS.free.build),
+          runtime_credits: Math.min(prof?.runtime_credits ?? 0, PLAN_LIMITS.free.runtime),
+          scheduled_plan: null,
+          cancel_at_period_end: false,
+          current_period_end: null,
           plan_before_downgrade: prof?.plan ?? null,
         }).eq("stripe_customer_id", customerId);
         if (prof) {
