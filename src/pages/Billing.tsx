@@ -298,9 +298,7 @@ export default function Billing() {
               </p>
             )}
           </div>
-          <Button onClick={() => setTopupOpen(true)} variant="outline">
-            <Sparkles className="mr-1 h-4 w-4" /> {t("billing.buyCredits")}
-          </Button>
+          {/* Top-ups hidden for launch (no live top-up products seeded yet). */}
         </div>
       </div>
 
@@ -316,26 +314,9 @@ export default function Billing() {
         </div>
       )}
 
-      <div className="mt-10 flex items-center justify-between">
+      <div className="mt-10">
+        {/* Monthly-only at launch; annual toggle hidden (no annual prices seeded). */}
         <h2 className="text-xl font-bold">{t("billing.plans")}</h2>
-        <div className="inline-flex rounded-md border bg-card p-1 text-xs">
-          <button
-            onClick={() => setInterval("monthly")}
-            className={`rounded px-3 py-1.5 font-medium transition-colors ${
-              interval === "monthly" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
-            }`}
-          >
-            {t("billing.monthly")}
-          </button>
-          <button
-            onClick={() => setInterval("annual")}
-            className={`rounded px-3 py-1.5 font-medium transition-colors ${
-              interval === "annual" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
-            }`}
-          >
-            {t("billing.annual")} <span className="ml-1 opacity-70">−20%</span>
-          </button>
-        </div>
       </div>
 
       <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
