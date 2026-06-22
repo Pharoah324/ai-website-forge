@@ -88,15 +88,18 @@ Stage-by-stage verification result. **Stages 1-3 work; Stage 4 (earnings/payout)
 
 ---
 
-## ⚠️ STRIPE BILLING — NOT LAUNCH-READY (status June 17, 2026)
-Verified read-only. **Billing is currently non-functional server-side:**
-- `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` are **NOT set** as edge-function secrets → webhook 400s, checkout can't create sessions.
-- `stripe_products` catalog is **empty (0 rows)** → `create-checkout` finds no price.
+## ✅ STRIPE BILLING — LIVE & VERIFIED (June 22, 2026)
+**Billing is now in LIVE mode and verified end-to-end with a real charge.** Go-live done June 22:
+- **Live products/prices created fresh** in this account's live mode (it was empty — the May-19 `price_1TYw…` IDs in the env-var list below NEVER existed here; ignore them). Live monthly price IDs now in `stripe_products`: starter `price_1Tk5puKArVNbWL53RSGmEHpZ` · builder `price_1Tk5rXKArVNbWL535CEGoWin` · pro `price_1Tk5sbKArVNbWL53qVMOzfQF` · agency `price_1Tk5tYKArVNbWL53KAZM7aIl`.
+- **Live webhook endpoint** `we_1Tk6BeKArVNbWL53OV7v3RDR` (10 events) + **live `STRIPE_SECRET_KEY`/`STRIPE_WEBHOOK_SECRET`** set.
+- **Live loop verified:** real $19 Starter charge → Starter granted (100/2500); refund → $19 returned; cancel → free + credits capped to 20/300, webhook 200. Admin profile reset to pristine free after.
+- **Launch config:** monthly-only (annual toggle hidden); top-ups hidden (no live top-up products seeded — `stripe_products` has only the 4 subs).
+- **🔥 GO-LIVE GOTCHA (cost us a real charge):** if `STRIPE_WEBHOOK_SECRET` is unset/wrong, the charge still SUCCEEDS (sk_live) but every webhook delivery 400s ("Missing signature/secret") so the **plan is never granted** — customer pays, gets nothing. Probe with `curl -X POST .../stripe-webhook -H "stripe-signature: t=1,v1=x"`: "Missing signature/secret" = secret unset; "Webhook Error: No signatures…" = secret set. Fix the secret, then **resend the `checkout.session.completed` event from the Stripe dashboard** to reconcile (CLI restricted key is READ-ONLY for live — it can't create products / resend / refund / cancel; all live writes are dashboard-only).
 - Schema-drift check **CLEAR**: every table/column/enum the webhook writes exists.
 
 **Canonical pricing (confirmed):** monthly-only at launch. Free $0 (NO Stripe sub — free users just sit at free limits), Starter $19, Builder $49, Pro $99, Agency $199. Credits per webhook `PLAN_LIMITS` (build/runtime): 20/300 · 100/2500 · 300/10000 · 800/30000 · 2000/100000. Build-credit rollover (50% unused, ≤1mo) on Builder/Pro/Agency; runtime never rolls. **No annual prices** (add clean numbers post-launch). The live `plans` table is **STALE** (free/starter/pro/enterprise, $29/$79, single credits) — reconcile/remove later; the billing flow uses `stripe_products`, not `plans`.
 
-**🔴 REQUIRED before launch (test/prod share `stripe_products`):** verification is being done in Stripe TEST mode (test secrets + test price IDs seeded into `stripe_products`). Because that table is shared test/prod, **before launch you MUST re-seed the LIVE price IDs into `stripe_products` AND set the LIVE `STRIPE_SECRET_KEY`/`STRIPE_WEBHOOK_SECRET`** — otherwise checkout stays stuck in test mode and no real charges occur.
+**✅ DONE (June 22) — was: re-seed LIVE prices + set LIVE secrets.** `stripe_products` now holds the live price IDs and the live secrets are set (see above). `stripe_products` is shared test/prod, so it is now LIVE — any test-mode work must re-point it back to test prices first.
 
 **🚨 BILLING LAUNCH-BLOCKERS found in test-mode verification (June 17, 2026) — do NOT promote billing until fixed:**
 1. **✅ FIXED (test-verified June 18, 2026) — Plan change created duplicate/orphaned subscriptions → double-billing.** Old behavior: changing plans went through `create-checkout` → a NEW Checkout → a NEW subscription; the old sub was never canceled and `checkout.session.completed` overwrote `profiles.stripe_subscription_id`. **Fix shipped (single-subscription-per-customer model):**
