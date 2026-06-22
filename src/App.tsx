@@ -46,7 +46,8 @@ import FamilyLegacy from "./pages/FamilyLegacy";
 import { WorkspaceProvider } from "./contexts/WorkspaceContext";
 import { getCustomerSubdomain } from "./lib/subdomain";
 import { I18nProvider } from "./lib/i18n";
-import { captureRefFromUrl } from "./lib/affiliateTracking";
+import { initConsent } from "./lib/consent";
+import { CookieConsent } from "./components/CookieConsent";
 import { usePageTranslator } from "./hooks/usePageTranslator";
 import { useEffect } from "react";
 
@@ -60,7 +61,9 @@ const queryClient = new QueryClient({
 });
 
 function RootLayout() {
-  useEffect(() => { captureRefFromUrl(); }, []);
+  // Honor any prior cookie-consent decision (gates affiliate capture etc.).
+  // Does NOT capture ?ref= unless marketing consent was already given.
+  useEffect(() => { initConsent(); }, []);
   // Customer-subdomain branch only runs in the browser (uses window). Safe for SSG.
   if (typeof window !== "undefined") {
     const customerSubdomain = getCustomerSubdomain();
@@ -90,6 +93,7 @@ function RootLayout() {
               </ErrorBoundary>
             </WorkspaceProvider>
           </AuthProvider>
+          <CookieConsent />
         </I18nProvider>
       </TooltipProvider>
     </QueryClientProvider>

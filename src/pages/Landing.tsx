@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { openCookieSettings } from "@/lib/consent";
 import {
   Sparkles,
   Zap,
@@ -994,6 +995,7 @@ export default function Landing() {
                 <li><a href="https://virtualengine.instatus.com" target="_blank" rel="noopener noreferrer" className="hover:text-primary-glow">Status</a></li>
                 <li><Link to="/privacy" className="hover:text-primary-glow">Privacy Policy</Link></li>
                 <li><Link to="/terms" className="hover:text-primary-glow">Terms</Link></li>
+                <li><button type="button" onClick={() => openCookieSettings()} className="hover:text-primary-glow">Cookie settings</button></li>
               </ul>
             </div>
           </div>

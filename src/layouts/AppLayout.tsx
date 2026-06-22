@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useProfile, PLAN_LIMITS } from "@/hooks/useProfile";
 import { useAdmin } from "@/hooks/useAdmin";
 import { supabase } from "@/integrations/supabase/client";
+import { openCookieSettings } from "@/lib/consent";
 import {
   LayoutDashboard,
   Plus,
@@ -149,6 +150,12 @@ export default function AppLayout() {
           >
             <LogOut className="h-4 w-4" />
             {t("nav.signout")}
+          </button>
+          <button
+            onClick={() => openCookieSettings()}
+            className="mt-1 w-full px-3 py-1.5 text-left text-xs text-sidebar-foreground/70 hover:text-sidebar-foreground"
+          >
+            Cookie settings
           </button>
         </div>
       </aside>

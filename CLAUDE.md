@@ -91,6 +91,8 @@ Stage-by-stage verification result. **Stages 1-3 work; Stage 4 (earnings/payout)
 
 **Launch rule:** the "30% recurring" landing promise is now fulfillable — no need to gate the Apply CTA.
 
+**⚠️ GDPR-vs-attribution tradeoff (by design, NOT a bug):** the `veb_ref` affiliate-attribution cookie is gated behind **marketing** cookie consent (see GDPR section). So a referral from a visitor who **rejects or ignores** the cookie banner is **not captured** → that signup has no `affiliate_ref` → no `referral_conversions` row → the affiliate gets no credit for them. This is correct GDPR behavior. **Do not later mistake a "missing referral / missing commission" for a billing/affiliate bug** — first check whether the referred visitor consented to marketing cookies.
+
 ---
 
 ## ✅ STRIPE BILLING — LIVE & VERIFIED (June 22, 2026)
@@ -279,7 +281,7 @@ Verify endpoint (should return `{"ok": true}` with all keys present):
 - [x] Resend domain verified
 - [ ] Stripe end-to-end test (all 5 tiers)
 - [ ] GHL end-to-end test
-- [ ] Cookie consent banner (GDPR)
+- [x] Cookie consent banner (GDPR) — real gating (not just a notice): `src/lib/consent.ts` + `CookieConsent.tsx`. Essential always on; analytics/marketing blocked until opt-in; reject/withdraw clears `veb_ref`. Withdraw reachable from Landing footer + in-app sidebar ("Cookie settings"). Future analytics/marketing scripts MUST be injected via `loadGatedScripts()` in consent.ts, never in index.html.
 - [ ] Private beta — 10 GHL power users
 
 ---
