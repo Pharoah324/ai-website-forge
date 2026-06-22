@@ -197,6 +197,9 @@ Deno.serve(async (req) => {
           await logAlert("subscription_canceled", "info",
             `Subscription canceled — downgraded to free.`,
             prof.id, prof.email, { previous_plan: prof.plan });
+          // Affiliate: stop counting this referred user as an active subscriber
+          // (already-earned commission stays). No-ops if they weren't referred.
+          await admin.rpc("release_affiliate_subscriber", { p_referred_user: prof.id });
         }
         break;
       }
@@ -277,6 +280,29 @@ Deno.serve(async (req) => {
           }
         }
         await admin.from("profiles").update(baseUpdate).eq("id", prof.id);
+
+        // Affiliate commission (30% recurring). Credit ONLY on
+        // invoice.payment_succeeded (not the duplicate 'paid' event) and only on
+        // real recurring charges (initial + renewals). Monthly value is read from
+        // the invoice line's price.unit_amount — NOT stripe_products — so this is
+        // catalog-independent. record_affiliate_commission no-ops if the payer
+        // wasn't referred. stripe_events idempotency => once per month.
+        if (
+          event.type === "invoice.payment_succeeded" &&
+          (invoice.billing_reason === "subscription_create" || invoice.billing_reason === "subscription_cycle")
+        ) {
+          const line: any = invoice.lines?.data?.[0];
+          const unit: number | undefined = line?.price?.unit_amount;
+          if (unit && unit > 0) {
+            const TIER_BY_AMOUNT: Record<number, string> = { 1900: "starter", 4900: "builder", 9900: "pro", 19900: "agency" };
+            await admin.rpc("record_affiliate_commission", {
+              p_referred_user: prof.id,
+              p_plan: TIER_BY_AMOUNT[unit] ?? (prof.plan ?? "subscription"),
+              p_monthly: unit / 100,
+              p_is_first: invoice.billing_reason === "subscription_create",
+            });
+          }
+        }
         break;
       }
 
