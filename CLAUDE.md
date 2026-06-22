@@ -80,11 +80,16 @@ Stage-by-stage verification result. **Stages 1-3 work; Stage 4 (earnings/payout)
 - **Apply** ✅ — must be logged in (apply form gates logged-out → signup; `affiliates.user_id` is NOT NULL). RLS: user sees own row, admin sees all.
 - **Attribution** ✅ — `attribute_affiliate_referral()` trigger on `auth.users` (migration `20260617_affiliate_referral_attribution.sql`) records a `pending` `referral_conversions` row from the new user's `affiliate_ref` metadata and bumps `total_referrals`. Safe (can't block signup), self-referral guarded.
 - **Dashboard** ✅ — reads/displays own data under RLS, cross-user isolated.
-- **Earnings/Payout** ❌ **NOT BUILT.** Nothing computes commission or aggregates earnings: conversions stay `monthly_value=0 / commission_amount=0 / status='pending'`, and `total_earnings`/`pending_payout`/`active_subscribers` are never populated. So a real affiliate sees referrals climb but **$0 earnings forever** and can never reach the $50 payout threshold.
+- **Earnings/Payout** ✅ **BUILT (June 22, 2026).** The Stripe webhook now accrues commission on every successful recurring payment via two SECURITY DEFINER functions (migration `20260622_affiliate_commission.sql`):
+  - `record_affiliate_commission(referred_user, plan, monthly, is_first)` — on `invoice.payment_succeeded` (subscription_create + subscription_cycle only; NOT the duplicate `invoice.paid`): confirms the conversion (`status='confirmed'`, sets `monthly_value`/`commission_amount`) and accrues `commission_rate%` (default **30%**) of the plan's **monthly price** to `total_earnings`/`pending_payout`/`total_earned`; bumps `active_subscribers` on the first paid month. Recurring/lifetime: accrues every paid month.
+  - `release_affiliate_subscriber(referred_user)` — on `customer.subscription.deleted`: decrements `active_subscribers`; earned commission stays.
+  - Monthly value is read from **`invoice.lines[0].price.unit_amount`, NOT `stripe_products`** (catalog-independent; chosen so verification never touches the live catalog). `stripe_events` idempotency => credited once/month.
+  - **Verified via direct RPC** (June 22): $19@30% → $5.70 first month → $11.40 after one renewal → `active_subscribers` 1 then 0 on cancel, earned retained. **Dashboard + "Request payout" UI already existed** and now populate.
+  - **⚠️ Webhook→function WIRING is review-verified, NOT runtime-exercised.** Post-go-live the webhook validates the LIVE signing secret, so test-mode test clocks can't reach it (they 400) and live mode has no test clocks — so the only runtime exercise is a real referred subscription. The commission math itself is fully verified (RPC). Watch the first real referred subscriber to confirm the invoice-line read + RPC call fire.
 
-**To finish:** wire the **Stripe webhook** to, on a referred user's subscription becoming active, confirm the conversion + set `monthly_value`/`commission_amount` (30%) + roll up to the affiliate totals. Payout disbursement itself stays a **manual admin action** (request → `affiliate_payouts` row → admin marks paid) — no auto-PayPal. This depends on the Stripe billing flow being verified first.
+**Payout disbursement** stays a **manual admin action** (affiliate clicks Request payout ≥$50 → `affiliate_payouts` row → admin marks paid in `AdminAffiliates.tsx`) — no auto-PayPal.
 
-**Launch rule:** GHL Marketplace launch does NOT require this (affiliate is an internal growth channel, not part of the installed app). But the landing page publicly promises "30% recurring," so **if earnings aren't finished by launch, gate the affiliate Apply CTA as "coming soon"** rather than advertise an unfulfillable payout.
+**Launch rule:** the "30% recurring" landing promise is now fulfillable — no need to gate the Apply CTA.
 
 ---
 
