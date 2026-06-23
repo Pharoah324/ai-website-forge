@@ -37,11 +37,13 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const redirectUri = `${supabaseUrl}/functions/v1/oauth-callback`;
+    // Sub-Account app scopes. NOTE: there is no `pipelines.readonly` scope for
+    // Sub-Account apps (GHL rejects it as "Invalid scope(s)"); pipeline read
+    // access is bundled into opportunities.readonly.
     const scopes = [
-      "contacts.write", "contacts.readonly",
+      "contacts.readonly", "contacts.write",
+      "opportunities.readonly", "opportunities.write",
       "locations.readonly",
-      "opportunities.write", "opportunities.readonly",
-      "pipelines.readonly",
     ].join(" ");
 
     // state carries the user id so the callback can attribute the connection
