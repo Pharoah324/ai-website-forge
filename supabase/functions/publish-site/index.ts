@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { addProjectDomain } from "../_shared/vercel.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -137,12 +138,27 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Option B SSL: register this specific subdomain on the Vercel project so it
+    // auto-verifies against the wildcard CNAME and gets a per-host cert. The site
+    // row is already published above; domain provisioning is reported separately so
+    // the UI can flag "saved, but domain pending/failed" without falsely reporting
+    // success. Logging + bounded retry + idempotency live in the vercel client.
+    const fullDomain = `${v.value}.${ROOT}`;
+    const domainResult = await addProjectDomain(fullDomain);
+
     return new Response(
       JSON.stringify({
         ok: true,
         published: true,
         subdomain: v.value,
         url: `https://${v.value}.${ROOT}`,
+        domain: {
+          name: fullDomain,
+          registered: domainResult.ok,
+          alreadyExists: domainResult.alreadyExists ?? false,
+          status: domainResult.status,
+          ...(domainResult.ok ? {} : { error: domainResult.body?.error?.message ?? "Domain registration failed" }),
+        },
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
