@@ -128,11 +128,19 @@ Deno.serve(async (req) => {
         const pipeRes = await fetch(`https://services.leadconnectorhq.com/opportunities/pipelines?locationId=${fresh.location_id}`, {
           headers: { "Authorization": `Bearer ${fresh.access_token}`, "Version": "2021-07-28", "Accept": "application/json" },
         });
-        const pipeJson = await pipeRes.json();
+        const pipeJson = await pipeRes.json().catch(() => ({}));
+        if (!pipeRes.ok) {
+          console.warn("Opportunity skipped — pipelines fetch failed", pipeRes.status, pipeJson);
+        }
         const pipe = (pipeJson.pipelines ?? []).find((p: any) => p.id === fresh.pipeline_id);
         const stageId = pipe?.stages?.[0]?.id;
+        if (!pipe) {
+          console.warn(`Opportunity skipped — pipeline not found for pipeline_id ${fresh.pipeline_id} (location ${fresh.location_id})`);
+        } else if (!stageId) {
+          console.warn(`Opportunity skipped — no first stage on pipeline ${fresh.pipeline_id}`);
+        }
         if (stageId) {
-          await fetch("https://services.leadconnectorhq.com/opportunities/", {
+          const oppRes = await fetch("https://services.leadconnectorhq.com/opportunities/", {
             method: "POST",
             headers: {
               "Authorization": `Bearer ${fresh.access_token}`,
@@ -149,6 +157,16 @@ Deno.serve(async (req) => {
               contactId,
             }),
           });
+          const oppJson = await oppRes.json().catch(() => ({}));
+          if (oppRes.ok) {
+            const oppId = oppJson?.opportunity?.id ?? oppJson?.id;
+            console.log(`Opportunity created ${oppId} (pipeline ${fresh.pipeline_id}, stage ${stageId}, contact ${contactId})`);
+          } else if (oppRes.status === 400 && typeof oppJson?.message === "string" && oppJson.message.includes("duplicate opportunity")) {
+            // Benign: contact already has an opportunity (e.g. a resubmission). Not a failure.
+            console.warn(`Opportunity skipped — contact ${contactId} already has opportunity ${oppJson?.meta?.existingId} (duplicate guard)`);
+          } else {
+            console.error("GHL opportunity create failed", oppRes.status, oppJson);
+          }
         }
       } catch (e) {
         console.warn("Opportunity create failed (non-fatal)", e);
