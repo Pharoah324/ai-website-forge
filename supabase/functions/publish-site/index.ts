@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { addProjectDomain } from "../_shared/vercel.ts";
+import { addProjectDomain, getProjectDomain } from "../_shared/vercel.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -144,7 +144,20 @@ Deno.serve(async (req) => {
     // the UI can flag "saved, but domain pending/failed" without falsely reporting
     // success. Logging + bounded retry + idempotency live in the vercel client.
     const fullDomain = `${v.value}.${ROOT}`;
-    const domainResult = await addProjectDomain(fullDomain);
+    const addRes = await addProjectDomain(fullDomain);
+
+    // Confirm-via-GET: the POST's `verified` can be optimistically true, so poll the
+    // project-domain a few times. Common fast case reports "live" within the request;
+    // otherwise "pending" (cert issuance can take up to a minute — UI says so).
+    let state: "live" | "pending" | "failed" = addRes.ok ? "pending" : "failed";
+    let verified = false;
+    if (addRes.ok) {
+      for (let i = 0; i < 4; i++) {
+        const got = await getProjectDomain(fullDomain);
+        if (got.ok && got.body?.verified === true) { state = "live"; verified = true; break; }
+        if (i < 3) await new Promise((r) => setTimeout(r, 2000));
+      }
+    }
 
     return new Response(
       JSON.stringify({
@@ -154,10 +167,12 @@ Deno.serve(async (req) => {
         url: `https://${v.value}.${ROOT}`,
         domain: {
           name: fullDomain,
-          registered: domainResult.ok,
-          alreadyExists: domainResult.alreadyExists ?? false,
-          status: domainResult.status,
-          ...(domainResult.ok ? {} : { error: domainResult.body?.error?.message ?? "Domain registration failed" }),
+          state, // 'live' | 'pending' | 'failed'
+          verified,
+          registered: addRes.ok,
+          alreadyExists: addRes.alreadyExists ?? false,
+          status: addRes.status,
+          ...(addRes.ok ? {} : { error: addRes.body?.error?.message ?? "Domain registration failed" }),
         },
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },

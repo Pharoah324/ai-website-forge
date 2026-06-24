@@ -196,10 +196,23 @@ export default function SiteDetail() {
       return;
     }
     qc.invalidateQueries({ queryKey: ["site", id] });
-    toast.success("Site published!", {
-      description: (data as any).url,
-      action: { label: "Open", onClick: () => window.open((data as any).url, "_blank") },
-    });
+    const url = (data as any).url as string;
+    const domain = (data as any).domain;
+    const openAction = { label: "Open", onClick: () => window.open(url, "_blank") };
+    if (domain?.state === "live") {
+      toast.success("Site published!", { description: url, action: openAction });
+    } else if (domain?.state === "pending") {
+      // Saved + domain accepted by Vercel, but the cert isn't confirmed live yet.
+      toast.success("Published — finishing domain setup", {
+        description: `${url} will be live within a minute.`,
+        action: openAction,
+      });
+    } else {
+      // Site row is saved/published, but domain registration failed — be honest.
+      toast.error("Published, but domain setup failed", {
+        description: `${domain?.error ?? "Domain provisioning failed"} — try Publish again.`,
+      });
+    }
     setPublishOpen(false);
   };
 
