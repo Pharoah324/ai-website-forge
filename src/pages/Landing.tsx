@@ -272,7 +272,7 @@ export default function Landing() {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
             </span>
-            ✦ Now Live in the GoHighLevel Marketplace
+            ✦ GoHighLevel-Native
           </div>
           <h1 className="text-balance text-[2rem] font-bold leading-[1.08] tracking-tight sm:text-5xl md:text-7xl">
             Stop Paying $3,000 For a Website.
