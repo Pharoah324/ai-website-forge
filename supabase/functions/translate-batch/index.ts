@@ -1,5 +1,15 @@
 // Translate an array of short UI strings into a target language using
-// Anthropic Claude. Public, no JWT required.
+// Anthropic Claude. Public, no JWT required — so guarded by input caps (Layer 1)
+// and a fail-closed global daily breaker (Layer 2).
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+
+// Layer 1 input caps (client batches <=40 short strings; these are generous headroom).
+const MAX_ITEMS = 60;
+const MAX_TOTAL_CHARS = 20_000;
+const MAX_ITEM_CHARS = 5_000;
+// Layer 2 global daily Anthropic-call limit.
+const DAILY_CALL_LIMIT = 5_000;
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -23,6 +33,20 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Layer 1 — input caps. BEFORE any Anthropic call. Bounds per-call cost; an
+    // oversized payload is rejected here (and never reaches the breaker/Anthropic).
+    const totalChars = texts.reduce((n: number, s: unknown) => n + (typeof s === "string" ? s.length : 0), 0);
+    if (
+      texts.length > MAX_ITEMS ||
+      totalChars > MAX_TOTAL_CHARS ||
+      texts.some((s: unknown) => typeof s === "string" && s.length > MAX_ITEM_CHARS)
+    ) {
+      return new Response(JSON.stringify({ error: "payload_too_large" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
     if (!apiKey) {
       return new Response(JSON.stringify({ error: "Missing ANTHROPIC_API_KEY" }), {
@@ -36,6 +60,38 @@ Deno.serve(async (req) => {
       `Preserve placeholders like {n}, HTML entities, emojis, and surrounding whitespace exactly. ` +
       `Keep brand names ("Virtual Engine Builder", "Lovable", "GoHighLevel", "Search Atlas", "Base44") in English. ` +
       `Return ONLY a JSON array of strings, same length and order, no commentary.`;
+
+    // Layer 2 — global daily circuit breaker. BEFORE the Anthropic call. FAIL-CLOSED:
+    // any RPC error / unexpected response, or being over the daily limit, returns 503
+    // and does NOT call Anthropic (these functions are anonymous — the breaker is the
+    // only runaway backstop, so a transient DB blip must not let calls through).
+    const admin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+    );
+    let allowed = false;
+    try {
+      const { data: brk, error: brkErr } = await admin.rpc("bump_ai_calls", { _limit: DAILY_CALL_LIMIT });
+      if (brkErr) {
+        console.error("[breaker] RPC error (fail-closed -> 503):", brkErr.message);
+      } else if (brk && (brk as { ok?: boolean; over?: boolean }).ok) {
+        if ((brk as { over?: boolean }).over) {
+          console.warn("[breaker] daily Anthropic limit reached -> 503; count:", (brk as { count?: number }).count);
+        } else {
+          allowed = true;
+        }
+      } else {
+        console.error("[breaker] unexpected RPC response (fail-closed -> 503):", JSON.stringify(brk));
+      }
+    } catch (e) {
+      console.error("[breaker] RPC threw (fail-closed -> 503):", e instanceof Error ? e.message : String(e));
+    }
+    if (!allowed) {
+      return new Response(JSON.stringify({ error: "service_busy" }), {
+        status: 503,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
