@@ -5,8 +5,14 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 const MAX_MESSAGES = 40;
 const MAX_TOTAL_CHARS = 12_000;
 const MAX_MESSAGE_CHARS = 4_000;
-// Layer 2 global daily Anthropic-call limit.
-const DAILY_CALL_LIMIT = 5_000;
+// Tunable limits via env (placed out-of-band); defaults are safe fallbacks.
+const envInt = (k: string, d: number) => {
+  const n = Number(Deno.env.get(k));
+  return Number.isFinite(n) && n > 0 ? n : d;
+};
+const IP_RATE_LIMIT = envInt("IP_RATE_LIMIT", 300);           // Layer 3: requests / window / IP
+const IP_RATE_WINDOW_SECS = envInt("IP_RATE_WINDOW_SECS", 3600);
+const DAILY_CALL_LIMIT = envInt("ANTHROPIC_DAILY_LIMIT", 5000); // Layer 2: global Anthropic calls / day
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -53,13 +59,41 @@ serve(async (req) => {
       });
     }
 
-    // Layer 2 — global daily circuit breaker. BEFORE the Anthropic call. FAIL-CLOSED:
-    // any RPC error / unexpected response, or over the daily limit, returns 503 and
-    // does NOT call Anthropic (anonymous function — the breaker is the only backstop).
     const admin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     );
+
+    // Layer 3 — per-IP throttle. BEFORE the global breaker, so an over-limit visitor
+    // is rejected (429) WITHOUT bumping the global counter. FAIL-OPEN: on RPC error
+    // or an unresolved client IP, fall through to the global breaker (fail-closed).
+    const clientIp =
+      req.headers.get("cf-connecting-ip") ||
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      null;
+    if (clientIp) {
+      try {
+        const { data: ipres, error: ipErr } = await admin.rpc("bump_ip_calls", {
+          _ip: clientIp, _limit: IP_RATE_LIMIT, _window_secs: IP_RATE_WINDOW_SECS,
+        });
+        if (ipErr) {
+          console.error("[throttle] bump_ip_calls error (fail-open):", ipErr.message);
+        } else if (ipres && (ipres as { over?: boolean }).over) {
+          console.warn("[throttle] per-IP limit hit -> 429; count:", (ipres as { count?: number }).count);
+          return new Response(JSON.stringify({ error: "rate_limited" }), {
+            status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      } catch (e) {
+        console.error("[throttle] bump_ip_calls threw (fail-open):", e instanceof Error ? e.message : String(e));
+      }
+    } else {
+      console.warn("[throttle] no client IP resolved — skipping per-IP, relying on global breaker");
+    }
+
+    // Layer 2 — global daily circuit breaker. AFTER the per-IP check, BEFORE the
+    // Anthropic call. FAIL-CLOSED: any RPC error / unexpected response, or over the
+    // daily limit, returns 503 and does NOT call Anthropic (only runaway backstop).
     let allowed = false;
     try {
       const { data: brk, error: brkErr } = await admin.rpc("bump_ai_calls", { _limit: DAILY_CALL_LIMIT });
