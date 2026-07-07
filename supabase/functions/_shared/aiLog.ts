@@ -10,27 +10,27 @@
 // every failure is console.error'd, it does not vanish.
 //
 // ─────────────────────────────────────────────────────────────────────────────
-// CALL PATTERN (A3 relies on this) — hand logAiCall() to EdgeRuntime.waitUntil()
-// so logging runs AFTER the response is returned (zero added latency) and is not
-// dropped when the isolate winds down. Guard for local/dev where EdgeRuntime is
-// undefined by falling back to a fire-and-forget await-less call:
+// CALL PATTERN (A3 relies on this) — use logAiCallBg(), which runs logAiCall and
+// hands the promise to EdgeRuntime.waitUntil so the insert completes AFTER the
+// response is returned (zero added latency) without being dropped when the
+// isolate winds down. It falls back to un-awaited fire-and-forget in local/dev
+// where EdgeRuntime is undefined. Prefer this over the manual guard:
 //
-//   import { logAiCall } from "../_shared/aiLog.ts";
+//   import { logAiCallBg } from "../_shared/aiLog.ts";
 //
-//   const logPromise = logAiCall({
+//   logAiCallBg({
 //     fn: "translate-batch", model: "claude-sonnet-4-5-20250929",
 //     tokensIn: usage?.input_tokens, tokensOut: usage?.output_tokens,
 //     durationMs: Date.now() - startedAt, success: true,
 //   });
-//   // deno-lint-ignore no-explicit-any
-//   const er = (globalThis as any).EdgeRuntime;
-//   if (er?.waitUntil) er.waitUntil(logPromise); // else: helper already
-//   // caught its own errors, so leaving logPromise un-awaited is safe.
 //
 // For a rejection row, pass success:false + errorMessage + meta:
-//   logAiCall({ fn: "translate-batch", model: MODEL, success: false,
-//     errorMessage: "rate_limited",
+//   logAiCallBg({ fn: "translate-batch", model: "claude-sonnet-4-5-20250929",
+//     success: false, errorMessage: "rate_limited", tokensIn: 0, tokensOut: 0,
 //     meta: { http_status: 429, limit_hit_reason: "rate_limited" } });
+//
+// logAiCall (awaitable, no waitUntil) remains exported for callers that must
+// await the insert — e.g. tests.
 //
 // ─────────────────────────────────────────────────────────────────────────────
 // COLUMN MAPPING (ai_generation_logs)

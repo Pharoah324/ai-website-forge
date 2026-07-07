@@ -2,6 +2,7 @@
 // Anthropic Claude. Public, no JWT required — so guarded by input caps (Layer 1)
 // and a fail-closed global daily breaker (Layer 2).
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { logAiCallBg } from "../_shared/aiLog.ts";
 
 // Layer 1 input caps (client batches <=40 short strings; these are generous headroom).
 const MAX_ITEMS = 60;
@@ -26,6 +27,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    const startedAt = Date.now();
     const { texts, target, sourceHint } = await req.json();
     if (!Array.isArray(texts) || !target) {
       return new Response(JSON.stringify({ error: "Bad request" }), {
@@ -47,6 +49,7 @@ Deno.serve(async (req) => {
       totalChars > MAX_TOTAL_CHARS ||
       texts.some((s: unknown) => typeof s === "string" && s.length > MAX_ITEM_CHARS)
     ) {
+      logAiCallBg({ fn: "translate-batch", model: "claude-sonnet-4-5-20250929", durationMs: Date.now() - startedAt, success: false, errorMessage: "payload_too_large", tokensIn: 0, tokensOut: 0, meta: { http_status: 400, limit_hit_reason: "payload_too_large" } });
       return new Response(JSON.stringify({ error: "payload_too_large" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -88,6 +91,7 @@ Deno.serve(async (req) => {
           console.error("[throttle] bump_ip_calls error (fail-open):", ipErr.message);
         } else if (ipres && (ipres as { over?: boolean }).over) {
           console.warn("[throttle] per-IP limit hit -> 429; count:", (ipres as { count?: number }).count);
+          logAiCallBg({ fn: "translate-batch", model: "claude-sonnet-4-5-20250929", durationMs: Date.now() - startedAt, success: false, errorMessage: "rate_limited", tokensIn: 0, tokensOut: 0, meta: { http_status: 429, limit_hit_reason: "rate_limited" } });
           return new Response(JSON.stringify({ error: "rate_limited" }), {
             status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
@@ -120,6 +124,7 @@ Deno.serve(async (req) => {
       console.error("[breaker] RPC threw (fail-closed -> 503):", e instanceof Error ? e.message : String(e));
     }
     if (!allowed) {
+      logAiCallBg({ fn: "translate-batch", model: "claude-sonnet-4-5-20250929", durationMs: Date.now() - startedAt, success: false, errorMessage: "service_busy", tokensIn: 0, tokensOut: 0, meta: { http_status: 503, limit_hit_reason: "service_busy" } });
       return new Response(JSON.stringify({ error: "service_busy" }), {
         status: 503,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -165,6 +170,7 @@ Deno.serve(async (req) => {
       }
     } catch { /* fall back to originals */ }
 
+    logAiCallBg({ fn: "translate-batch", model: "claude-sonnet-4-5-20250929", tokensIn: data?.usage?.input_tokens ?? null, tokensOut: data?.usage?.output_tokens ?? null, durationMs: Date.now() - startedAt, success: true });
     return new Response(JSON.stringify({ translations }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
