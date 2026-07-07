@@ -111,3 +111,17 @@ export async function logAiCall(args: LogAiCallArgs): Promise<void> {
     );
   }
 }
+
+/**
+ * Fire-and-forget logging for edge functions. Runs logAiCall and hands the
+ * promise to EdgeRuntime.waitUntil so the insert completes after the response
+ * is returned (zero added latency) without being dropped when the isolate winds
+ * down. Falls back to un-awaited fire-and-forget where EdgeRuntime is undefined
+ * (local/dev). logAiCall never rejects, so the un-awaited promise is safe.
+ */
+export function logAiCallBg(args: LogAiCallArgs): void {
+  const p = logAiCall(args);
+  // deno-lint-ignore no-explicit-any
+  const er = (globalThis as any).EdgeRuntime;
+  if (er?.waitUntil) er.waitUntil(p);
+}
