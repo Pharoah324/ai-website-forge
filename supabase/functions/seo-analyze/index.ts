@@ -2,6 +2,7 @@
 // Pulls top keywords for the detected industry/location, suggests blog topics,
 // generates SEO-optimized meta title/description, computes an SEO score (0-100).
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { logAiCallBg } from "../_shared/aiLog.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -109,6 +110,7 @@ function computeScore(args: {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
+    const startedAt = Date.now();
     const auth = req.headers.get("Authorization");
     if (!auth) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { global: { headers: { Authorization: auth } } });
@@ -132,6 +134,7 @@ Deno.serve(async (req) => {
       prompt: site.prompt || "",
       keywords: [],
     });
+    logAiCallBg({ fn: "seo-analyze", userId: u.user.id, siteId, model: "claude-sonnet-4-5-20250929", tokensIn: null, tokensOut: null, durationMs: Date.now() - startedAt, success: true, meta: { pass: "seed" } });
     const industry: string = seedAI.industry || "small business";
     const location: string = seedAI.location || "";
 
@@ -146,6 +149,7 @@ Deno.serve(async (req) => {
           keywords,
         })
       : seedAI;
+    if (keywords.length) logAiCallBg({ fn: "seo-analyze", userId: u.user.id, siteId, model: "claude-sonnet-4-5-20250929", tokensIn: null, tokensOut: null, durationMs: Date.now() - startedAt, success: true, meta: { pass: "final" } });
 
     const meta_title: string = (finalAI.meta_title || `${content.name || site.name} | ${content.tagline || ""}`).slice(0, 60);
     const meta_description: string = (finalAI.meta_description || content.tagline || "").slice(0, 160);

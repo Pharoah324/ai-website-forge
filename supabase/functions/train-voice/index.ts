@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { logAiCallBg } from "../_shared/aiLog.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -27,6 +28,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    const startedAt = Date.now();
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
     if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY not configured");
 
@@ -131,6 +133,7 @@ Deno.serve(async (req) => {
         .eq("id", userData.user.id);
     }
 
+    logAiCallBg({ fn: "train-voice", userId: userData.user.id, siteId: null, model: "claude-sonnet-4-5-20250929", tokensIn: data?.usage?.input_tokens ?? null, tokensOut: data?.usage?.output_tokens ?? null, durationMs: Date.now() - startedAt, success: true, meta: { workspace_id: workspace_id ?? null } });
     return new Response(JSON.stringify({ voice_rules: rules }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { logAiCallBg } from "../_shared/aiLog.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -174,6 +175,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    const startedAt = Date.now();
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
     if (!ANTHROPIC_API_KEY || !ANTHROPIC_API_KEY.trim()) {
       console.error("[refine-site] ANTHROPIC_API_KEY is missing.");
@@ -256,6 +258,7 @@ Deno.serve(async (req) => {
       const status = g.reason === "no_credits" ? 402
         : g.reason === "daily_limit" || g.reason === "hourly_limit" || g.reason === "blocked" ? 429
         : 403;
+      if (g.reason === "no_credits") logAiCallBg({ fn: "refine-site", userId: user.id, siteId, model: "claude-sonnet-4-5-20250929", durationMs: Date.now() - startedAt, success: false, errorMessage: "no_credits", tokensIn: 0, tokensOut: 0, meta: { http_status: status, limit_hit_reason: "no_credits" } });
       return json({ error: g.reason || "blocked" }, status);
     }
 
@@ -349,6 +352,7 @@ Deno.serve(async (req) => {
       content: summary, summary, credits_used: 1, version_id: ver?.id,
     });
 
+    logAiCallBg({ fn: "refine-site", userId: user.id, siteId, model: "claude-sonnet-4-5-20250929", tokensIn: data?.usage?.input_tokens ?? null, tokensOut: data?.usage?.output_tokens ?? null, durationMs: Date.now() - startedAt, success: true });
     return json({ ok: true, content: updatedContent, summary, version_id: ver?.id, version_number: nextVersion });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Unknown";
