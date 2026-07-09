@@ -659,6 +659,11 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
     const encoder = new TextEncoder();
     let leftover = "";
     let accumulated = "";
+    // Token usage read observationally off the passing SSE events (below): input
+    // from message_start, output from the final message_delta. Does not affect
+    // what is forwarded to the client or the tool-use accumulation.
+    let usageIn: number | null = null;
+    let usageOut: number | null = null;
 
     const out = new ReadableStream({
       async start(controller) {
@@ -704,6 +709,14 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
                   accumulated += argChunk;
                   send("delta", { partial_json: argChunk });
                 }
+                // Observational usage read — does not forward or accumulate.
+                if (evt.type === "message_start") {
+                  const it = evt.message?.usage?.input_tokens;
+                  if (typeof it === "number") usageIn = it;
+                } else if (evt.type === "message_delta") {
+                  const ot = evt.usage?.output_tokens;
+                  if (typeof ot === "number") usageOut = ot;
+                }
               } catch { /* ignore */ }
             }
           }
@@ -733,7 +746,7 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
             effectiveWorkspaceId,
           );
           send("done", { site });
-          logAiCallBg({ fn: "generate-site", userId: user.id, siteId: site?.id ?? null, model: "claude-sonnet-4-5-20250929", tokensIn: null, tokensOut: null, durationMs: Date.now() - startedAt, success: true });
+          logAiCallBg({ fn: "generate-site", userId: user.id, siteId: site?.id ?? null, model: "claude-sonnet-4-5-20250929", tokensIn: usageIn, tokensOut: usageOut, durationMs: Date.now() - startedAt, success: true });
           clearInterval(heartbeat);
           closed = true;
           try { controller.close(); } catch { /* noop */ }
