@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { logAiCallBg } from "../_shared/aiLog.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -410,6 +411,7 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const startedAt = Date.now();
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
     if (!ANTHROPIC_API_KEY || !ANTHROPIC_API_KEY.trim()) {
       console.error("[generate-site] ANTHROPIC_API_KEY is missing.");
@@ -498,6 +500,7 @@ Deno.serve(async (req) => {
         g.reason === "no_credits" ? 402 :
         g.reason === "daily_limit" || g.reason === "hourly_limit" || g.reason === "blocked" ? 429 :
         403;
+      if (g.reason === "no_credits") logAiCallBg({ fn: "generate-site", userId: user.id, siteId: null, model: "claude-sonnet-4-5-20250929", durationMs: Date.now() - startedAt, success: false, errorMessage: "no_credits", tokensIn: 0, tokensOut: 0, meta: { http_status: status, limit_hit_reason: "no_credits" } });
       return new Response(JSON.stringify({
         error: g.reason ?? "blocked",
         plan: g.plan,
@@ -642,6 +645,7 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
       try { sanitizeMarkdownImages(parsed); } catch (e) { console.warn("sanitizeMarkdownImages failed:", e); }
       try { await hydrateImages(parsed, prompt); } catch (e) { console.warn("hydrateImages failed (continuing without images):", e); }
       const site = await persistSite(admin, user.id, prompt, parsed, profile, isUnlimited, isAdmin, effectiveWorkspaceId);
+      logAiCallBg({ fn: "generate-site", userId: user.id, siteId: site?.id ?? null, model: "claude-sonnet-4-5-20250929", tokensIn: data?.usage?.input_tokens ?? null, tokensOut: data?.usage?.output_tokens ?? null, durationMs: Date.now() - startedAt, success: true });
       return new Response(JSON.stringify({ site }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -729,6 +733,7 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
             effectiveWorkspaceId,
           );
           send("done", { site });
+          logAiCallBg({ fn: "generate-site", userId: user.id, siteId: site?.id ?? null, model: "claude-sonnet-4-5-20250929", tokensIn: null, tokensOut: null, durationMs: Date.now() - startedAt, success: true });
           clearInterval(heartbeat);
           closed = true;
           try { controller.close(); } catch { /* noop */ }

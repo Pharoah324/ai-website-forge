@@ -1,5 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { logAiCallBg } from "../_shared/aiLog.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -95,6 +96,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
+    const startedAt = Date.now();
     const auth = req.headers.get("Authorization");
     if (!auth) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -151,6 +153,7 @@ Deno.serve(async (req) => {
     const g = gate as { ok: boolean; reason?: string; retry_after_seconds?: number; daily_limit?: number; plan?: string };
     if (!g.ok) {
       const status = g.reason === "daily_limit" || g.reason === "hourly_limit" || g.reason === "blocked" ? 429 : 403;
+      if (g.reason === "no_credits") logAiCallBg({ fn: "analyze-website", userId: user.id, siteId: null, model: "claude-sonnet-4-5-20250929", durationMs: Date.now() - startedAt, success: false, errorMessage: "no_credits", tokensIn: 0, tokensOut: 0, meta: { http_status: status, limit_hit_reason: "no_credits" } });
       return new Response(JSON.stringify({
         error: g.reason ?? "blocked",
         plan: g.plan,
@@ -189,6 +192,7 @@ Deno.serve(async (req) => {
       throw inner;
     }
 
+    logAiCallBg({ fn: "analyze-website", userId: user.id, siteId: null, model: "claude-sonnet-4-5-20250929", tokensIn: null, tokensOut: null, durationMs: Date.now() - startedAt, success: true, meta: { projectId } });
     return new Response(JSON.stringify({ ok: true, report }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
