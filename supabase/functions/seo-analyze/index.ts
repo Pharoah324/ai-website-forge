@@ -82,10 +82,11 @@ Return JSON only.`;
   });
   if (!r.ok) throw new Error(`AI ${r.status}`);
   const j = await r.json();
+  const usage = j?.usage ?? null;
   const txt = (Array.isArray(j.content) ? j.content.find((b: { type?: string }) => b?.type === "text")?.text : "") || "{}";
   // Claude may wrap JSON in ```json fences — strip before parsing.
   const cleaned = txt.replace(/^```(?:json)?/i, "").replace(/```\s*$/i, "").trim();
-  try { return JSON.parse(cleaned); } catch { return {}; }
+  try { return { result: JSON.parse(cleaned), usage }; } catch { return { result: {}, usage }; }
 }
 
 function computeScore(args: {
@@ -134,9 +135,9 @@ Deno.serve(async (req) => {
       prompt: site.prompt || "",
       keywords: [],
     });
-    logAiCallBg({ fn: "seo-analyze", userId: u.user.id, siteId, model: "claude-sonnet-4-5-20250929", tokensIn: null, tokensOut: null, durationMs: Date.now() - startedAt, success: true, meta: { pass: "seed" } });
-    const industry: string = seedAI.industry || "small business";
-    const location: string = seedAI.location || "";
+    logAiCallBg({ fn: "seo-analyze", userId: u.user.id, siteId, model: "claude-sonnet-4-5-20250929", tokensIn: seedAI.usage?.input_tokens ?? null, tokensOut: seedAI.usage?.output_tokens ?? null, durationMs: Date.now() - startedAt, success: true, meta: { pass: "seed" } });
+    const industry: string = seedAI.result.industry || "small business";
+    const location: string = seedAI.result.location || "";
 
     const keywords = await fetchSearchAtlasKeywords(industry, location);
 
@@ -149,11 +150,11 @@ Deno.serve(async (req) => {
           keywords,
         })
       : seedAI;
-    if (keywords.length) logAiCallBg({ fn: "seo-analyze", userId: u.user.id, siteId, model: "claude-sonnet-4-5-20250929", tokensIn: null, tokensOut: null, durationMs: Date.now() - startedAt, success: true, meta: { pass: "final" } });
+    if (keywords.length) logAiCallBg({ fn: "seo-analyze", userId: u.user.id, siteId, model: "claude-sonnet-4-5-20250929", tokensIn: finalAI.usage?.input_tokens ?? null, tokensOut: finalAI.usage?.output_tokens ?? null, durationMs: Date.now() - startedAt, success: true, meta: { pass: "final" } });
 
-    const meta_title: string = (finalAI.meta_title || `${content.name || site.name} | ${content.tagline || ""}`).slice(0, 60);
-    const meta_description: string = (finalAI.meta_description || content.tagline || "").slice(0, 160);
-    const blog_topics: string[] = Array.isArray(finalAI.blog_topics) ? finalAI.blog_topics.slice(0, 5) : [];
+    const meta_title: string = (finalAI.result.meta_title || `${content.name || site.name} | ${content.tagline || ""}`).slice(0, 60);
+    const meta_description: string = (finalAI.result.meta_description || content.tagline || "").slice(0, 160);
+    const blog_topics: string[] = Array.isArray(finalAI.result.blog_topics) ? finalAI.result.blog_topics.slice(0, 5) : [];
 
     const score = computeScore({
       hasKeywords: keywords.length > 0,

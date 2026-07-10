@@ -76,6 +76,7 @@ async function callAI(url: string, integrations: Record<string, boolean>) {
     throw new Error(`AI provider ${resp.status}: ${t.slice(0, 300)}`);
   }
   const data = await resp.json();
+  const usage = data?.usage ?? null;
   const text = (Array.isArray(data.content) ? data.content.find((b: { type?: string }) => b?.type === "text")?.text : "") ?? "";
   if (!text.trim()) throw new Error("AI returned an empty response");
   // Extract the JSON object even if wrapped in prose/fences, and guard against
@@ -86,7 +87,7 @@ async function callAI(url: string, integrations: Record<string, boolean>) {
     throw new Error("AI did not return JSON: " + text.slice(0, 200));
   }
   try {
-    return JSON.parse(text.slice(start, end + 1));
+    return { result: JSON.parse(text.slice(start, end + 1)), usage };
   } catch {
     throw new Error("Failed to parse AI JSON (likely truncated — try again)");
   }
@@ -170,8 +171,11 @@ Deno.serve(async (req) => {
     // If anything below fails, reset status to 'error' so the UI doesn't hang on
     // the "analyzing" spinner forever (and the user can re-run).
     let report;
+    let usage;
     try {
-      report = await callAI(project.website_url, project.integrations || {});
+      const ai = await callAI(project.website_url, project.integrations || {});
+      report = ai.result;
+      usage = ai.usage;
 
       await supa.from("optimization_reports").insert({
         project_id: projectId,
@@ -192,7 +196,7 @@ Deno.serve(async (req) => {
       throw inner;
     }
 
-    logAiCallBg({ fn: "analyze-website", userId: user.id, siteId: null, model: "claude-sonnet-4-5-20250929", tokensIn: null, tokensOut: null, durationMs: Date.now() - startedAt, success: true, meta: { projectId } });
+    logAiCallBg({ fn: "analyze-website", userId: user.id, siteId: null, model: "claude-sonnet-4-5-20250929", tokensIn: usage?.input_tokens ?? null, tokensOut: usage?.output_tokens ?? null, durationMs: Date.now() - startedAt, success: true, meta: { projectId } });
     return new Response(JSON.stringify({ ok: true, report }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
