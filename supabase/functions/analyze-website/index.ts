@@ -11,6 +11,12 @@ const corsHeaders = {
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY")!;
+// Per-user/day cap on optimization runs. Cold-start (redeploy to change), defensive
+// like IP_RATE_LIMIT: default 10 when ANALYZE_DAILY_LIMIT is unset/empty/non-numeric/<=0.
+const ANALYZE_DAILY_LIMIT = (() => {
+  const n = Number(Deno.env.get("ANALYZE_DAILY_LIMIT"));
+  return Number.isFinite(n) && n > 0 ? n : 10;
+})();
 
 const SYSTEM = `You are an expert SEO + growth analyst for "Virtual Engine Builder", an AI business growth infrastructure platform.
 
@@ -161,6 +167,27 @@ Deno.serve(async (req) => {
         retry_after_seconds: g.retry_after_seconds,
         daily_limit: g.daily_limit,
       }), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // Per-user daily cap (the check_and_consume gate above is inert at _credit_cost:0).
+    // Increment-then-check happens inside the RPC, BEFORE callAI, so the capped call
+    // returns 429 without hitting Anthropic (zero cost); calls 1..limit reach callAI.
+    // FAIL-OPEN: on RPC error/throw, warn and proceed — never block a user on a
+    // counter hiccup (mirrors the per-IP throttle's bump error handling).
+    try {
+      const { data: capRes, error: capErr } = await supa.rpc("bump_user_calls", {
+        _uid: user.id, _fn: "analyze-website", _limit: ANALYZE_DAILY_LIMIT,
+      });
+      if (capErr) {
+        console.warn("[cap] bump_user_calls error (fail-open):", capErr.message);
+      } else if (capRes && (capRes as { over?: boolean }).over) {
+        logAiCallBg({ fn: "analyze-website", userId: user.id, model: "claude-sonnet-4-5-20250929", success: false, tokensIn: 0, tokensOut: 0, meta: { http_status: 429, limit_hit_reason: "user_daily_cap" } });
+        return new Response(JSON.stringify({ error: "user_daily_cap", retry_after_seconds: 86400 }), {
+          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    } catch (e) {
+      console.warn("[cap] bump_user_calls threw (fail-open):", e instanceof Error ? e.message : String(e));
     }
 
     await supa
