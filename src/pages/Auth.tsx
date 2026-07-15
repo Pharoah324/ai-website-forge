@@ -13,9 +13,19 @@ import { z } from "zod";
 import { getStoredRef } from "@/lib/affiliateTracking";
 import { useI18n } from "@/lib/i18n";
 
-const schema = z.object({
-  email: z.string().trim().email("Invalid email").max(255),
-  password: z.string().min(6, "Min 6 characters").max(128),
+// Email rule shared by signup, sign-in, and the resend-confirmation action.
+const emailSchema = z.string().trim().email("Invalid email").max(255);
+// Mode-aware password rules. Signup mirrors the backend (min 8, no character
+// classes). Sign-in only requires a non-empty password — existing users whose
+// password predates the 8-char policy must never be client-side locked out of a
+// password the backend still accepts.
+const signUpSchema = z.object({
+  email: emailSchema,
+  password: z.string().min(8, "At least 8 characters").max(128),
+});
+const signInSchema = z.object({
+  email: emailSchema,
+  password: z.string().min(1, "Enter your password").max(128),
 });
 
 const APP_ORIGIN = "https://builder.virtualengine.ai";
@@ -123,7 +133,7 @@ export default function Auth() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const parsed = schema.safeParse({ email, password });
+    const parsed = (mode === "signup" ? signUpSchema : signInSchema).safeParse({ email, password });
     if (!parsed.success) {
       toast.error(parsed.error.issues[0].message);
       return;
@@ -170,7 +180,7 @@ export default function Auth() {
   // Resend the signup confirmation email. emailRedirectTo MUST match the original
   // signUp's (`${APP_ORIGIN}${postAuthPath}`) or the link falls back to site_url.
   const resendConfirmation = async () => {
-    const parsedEmail = schema.shape.email.safeParse(email);
+    const parsedEmail = emailSchema.safeParse(email);
     if (!parsedEmail.success) {
       toast.error("Enter the email you signed up with first");
       return;
@@ -261,9 +271,12 @@ export default function Auth() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              minLength={6}
+              minLength={mode === "signup" ? 8 : undefined}
               autoComplete={mode === "signup" ? "new-password" : "current-password"}
             />
+            {mode === "signup" && (
+              <p className="mt-1 text-xs text-muted-foreground">At least 8 characters</p>
+            )}
           </div>
           <Button type="submit" className="w-full" disabled={anyLoading}>
             {loading
