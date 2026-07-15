@@ -39,6 +39,10 @@ export default function Auth() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<null | "google" | "apple">(null);
+  // Resend-confirmation UX: shown after a signup, or when a sign-in is blocked by
+  // an unconfirmed email (the path that otherwise dead-ends a returning user).
+  const [needsConfirm, setNeedsConfirm] = useState(false);
+  const [resending, setResending] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
   const { lang } = useI18n();
@@ -138,6 +142,7 @@ export default function Auth() {
         });
         if (error) throw error;
         toast.success("Account created. Check your email to confirm.");
+        setNeedsConfirm(true);
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email: parsed.data.email,
@@ -150,6 +155,8 @@ export default function Auth() {
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Authentication failed";
       const isFetchFailure = /failed to fetch/i.test(msg);
+      // Unconfirmed email on sign-in: offer the resend action instead of a dead end.
+      if (/email not confirmed/i.test(msg) || (err as { code?: string } | null)?.code === "email_not_confirmed") setNeedsConfirm(true);
       toast.error(
         isFetchFailure
           ? "Couldn't reach the authentication server. Check your internet connection — if this persists on the live site, the Supabase environment variables may be missing in your hosting provider."
@@ -157,6 +164,30 @@ export default function Auth() {
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Resend the signup confirmation email. emailRedirectTo MUST match the original
+  // signUp's (`${APP_ORIGIN}${postAuthPath}`) or the link falls back to site_url.
+  const resendConfirmation = async () => {
+    const parsedEmail = schema.shape.email.safeParse(email);
+    if (!parsedEmail.success) {
+      toast.error("Enter the email you signed up with first");
+      return;
+    }
+    setResending(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: parsedEmail.data,
+        options: { emailRedirectTo: `${APP_ORIGIN}${postAuthPath}` },
+      });
+      if (error) throw error;
+      toast.success("Confirmation email resent. Check your inbox.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't resend the email");
+    } finally {
+      setResending(false);
     }
   };
 
@@ -242,6 +273,19 @@ export default function Auth() {
                 : "Sign in"}
           </Button>
         </form>
+        {needsConfirm && (
+          <div className="mt-4 rounded-lg border border-navy-muted bg-muted/30 p-3 text-center text-sm">
+            <span className="text-muted-foreground">{"Didn't get the email?"}</span>{" "}
+            <button
+              type="button"
+              onClick={resendConfirmation}
+              disabled={resending || anyLoading}
+              className="font-medium text-primary hover:underline disabled:opacity-60"
+            >
+              {resending ? "Resending…" : "Resend confirmation email"}
+            </button>
+          </div>
+        )}
         <p className="mt-4 text-center text-sm text-muted-foreground">
           {mode === "signup" ? "Already have an account?" : "New here?"}{" "}
           <button
