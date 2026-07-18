@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import AuthCallback from "./pages/AuthCallback";
+import ResetPassword from "./pages/ResetPassword";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import Contact from "./pages/Contact";
@@ -108,6 +109,7 @@ export const routes: RouteRecord[] = [
       { index: true, Component: Landing },
       { path: "auth", Component: Auth },
       { path: "auth/callback", Component: AuthCallback },
+      { path: "reset-password", Component: ResetPassword },
       { path: "privacy", Component: Privacy },
       { path: "terms", Component: Terms },
       { path: "contact", Component: Contact },

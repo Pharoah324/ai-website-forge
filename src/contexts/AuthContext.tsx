@@ -56,6 +56,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     // Listener first
     const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
+      // Recovery links auto-establish a session and fire PASSWORD_RECOVERY. Do NOT
+      // treat it as a normal sign-in: apply the session (so /reset-password can
+      // authorize updateUser), but skip the post-auth redirect and profile-ensure,
+      // and route to the reset form. Returns before the normal-sign-in paths below,
+      // so no race with the stored-path redirect.
+      if (event === "PASSWORD_RECOVERY") {
+        applySession(s);
+        if (typeof window !== "undefined" && window.location.pathname !== "/reset-password") {
+          window.location.replace("/reset-password");
+        }
+        return;
+      }
       applySession(s);
       if (s) redirectToStoredPostAuthPath();
       // Ensure a profile row exists for this user (OAuth or email signup).

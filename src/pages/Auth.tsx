@@ -19,9 +19,13 @@ const emailSchema = z.string().trim().email("Invalid email").max(255);
 // classes). Sign-in only requires a non-empty password — existing users whose
 // password predates the 8-char policy must never be client-side locked out of a
 // password the backend still accepts.
+// Shared password rule (min 8, no character classes) — matches the live backend
+// policy. Exported so the reset-password page reuses the EXACT same rule and the two
+// can never drift from each other or the backend.
+export const passwordSchema = z.string().min(8, "At least 8 characters").max(128);
 const signUpSchema = z.object({
   email: emailSchema,
-  password: z.string().min(8, "At least 8 characters").max(128),
+  password: passwordSchema,
 });
 const signInSchema = z.object({
   email: emailSchema,
@@ -53,6 +57,8 @@ export default function Auth() {
   // an unconfirmed email (the path that otherwise dead-ends a returning user).
   const [needsConfirm, setNeedsConfirm] = useState(false);
   const [resending, setResending] = useState(false);
+  // Forgot-password (send reset link) UX — sign-in mode only.
+  const [resetting, setResetting] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
   const { lang } = useI18n();
@@ -201,6 +207,29 @@ export default function Auth() {
     }
   };
 
+  // Send a password-reset email. redirectTo is MANDATORY — without it the link falls
+  // back to site_url and silently signs the user in on the landing page instead of
+  // routing them to the set-new-password form.
+  const forgotPassword = async () => {
+    const parsedEmail = emailSchema.safeParse(email);
+    if (!parsedEmail.success) {
+      toast.error("Enter your email above first, then tap Forgot password");
+      return;
+    }
+    setResetting(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(parsedEmail.data, {
+        redirectTo: `${APP_ORIGIN}/reset-password`,
+      });
+      if (error) throw error;
+      toast.success("Check your email for a reset link.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't send the reset email");
+    } finally {
+      setResetting(false);
+    }
+  };
+
   const anyLoading = loading || oauthLoading !== null;
 
   return (
@@ -276,6 +305,16 @@ export default function Auth() {
             />
             {mode === "signup" && (
               <p className="mt-1 text-xs text-muted-foreground">At least 8 characters</p>
+            )}
+            {mode === "signin" && (
+              <button
+                type="button"
+                onClick={forgotPassword}
+                disabled={resetting || anyLoading}
+                className="mt-1 text-xs font-medium text-primary hover:underline disabled:opacity-60"
+              >
+                {resetting ? "Sending reset link…" : "Forgot password?"}
+              </button>
             )}
           </div>
           <Button type="submit" className="w-full" disabled={anyLoading}>
