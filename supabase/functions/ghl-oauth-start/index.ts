@@ -41,9 +41,8 @@ Deno.serve(async (req) => {
     // Sub-Account apps (GHL rejects it as "Invalid scope(s)"); pipeline read
     // access is bundled into opportunities.readonly.
     const scopes = [
-      "contacts.readonly", "contacts.write",
+      "contacts.write",
       "opportunities.readonly", "opportunities.write",
-      "locations.readonly",
     ].join(" ");
 
     // state carries the user id so the callback can attribute the connection
