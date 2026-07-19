@@ -55,6 +55,14 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Public endpoint — bound the payload before it persists to our DB. Legit forms
+    // are far under 10KB; anything larger is abuse.
+    if (JSON.stringify(fields).length > 10_000) {
+      return new Response(JSON.stringify({ error: "payload_too_large" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
     // Look up site owner — must be a real, published site
@@ -71,16 +79,49 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Capture-first: persist the raw submission BEFORE attempting delivery, so a lead
+    // is never lost to a downstream failure. Capture must never break delivery — if the
+    // insert itself fails, log and continue to delivery anyway.
+    let submissionId: string | null = null;
+    try {
+      const { data: sub } = await admin.from("form_submissions").insert({
+        site_id: site.id, user_id: site.user_id, fields, delivery_status: "pending",
+      }).select("id").single();
+      submissionId = sub?.id ?? null;
+    } catch (e) {
+      console.error("form_submissions insert failed (continuing to delivery)", e);
+    }
+    const markStatus = async (status: string, extra: Record<string, unknown> = {}) => {
+      if (!submissionId) return;
+      try {
+        await admin.from("form_submissions").update({ delivery_status: status, ...extra }).eq("id", submissionId);
+      } catch (e) {
+        console.error("form_submissions status update failed", e);
+      }
+    };
+
     // Look up owner's GHL integration
     const { data: integration, error: intErr } = await admin.from("integrations")
       .select("*").eq("user_id", site.user_id).eq("platform", "gohighlevel").maybeSingle();
     if (intErr || !integration || !integration.access_token) {
-      return new Response(JSON.stringify({ error: "Owner has not connected GoHighLevel" }), {
-        status: 412, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      // Lead is captured; the owner just hasn't connected GHL. Honest success to the
+      // visitor (the row exists in our DB) instead of a 412 the frontend masks as success.
+      await markStatus("no_integration");
+      return new Response(JSON.stringify({ ok: true, delivered: false, reason: "no_integration" }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const fresh = await refreshIfNeeded(admin, integration);
+    let fresh;
+    try {
+      fresh = await refreshIfNeeded(admin, integration);
+    } catch (e) {
+      // Token refresh failed (e.g. refresh_token revoked/expired). Lead is safe in our DB.
+      await markStatus("failed", { error: (e as Error).message });
+      return new Response(JSON.stringify({ ok: true, delivered: false }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Map common form fields → GHL contact
     const f = fields as Record<string, any>;
@@ -114,12 +155,16 @@ Deno.serve(async (req) => {
 
     if (!ghlRes.ok) {
       console.error("GHL contact create failed", ghlRes.status, ghlJson);
-      return new Response(JSON.stringify({ error: "GHL API error", status: ghlRes.status, details: ghlJson }), {
-        status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      // Delivery failed but the lead is captured — return success so the visitor isn't
+      // shown an error they can't fix; the owner can recover it from our DB.
+      await markStatus("failed", { error: `GHL ${ghlRes.status}: ${JSON.stringify(ghlJson).slice(0, 500)}` });
+      return new Response(JSON.stringify({ ok: true, delivered: false }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const contactId = ghlJson?.contact?.id ?? ghlJson?.id;
+    await markStatus("delivered", { ghl_contact_id: contactId ?? null });
 
     // Optionally create an opportunity in the chosen pipeline
     if (fresh.pipeline_id && contactId) {
@@ -189,7 +234,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    return new Response(JSON.stringify({ ok: true, contactId }), {
+    return new Response(JSON.stringify({ ok: true, delivered: true, contactId }), {
       status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
