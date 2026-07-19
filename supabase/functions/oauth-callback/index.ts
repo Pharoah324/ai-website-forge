@@ -27,7 +27,18 @@ Deno.serve(async (req) => {
     const errorParam = url.searchParams.get("error");
 
     if (errorParam) return html(`<h2>Connection cancelled</h2><p>${errorParam}</p><p><a href="${APP_ORIGIN}/app/integrations">Back to Integrations</a></p>`, 400);
-    if (!code || !state) return html(`<h2>Missing code or state</h2>`, 400);
+    if (!code) return html(`<h2>Missing code or state</h2>`, 400);
+    // Marketplace-originated install: GHL redirects a bare browser here with ?code
+    // but NO state (state is minted only by our dashboard connect flow, and carries
+    // the userId we need to attach tokens to). Without it we can't complete the
+    // exchange, so discard the single-use, short-lived code and send the browser to
+    // the state-bearing dashboard flow, which mints a fresh code and finishes there.
+    if (!state) {
+      return new Response(null, {
+        status: 302,
+        headers: { Location: `${APP_ORIGIN}/app/integrations?source=ghl-marketplace` },
+      });
+    }
 
     let userId: string;
     let provider: "gohighlevel" | "github" = "gohighlevel";
