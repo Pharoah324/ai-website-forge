@@ -6,11 +6,9 @@ import {
   Zap,
   ArrowRight,
   ArrowDown,
-  Star,
   Users,
   Globe,
   Timer,
-  Quote,
   Link2,
   TrendingUp,
   Languages,
@@ -87,7 +85,6 @@ const STATS = [
   { value: "50+", label: "Languages Supported", icon: Languages },
   { value: "190+", label: "Countries Served", icon: Globe },
   { value: "60 sec", label: "Avg Build Time", icon: Timer },
-  { value: "4.9★", label: "Rating", icon: Star },
   { value: "8B+", label: "Potential Customers", icon: Users },
 ];
 
@@ -98,7 +95,7 @@ const WHY_CARDS = [
     title: "Built FOR GoHighLevel",
     body:
       "Every form submission on your site automatically creates a contact and drops them into your GHL pipeline. No Zapier. No setup. No copy-paste. The only AI builder with native GHL integration.",
-    badge: "Available in GHL Marketplace",
+    badge: "One-Click Install Available",
   },
   {
     icon: TrendingUp,
@@ -128,7 +125,7 @@ const COMPARISON_ROWS: Array<{ feature: string; base: string | boolean; lov: str
   { feature: "White-Label Mode", base: false, lov: false, veb: "Agency Plan" },
   { feature: "Voice Prompt Input", base: false, lov: false, veb: "Built In" },
   { feature: "SEO Optimization", base: false, lov: false, veb: "Search Atlas" },
-  { feature: "GHL Marketplace Listed", base: false, lov: false, veb: "Official" },
+  { feature: "One-Click GHL Install", base: false, lov: false, veb: "Available Now" },
   { feature: "Starting Price", base: "$16/mo", lov: "$20/mo", veb: "$19/mo ✅" },
 ];
 
@@ -177,36 +174,11 @@ const LANGUAGES = [
 ];
 
 const TESTIMONIALS = [
-  {
-    quote:
-      "I was quoted $4,500 by a web agency. I described my business to Virtual Engine Builder and had a live website in 8 minutes. It ranks on Google and connects to my GoHighLevel account automatically. I genuinely could not believe it.",
-    name: "David M.",
-    role: "HVAC contractor, Texas",
-  },
-  {
-    quote:
-      "I described my medspa and had a fully designed website with online booking in under 2 minutes. The GoHighLevel connection is everything — leads go straight into my pipeline without me touching anything.",
-    name: "Jessica R.",
-    role: "Glow Aesthetics Miami",
-  },
-  {
-    quote:
-      "I manage 14 client websites from one dashboard. The white-label mode makes me look like I built a proprietary platform. My clients have no idea this exists and I charge premium prices.",
-    name: "Marcus D.",
-    role: "MD Digital Agency",
-  },
-  {
-    quote:
-      "Switched from Base44. The credit rollover alone saves me $40 a month. And the Search Atlas SEO built in means my clients actually rank on Google now. Nothing else does this.",
-    name: "Tanya K.",
-    role: "Real Estate Coach Atlanta",
-  },
-  {
-    quote:
-      "Creé el sitio web de mi restaurante en español en 60 segundos. Nunca pensé que algo así fuera posible para un negocio pequeño como el mío.",
-    name: "Carlos M.",
-    role: "Restaurante El Fogón, Ciudad de México",
-  },
+  "For home-service contractors — Describe your services and coverage area. Get a site built to rank in local search, with every form submission landing in your GoHighLevel pipeline automatically.",
+  "For med spas and clinics — A polished site with your GHL booking calendar embedded, so new clients book directly and every lead is captured the moment they inquire.",
+  "For agencies — Manage every client site from one dashboard with white-label mode. Your clients see your brand, and you deliver in minutes what used to take weeks.",
+  "For coaches and consultants — Search Atlas keyword data baked into every page, so your site works toward ranking from day one. Credits roll over, so nothing you pay for is wasted.",
+  "Para restaurantes y negocios locales — Describe tu negocio en español y recibe tu sitio completo en español. Funciona en más de 50 idiomas.",
 ];
 
 function Cell({ value }: { value: string | boolean }) {
@@ -272,7 +244,7 @@ export default function Landing() {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
             </span>
-            ✦ GoHighLevel-Native
+            ✦ Native GoHighLevel Integration — One-Click Install
           </div>
           <h1 className="text-balance text-[2rem] font-bold leading-[1.08] tracking-tight sm:text-5xl md:text-7xl">
             Stop Paying $3,000 For a Website.
@@ -389,10 +361,10 @@ export default function Landing() {
       <section className="border-y border-primary/30 bg-navy py-6 text-navy-foreground">
         <div className="container">
           <p className="text-center text-sm font-medium text-navy-foreground/90 md:text-base">
-            <span className="font-bold text-primary-glow">12,400+</span> Websites Built ·{" "}
-            <span className="font-bold text-primary-glow">3,200+</span> Active Users ·{" "}
-            <span className="font-bold text-primary-glow">10 Min</span> Avg Build Time ·{" "}
-            <span className="font-bold text-primary-glow">4.9★</span> Rating
+            <span className="font-bold text-primary-glow">Now in Early Access</span> ·{" "}
+            <span className="font-bold text-primary-glow">50+ Languages</span> ·{" "}
+            <span className="font-bold text-primary-glow">Sites Live in Minutes</span> ·{" "}
+            <span className="font-bold text-primary-glow">Free to Start</span>
           </p>
           <p className="mt-2 text-center text-sm font-semibold text-primary-glow md:text-base">
             Available in 50+ Languages · 190+ Countries · 8 Billion Potential Customers
@@ -668,7 +640,7 @@ export default function Landing() {
         <div className="container max-w-6xl">
           <FadeIn className="mb-14 text-center">
             <div className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[11px] font-semibold text-primary-glow">
-              <CheckCircle2 className="h-3 w-3" /> Available in GHL Marketplace
+              <CheckCircle2 className="h-3 w-3" /> One-Click Install Available
             </div>
             <h2 className="text-4xl font-bold tracking-tight md:text-5xl">GoHighLevel User?</h2>
             <p className="mt-3 text-lg text-navy-foreground/90">This was built for you specifically.</p>
@@ -689,9 +661,9 @@ export default function Landing() {
           </div>
           <FadeIn className="mt-10 text-center">
             <Button asChild size="lg" className="bg-cta text-cta-foreground hover:bg-cta/90">
-              <a href="https://marketplace.gohighlevel.com" target="_blank" rel="noopener noreferrer">
-                ✦ Find Us in the GHL Marketplace <ArrowRight className="ml-1 h-4 w-4" />
-              </a>
+              <Link to="/app/integrations">
+                ✦ Connect GoHighLevel <ArrowRight className="ml-1 h-4 w-4" />
+              </Link>
             </Button>
           </FadeIn>
         </div>
@@ -763,24 +735,16 @@ export default function Landing() {
       <section className="bg-background py-24">
         <div className="container max-w-6xl">
           <FadeIn className="mx-auto mb-12 max-w-2xl text-center">
-            <h2 className="text-4xl font-bold tracking-tight md:text-5xl">Real Results. Real Business Owners.</h2>
+            <h2 className="text-4xl font-bold tracking-tight md:text-5xl">Built for Businesses Like Yours.</h2>
           </FadeIn>
           <div className="grid gap-6 md:grid-cols-2">
             {TESTIMONIALS.map((t) => (
-              <FadeIn key={t.name}>
+              <FadeIn key={t}>
                 <div
                   className="h-full rounded-xl border border-primary/15 p-7 shadow-card transition-shadow hover:shadow-elevated"
                   style={{ background: "rgba(16,185,129,0.04)" }}
                 >
-                  <Quote className="mb-3 h-5 w-5 text-primary" />
-                  <p className="text-base leading-relaxed text-foreground">"{t.quote}"</p>
-                  <div className="mt-4 flex items-center gap-1 text-cta">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="h-3.5 w-3.5 fill-current" />
-                    ))}
-                  </div>
-                  <div className="mt-3 text-sm font-semibold">{t.name}</div>
-                  <div className="text-xs text-muted-foreground">{t.role}</div>
+                  <p className="text-base leading-relaxed text-foreground">{t}</p>
                 </div>
               </FadeIn>
             ))}
@@ -972,7 +936,7 @@ export default function Landing() {
                 <li><Link to="/app" className="hover:text-primary-glow">Dashboard</Link></li>
                 <li><Link to="/app" className="hover:text-primary-glow">Templates</Link></li>
                 <li><Link to="/app/integrations" className="hover:text-primary-glow">Integrations</Link></li>
-                <li><a href="https://marketplace.gohighlevel.com" target="_blank" rel="noopener noreferrer" className="hover:text-primary-glow">GHL Marketplace</a></li>
+                <li><Link to="/app/integrations" className="hover:text-primary-glow">GHL Integration</Link></li>
                 <li><a href="#pricing" className="hover:text-primary-glow">Pricing</a></li>
               </ul>
             </div>
