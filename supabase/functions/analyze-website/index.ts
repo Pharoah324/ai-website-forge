@@ -2,6 +2,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { logAiCallBg } from "../_shared/aiLog.ts";
 
+const MODEL = Deno.env.get("ANTHROPIC_MODEL") ?? "claude-sonnet-4-5-20250929";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -68,7 +70,7 @@ async function callAI(url: string, integrations: Record<string, boolean>) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "claude-sonnet-4-5-20250929",
+      model: MODEL,
       max_tokens: 16000,
       system: SYSTEM,
       messages: [
@@ -160,7 +162,7 @@ Deno.serve(async (req) => {
     const g = gate as { ok: boolean; reason?: string; retry_after_seconds?: number; daily_limit?: number; plan?: string };
     if (!g.ok) {
       const status = g.reason === "daily_limit" || g.reason === "hourly_limit" || g.reason === "blocked" ? 429 : 403;
-      if (g.reason === "no_credits") logAiCallBg({ fn: "analyze-website", userId: user.id, siteId: null, model: "claude-sonnet-4-5-20250929", durationMs: Date.now() - startedAt, success: false, errorMessage: "no_credits", tokensIn: 0, tokensOut: 0, meta: { http_status: status, limit_hit_reason: "no_credits" } });
+      if (g.reason === "no_credits") logAiCallBg({ fn: "analyze-website", userId: user.id, siteId: null, model: MODEL, durationMs: Date.now() - startedAt, success: false, errorMessage: "no_credits", tokensIn: 0, tokensOut: 0, meta: { http_status: status, limit_hit_reason: "no_credits" } });
       return new Response(JSON.stringify({
         error: g.reason ?? "blocked",
         plan: g.plan,
@@ -181,7 +183,7 @@ Deno.serve(async (req) => {
       if (capErr) {
         console.warn("[cap] bump_user_calls error (fail-open):", capErr.message);
       } else if (capRes && (capRes as { over?: boolean }).over) {
-        logAiCallBg({ fn: "analyze-website", userId: user.id, model: "claude-sonnet-4-5-20250929", success: false, tokensIn: 0, tokensOut: 0, meta: { http_status: 429, limit_hit_reason: "user_daily_cap" } });
+        logAiCallBg({ fn: "analyze-website", userId: user.id, model: MODEL, success: false, tokensIn: 0, tokensOut: 0, meta: { http_status: 429, limit_hit_reason: "user_daily_cap" } });
         return new Response(JSON.stringify({ error: "user_daily_cap", retry_after_seconds: 86400 }), {
           status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -223,7 +225,7 @@ Deno.serve(async (req) => {
       throw inner;
     }
 
-    logAiCallBg({ fn: "analyze-website", userId: user.id, siteId: null, model: "claude-sonnet-4-5-20250929", tokensIn: usage?.input_tokens ?? null, tokensOut: usage?.output_tokens ?? null, durationMs: Date.now() - startedAt, success: true, meta: { projectId } });
+    logAiCallBg({ fn: "analyze-website", userId: user.id, siteId: null, model: MODEL, tokensIn: usage?.input_tokens ?? null, tokensOut: usage?.output_tokens ?? null, durationMs: Date.now() - startedAt, success: true, meta: { projectId } });
     return new Response(JSON.stringify({ ok: true, report }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

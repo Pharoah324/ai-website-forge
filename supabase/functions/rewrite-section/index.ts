@@ -1,6 +1,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { logAiCallBg } from "../_shared/aiLog.ts";
 
+const MODEL = Deno.env.get("ANTHROPIC_MODEL") ?? "claude-sonnet-4-5-20250929";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -80,7 +82,7 @@ Deno.serve(async (req) => {
     const now = Date.now();
     const hits = (RL.get(uid) || []).filter((t) => now - t < WINDOW_MS);
     if (hits.length >= LIMIT) {
-      logAiCallBg({ fn: "rewrite-section", userId: uid, siteId: null, model: "claude-sonnet-4-5-20250929", durationMs: Date.now() - startedAt, success: false, errorMessage: "rate_limited", tokensIn: 0, tokensOut: 0, meta: { http_status: 429, limit_hit_reason: "rate_limited" } });
+      logAiCallBg({ fn: "rewrite-section", userId: uid, siteId: null, model: MODEL, durationMs: Date.now() - startedAt, success: false, errorMessage: "rate_limited", tokensIn: 0, tokensOut: 0, meta: { http_status: 429, limit_hit_reason: "rate_limited" } });
       return new Response(
         JSON.stringify({ error: "Rewrite limit reached. Try again in an hour." }),
         { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -138,7 +140,7 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-5-20250929",
+        model: MODEL,
         max_tokens: 4096,
         system: `You rewrite a single website section. Produce 3 distinct, conversion-focused variations. Keep the same section type, similar length, and same number of items.${voiceAddon}`,
         messages: [
@@ -169,7 +171,7 @@ Deno.serve(async (req) => {
     if (toolBlock?.input) {
       variations = (toolBlock.input as { variations?: unknown[] }).variations ?? [];
     }
-    logAiCallBg({ fn: "rewrite-section", userId: uid, siteId: site_id ?? null, model: "claude-sonnet-4-5-20250929", tokensIn: data?.usage?.input_tokens ?? null, tokensOut: data?.usage?.output_tokens ?? null, durationMs: Date.now() - startedAt, success: true });
+    logAiCallBg({ fn: "rewrite-section", userId: uid, siteId: site_id ?? null, model: MODEL, tokensIn: data?.usage?.input_tokens ?? null, tokensOut: data?.usage?.output_tokens ?? null, durationMs: Date.now() - startedAt, success: true });
     return new Response(JSON.stringify({ variations }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

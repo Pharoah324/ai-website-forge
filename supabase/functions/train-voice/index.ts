@@ -1,6 +1,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { logAiCallBg } from "../_shared/aiLog.ts";
 
+const MODEL = Deno.env.get("ANTHROPIC_MODEL") ?? "claude-sonnet-4-5-20250929";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -70,7 +72,7 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-5-20250929",
+        model: MODEL,
         max_tokens: 1024,
         system:
           "Analyze the writing samples and describe the writer's style in exactly 5 specific, actionable rules. Examples: 'Uses short sentences', 'Friendly and casual tone', 'Uses you and we a lot', 'Avoids corporate jargon', 'Ends with action-oriented sentences'. Return via the voice_rules tool.",
@@ -133,7 +135,7 @@ Deno.serve(async (req) => {
         .eq("id", userData.user.id);
     }
 
-    logAiCallBg({ fn: "train-voice", userId: userData.user.id, siteId: null, model: "claude-sonnet-4-5-20250929", tokensIn: data?.usage?.input_tokens ?? null, tokensOut: data?.usage?.output_tokens ?? null, durationMs: Date.now() - startedAt, success: true, meta: { workspace_id: workspace_id ?? null } });
+    logAiCallBg({ fn: "train-voice", userId: userData.user.id, siteId: null, model: MODEL, tokensIn: data?.usage?.input_tokens ?? null, tokensOut: data?.usage?.output_tokens ?? null, durationMs: Date.now() - startedAt, success: true, meta: { workspace_id: workspace_id ?? null } });
     return new Response(JSON.stringify({ voice_rules: rules }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

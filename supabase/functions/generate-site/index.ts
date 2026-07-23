@@ -1,6 +1,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { logAiCallBg } from "../_shared/aiLog.ts";
 
+const MODEL = Deno.env.get("ANTHROPIC_MODEL") ?? "claude-sonnet-4-5-20250929";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -366,7 +368,7 @@ async function verifySecrets() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "claude-sonnet-4-5-20250929",
+          model: MODEL,
           max_tokens: 1,
           messages: [{ role: "user", content: "ping" }],
         }),
@@ -500,7 +502,7 @@ Deno.serve(async (req) => {
         g.reason === "no_credits" ? 402 :
         g.reason === "daily_limit" || g.reason === "hourly_limit" || g.reason === "blocked" ? 429 :
         403;
-      if (g.reason === "no_credits") logAiCallBg({ fn: "generate-site", userId: user.id, siteId: null, model: "claude-sonnet-4-5-20250929", durationMs: Date.now() - startedAt, success: false, errorMessage: "no_credits", tokensIn: 0, tokensOut: 0, meta: { http_status: status, limit_hit_reason: "no_credits" } });
+      if (g.reason === "no_credits") logAiCallBg({ fn: "generate-site", userId: user.id, siteId: null, model: MODEL, durationMs: Date.now() - startedAt, success: false, errorMessage: "no_credits", tokensIn: 0, tokensOut: 0, meta: { http_status: status, limit_hit_reason: "no_credits" } });
       return new Response(JSON.stringify({
         error: g.reason ?? "blocked",
         plan: g.plan,
@@ -576,7 +578,7 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
     userMessage += `\n\nDESIGN DIRECTION FOR THIS BUILD — make this site look visually distinct from other generated sites by applying this aesthetic:\n${designDirection}\nAdapt it to suit the business: where the industry has strong conventions (e.g. law = gravitas, medical = clinical) keep the palette/mood appropriate, but ALWAYS vary the structural treatment — hero style, section ordering, feature presentation (cards vs list vs alternating rows vs steps), spacing and shape language — so the result does not default to the same generic skeleton. Honor all quality, language and funnel rules.`;
 
     const aiBody = {
-      model: "claude-sonnet-4-5-20250929",
+      model: MODEL,
       max_tokens: 8192,
       system: SYSTEM_PROMPT + voiceAddon,
       messages: [
@@ -645,7 +647,7 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
       try { sanitizeMarkdownImages(parsed); } catch (e) { console.warn("sanitizeMarkdownImages failed:", e); }
       try { await hydrateImages(parsed, prompt); } catch (e) { console.warn("hydrateImages failed (continuing without images):", e); }
       const site = await persistSite(admin, user.id, prompt, parsed, profile, isUnlimited, isAdmin, effectiveWorkspaceId);
-      logAiCallBg({ fn: "generate-site", userId: user.id, siteId: site?.id ?? null, model: "claude-sonnet-4-5-20250929", tokensIn: data?.usage?.input_tokens ?? null, tokensOut: data?.usage?.output_tokens ?? null, durationMs: Date.now() - startedAt, success: true });
+      logAiCallBg({ fn: "generate-site", userId: user.id, siteId: site?.id ?? null, model: MODEL, tokensIn: data?.usage?.input_tokens ?? null, tokensOut: data?.usage?.output_tokens ?? null, durationMs: Date.now() - startedAt, success: true });
       return new Response(JSON.stringify({ site }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -746,7 +748,7 @@ ${JSON.stringify(templateDraft).slice(0, 6000)}`;
             effectiveWorkspaceId,
           );
           send("done", { site });
-          logAiCallBg({ fn: "generate-site", userId: user.id, siteId: site?.id ?? null, model: "claude-sonnet-4-5-20250929", tokensIn: usageIn, tokensOut: usageOut, durationMs: Date.now() - startedAt, success: true });
+          logAiCallBg({ fn: "generate-site", userId: user.id, siteId: site?.id ?? null, model: MODEL, tokensIn: usageIn, tokensOut: usageOut, durationMs: Date.now() - startedAt, success: true });
           clearInterval(heartbeat);
           closed = true;
           try { controller.close(); } catch { /* noop */ }

@@ -4,6 +4,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { logAiCallBg } from "../_shared/aiLog.ts";
 
+const MODEL = Deno.env.get("ANTHROPIC_MODEL") ?? "claude-sonnet-4-5-20250929";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -72,7 +74,7 @@ Return JSON only.`;
     method: "POST",
     headers: { "x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "claude-sonnet-4-5-20250929",
+      model: MODEL,
       max_tokens: 1024,
       system: sys,
       messages: [
@@ -135,7 +137,7 @@ Deno.serve(async (req) => {
       prompt: site.prompt || "",
       keywords: [],
     });
-    logAiCallBg({ fn: "seo-analyze", userId: u.user.id, siteId, model: "claude-sonnet-4-5-20250929", tokensIn: seedAI.usage?.input_tokens ?? null, tokensOut: seedAI.usage?.output_tokens ?? null, durationMs: Date.now() - startedAt, success: true, meta: { pass: "seed" } });
+    logAiCallBg({ fn: "seo-analyze", userId: u.user.id, siteId, model: MODEL, tokensIn: seedAI.usage?.input_tokens ?? null, tokensOut: seedAI.usage?.output_tokens ?? null, durationMs: Date.now() - startedAt, success: true, meta: { pass: "seed" } });
     const industry: string = seedAI.result.industry || "small business";
     const location: string = seedAI.result.location || "";
 
@@ -150,7 +152,7 @@ Deno.serve(async (req) => {
           keywords,
         })
       : seedAI;
-    if (keywords.length) logAiCallBg({ fn: "seo-analyze", userId: u.user.id, siteId, model: "claude-sonnet-4-5-20250929", tokensIn: finalAI.usage?.input_tokens ?? null, tokensOut: finalAI.usage?.output_tokens ?? null, durationMs: Date.now() - startedAt, success: true, meta: { pass: "final" } });
+    if (keywords.length) logAiCallBg({ fn: "seo-analyze", userId: u.user.id, siteId, model: MODEL, tokensIn: finalAI.usage?.input_tokens ?? null, tokensOut: finalAI.usage?.output_tokens ?? null, durationMs: Date.now() - startedAt, success: true, meta: { pass: "final" } });
 
     const meta_title: string = (finalAI.result.meta_title || `${content.name || site.name} | ${content.tagline || ""}`).slice(0, 60);
     const meta_description: string = (finalAI.result.meta_description || content.tagline || "").slice(0, 160);

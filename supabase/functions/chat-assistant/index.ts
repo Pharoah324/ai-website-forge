@@ -2,6 +2,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { logAiCallBg } from "../_shared/aiLog.ts";
 
+const MODEL = Deno.env.get("ANTHROPIC_MODEL") ?? "claude-sonnet-4-5-20250929";
+
 // Layer 1 input caps (a real support chat is short; generous headroom).
 const MAX_MESSAGES = 40;
 const MAX_TOTAL_CHARS = 12_000;
@@ -43,7 +45,7 @@ serve(async (req) => {
       totalChars > MAX_TOTAL_CHARS ||
       msgs.some((m: { content?: unknown }) => typeof m?.content === "string" && m.content.length > MAX_MESSAGE_CHARS)
     ) {
-      logAiCallBg({ fn: "chat-assistant", model: "claude-sonnet-4-5-20250929", durationMs: Date.now() - startedAt, success: false, errorMessage: "payload_too_large", tokensIn: 0, tokensOut: 0, meta: { http_status: 400, limit_hit_reason: "payload_too_large" } });
+      logAiCallBg({ fn: "chat-assistant", model: MODEL, durationMs: Date.now() - startedAt, success: false, errorMessage: "payload_too_large", tokensIn: 0, tokensOut: 0, meta: { http_status: 400, limit_hit_reason: "payload_too_large" } });
       return new Response(JSON.stringify({ error: "payload_too_large" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -83,7 +85,7 @@ serve(async (req) => {
           console.error("[throttle] bump_ip_calls error (fail-open):", ipErr.message);
         } else if (ipres && (ipres as { over?: boolean }).over) {
           console.warn("[throttle] per-IP limit hit -> 429; count:", (ipres as { count?: number }).count);
-          logAiCallBg({ fn: "chat-assistant", model: "claude-sonnet-4-5-20250929", durationMs: Date.now() - startedAt, success: false, errorMessage: "rate_limited", tokensIn: 0, tokensOut: 0, meta: { http_status: 429, limit_hit_reason: "rate_limited" } });
+          logAiCallBg({ fn: "chat-assistant", model: MODEL, durationMs: Date.now() - startedAt, success: false, errorMessage: "rate_limited", tokensIn: 0, tokensOut: 0, meta: { http_status: 429, limit_hit_reason: "rate_limited" } });
           return new Response(JSON.stringify({ error: "rate_limited" }), {
             status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
@@ -116,7 +118,7 @@ serve(async (req) => {
       console.error("[breaker] RPC threw (fail-closed -> 503):", e instanceof Error ? e.message : String(e));
     }
     if (!allowed) {
-      logAiCallBg({ fn: "chat-assistant", model: "claude-sonnet-4-5-20250929", durationMs: Date.now() - startedAt, success: false, errorMessage: "service_busy", tokensIn: 0, tokensOut: 0, meta: { http_status: 503, limit_hit_reason: "service_busy" } });
+      logAiCallBg({ fn: "chat-assistant", model: MODEL, durationMs: Date.now() - startedAt, success: false, errorMessage: "service_busy", tokensIn: 0, tokensOut: 0, meta: { http_status: 503, limit_hit_reason: "service_busy" } });
       return new Response(JSON.stringify({ error: "service_busy" }), {
         status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -130,7 +132,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-5-20250929",
+        model: MODEL,
         max_tokens: 1024,
         system: SYSTEM_PROMPT + langHint,
         messages: convo,
@@ -190,7 +192,7 @@ serve(async (req) => {
             }
           }
           controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-          logAiCallBg({ fn: "chat-assistant", model: "claude-sonnet-4-5-20250929", tokensIn: null, tokensOut: null, durationMs: Date.now() - startedAt, success: true });
+          logAiCallBg({ fn: "chat-assistant", model: MODEL, tokensIn: null, tokensOut: null, durationMs: Date.now() - startedAt, success: true });
         } catch (e) {
           console.error("chat-assistant stream error", e);
         } finally {
