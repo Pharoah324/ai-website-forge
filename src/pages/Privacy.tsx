@@ -18,7 +18,7 @@ export default function Privacy() {
       <main className="container max-w-3xl py-16">
         <p className="mb-2 text-sm uppercase tracking-wider text-primary-glow">Virtual Engine Builder</p>
         <h1 className="mb-3 text-4xl font-bold md:text-5xl">Privacy Policy</h1>
-        <p className="mb-12 text-sm text-muted-foreground">Effective Date: May 14, 2026</p>
+        <p className="mb-12 text-sm text-muted-foreground">Effective Date: July 22, 2026</p>
 
         <div className="prose-legal space-y-6 text-foreground/90 leading-relaxed">
           <p>
@@ -179,7 +179,21 @@ export default function Privacy() {
             </p>
           </Section>
 
-          <Section title="12. Changes to This Policy">
+          <Section title="12. Data We Process on Behalf of Site Owners">
+            <p>
+              When a visitor submits a form on a website published through Virtual Engine Builder, we collect the
+              information the visitor enters (such as name, email address, phone number, and message) on behalf of the
+              site owner. For this data, the site owner is the data controller and Virtual Engine Builder acts as a
+              data processor. We store form submissions to ensure leads are not lost if delivery to the site owner's connected
+              systems (such as GoHighLevel) fails, and we deliver them to those systems as directed by the site owner. We
+              do not use visitor form data for advertising, and we do not sell it. We may use aggregated, anonymized
+              metrics (such as submission counts and delivery success rates) to operate and improve the service. Visitors
+              seeking to access, correct, or delete their form data should contact the owner of the website where they
+              submitted it; we will assist site owners in fulfilling such requests.
+            </p>
+          </Section>
+
+          <Section title="13. Changes to This Policy">
             <p>
               We may update this Privacy Policy from time to time. We will notify you of material changes by email or by
               posting a notice in the Service. Your continued use of the Service after the effective date of the updated
@@ -187,7 +201,7 @@ export default function Privacy() {
             </p>
           </Section>
 
-          <Section title="13. Contact Us">
+          <Section title="14. Contact Us">
             <p>If you have questions or concerns about this Privacy Policy, please contact us:</p>
             <p>
               Virtual Engine

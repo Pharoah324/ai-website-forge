@@ -18,7 +18,7 @@ export default function Terms() {
       <main className="container max-w-3xl py-16">
         <p className="mb-2 text-sm uppercase tracking-wider text-primary-glow">Virtual Engine Builder</p>
         <h1 className="mb-3 text-4xl font-bold md:text-5xl">Terms of Service</h1>
-        <p className="mb-12 text-sm text-muted-foreground">Effective Date: May 14, 2026</p>
+        <p className="mb-12 text-sm text-muted-foreground">Effective Date: July 22, 2026</p>
 
         <div className="space-y-6 text-foreground/90 leading-relaxed">
           <p>
@@ -171,6 +171,14 @@ export default function Terms() {
               account, you authorize us to interact with your GHL data on your behalf. You are responsible for your GHL
               account and compliance with GHL's terms. We are not affiliated with or endorsed by GoHighLevel except as a
               listed marketplace partner.
+            </p>
+            <p>
+              If you connect a third-party service (such as GoHighLevel) or publish a website that collects visitor
+              information, you are responsible for complying with applicable privacy laws for that data, including
+              providing any required notices to your visitors and honoring their data-rights requests. You authorize
+              Virtual Engine Builder to store form submissions from your published sites and to transmit them to the
+              services you connect. You may disconnect an integration at any time; disconnecting does not delete form
+              submissions already stored, which we retain on your behalf and can provide to you upon request.
             </p>
           </Section>
 
